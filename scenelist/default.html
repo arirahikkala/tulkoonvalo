@@ -14,9 +14,10 @@
 		orientation: "vertical",
 		min: 0,
 		max: 1,
-		step: 0.001
+		step: 0.001,
+		stop: function(event, ui) { $("#outputnum").html ($("#slider").slider("option", "value")) }
 	    });
-	    $("#slider").bind ("stop", function(event, ui) { alert ("changed")});
+
 	});
 	</script>
 </head>
