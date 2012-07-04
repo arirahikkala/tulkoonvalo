@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>jQuery UI Slider - Default functionality</title>
+	<script type="text/javascript" src="../lib/jqueryui/js/jquery-1.7.2.min.js"></script>
+	<script type="text/javascript" src="../lib/jqueryui/js/jquery-ui-1.8.21.custom.min.js"></script>
+	<link rel="stylesheet" href="../lib/jqueryui/css/ui-lightness/jquery-ui-1.8.21.custom.css" />
+	<style type="text/css">
+	#demo-frame > div.demo { padding: 10px !important; }
+	</style>
+	<script type="text/javascript">
+	$(function() {
+	    var slider = $( "#slider" ).slider({
+		orientation: "vertical",
+		min: 0,
+		max: 1,
+		step: 0.001
+	    });
+	    $("#slider").bind ("stop", function(event, ui) { alert ("changed")});
+	});
+	</script>
+</head>
+<body>
+
+<div class="demo">
+<div id="slidername"></div>
+<div id="slider"></div>
+
+</div><!-- End demo -->
+
+
+
+<div class="demo-description">
+<p>The basic slider is horizontal and has a single handle that can be moved with the mouse or by using the arrow keys.</p>
+</div><!-- End demo-description -->
+<div id="outputnum"></div>
+</body>
+</html>
