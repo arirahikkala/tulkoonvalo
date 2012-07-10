@@ -42,7 +42,6 @@
 
 	events: {
 	    "slide .slider-widget" : "updateFromUI",
-//	    "slide .slider-widget" : "updateFromUI"
 	},
 
 	initialize: function() {
@@ -62,38 +61,3 @@
 	}
     });
 }).call(this);
-
-/*
-    sliderObject.on("change:brightness", function() { $("#outputnum").html (sliderObject.get("brightness"));});
-
-    $(function() {
-	var slider = $( "#slider" ).slider({
-	    orientation: "vertical",
-	    min: 0,
-	    max: 1,
-	    step: 0.001,
-	    change: function(event, ui) {sliderObject.set ({ brightness: $("#slider").slider("option", "value")});}
-	});
-*/
-
-
-
-// move into sliderlist or something?
-/*    // attributes: sliders (array of Slider)
-    var Program = Backbone.Model.extend({
-	defaults: function() {
-	    return {
-		sliders: Array()
-	    }
-	},
-
-	getNumSliders: function() { return this.get("sliders").length; },
-
-	addSlider: function(newslider) { 
-	    var s = this.get("sliders");
-	    s.push (newslider);
-	    this.set (s);
-	}
-    });
-*/
-
