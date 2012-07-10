@@ -23,6 +23,8 @@
 		brightness: 0
 	    };
 	}
+
+	
     });
 
     Slider.SliderView = Backbone.View.extend({
@@ -30,19 +32,33 @@
 
 	className: "slider",
 
+	widget: {},
+	$widget: {},
+
 	template: _.template("<div class='slider'>\
 <%= name %>\
 <div class='slider-widget' id='<%= id %>' />\
 </div>"),
 
 	events: {
-	    "change .slider-widget" : "updateFromUI",
-	    "slide .slider-widget" : "updateFromUI"
+	    "slide .slider-widget" : "updateFromUI",
+//	    "slide .slider-widget" : "updateFromUI"
+	},
+
+	initialize: function() {
+	    this.render();
 	},
 
 	render: function () {
-	    this.$el.html = "test";
+	    this.$el.html (this.template ({name: this.model.get('name'), 
+					   id: this.options.idAttr}));
+	    $widget = $("#"+this.options.idAttr)
+	    widget = $widget.slider();
 	    return this;
+	},
+	
+	updateFromUI: function() {
+	    this.model.set("brightness", $widget.slider("option", "value"));
 	}
     });
 }).call(this);

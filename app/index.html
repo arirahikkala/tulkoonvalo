@@ -5,7 +5,7 @@
   <style type="text/css">
   </style>
   <script type="text/javascript" src="../lib/jqueryui/js/jquery-1.7.2.min.js"></script>
-  <script type="text/javascript" src="../lib/underscore-min.js"></script>
+  <script type="text/javascript" src="../lib/underscore.js"></script>
   <script type="text/javascript" src="../lib/backbone.js"></script>
   <script type="text/javascript" src="../lib/jqueryui/js/jquery-ui-1.8.21.custom.min.js"></script>
   <script type="text/javascript" src="slider.js"></script>
@@ -18,7 +18,9 @@
   <script type="text/javascript">
     var SliderObj = new Slider.Slider();
 
-    var Sliderview = new Slider.SliderView({el: $("#example-slider")});
+    var Sliderview = new Slider.SliderView({el: $("#example-slider"), 
+					    idAttr: "yksi", 
+					    model: SliderObj});
 
 /*    var AppView = Backbone.View.extend ({
 	initialize: function() {
