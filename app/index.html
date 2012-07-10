@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>WebDALI</title>
+  <style type="text/css">
+  </style>
+  <script type="text/javascript" src="../lib/jqueryui/js/jquery-1.7.2.min.js"></script>
+  <script type="text/javascript" src="../lib/underscore-min.js"></script>
+  <script type="text/javascript" src="../lib/backbone.js"></script>
+  <script type="text/javascript" src="../lib/jqueryui/js/jquery-ui-1.8.21.custom.min.js"></script>
+  <script type="text/javascript" src="slider.js"></script>
+  <link rel="stylesheet" href="../lib/jqueryui/css/ui-lightness/jquery-ui-1.8.21.custom.css" />
+
+</head>
+<body>
+  <div id="example-slider" />
+
+  <script type="text/javascript">
+    var SliderObj = new Slider.Slider();
+
+    var Sliderview = new Slider.SliderView({el: $("#example-slider")});
+
+/*    var AppView = Backbone.View.extend ({
+	initialize: function() {
+	    this.render();
+	},
+
+	render: function() {
+	    var _this = this;
+	    setTimeout (function() {_this.$el.html ("there")}, 1000);
+	}
+    })
+
+    var foo = new AppView({el: $("#example-slider")});
+*/
+</script>
+</body>
+</html>
