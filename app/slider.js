@@ -20,7 +20,7 @@
 	defaults: function() {
 	    return {
 		name: "unnamed",
-		brightness: 0
+		brightness: 0,
 	    };
 	},
 
@@ -42,7 +42,6 @@
 	},
 
 	initialize: function() {
-	    var _this = this;
 	    this.model.bind("change", this.updateUIFromModel, this);
 	    this.render();
 	},
@@ -61,6 +60,6 @@
 	
 	updateFromUI: function() {
 	    this.model.set("brightness", $widget.slider("option", "value"));
-	}
+	},
     });
 }).call(this);

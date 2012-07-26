@@ -11,13 +11,23 @@
 	root['Program'] = Program;
     }
 
+    Program.SliderList = Backbone.Collection.extend ({
+	url: function() { 
+	    return this.parent.get("id")+"/sliders/";
+	}
+    });
+
     // attributes: sliders (array of Slider), name (string)
     Program.Program = Backbone.Model.extend ({
 	defaults: function() {
 	    return {
-		sliders: [],
+		sliders: new Program.SliderList([], { parent: this }),
 		name: "unnamed program"
 	    };
+	},
+
+	addSlider: function() {
+	    
 	}
     });
     
@@ -28,6 +38,7 @@
 	className: "program",
 
 	addSlider: function(slider) {
+	    alert ("hi");
 	    var view = new Slider.SliderView({model: slider});
 	    this.$(".program").append(view.render().el);
 	},
@@ -50,7 +61,9 @@
 	},
 
 	render: function() {
-	    this.$el.html ("<div class='program-item'>" + this.model.get("name") + "</div>");
+//	    console.log (this.model);
+	    this.$el.html ("<div class='program-item'>" + this.model.model.get("name") + "</div>");
+	    return this;
 	}
     })
 }).call(this);
