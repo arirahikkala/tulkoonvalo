@@ -8,33 +8,31 @@
   <script type="text/javascript" src="../lib/underscore.js"></script>
   <script type="text/javascript" src="../lib/backbone.js"></script>
   <script type="text/javascript" src="../lib/jqueryui/js/jquery-ui-1.8.21.custom.min.js"></script>
+  <script type="text/javascript" src="../lib/jstree/jquery.jstree.js"></script>
   <script type="text/javascript" src="slider.js"></script>
+  <script type="text/javascript" src="program.js"></script>
+  <script type="text/javascript" src="programlist.js"></script>
   <link rel="stylesheet" href="../lib/jqueryui/css/ui-lightness/jquery-ui-1.8.21.custom.css" />
 
 </head>
 <body>
-  <div id="example-slider" />
+  <div id="foo"></div>
+  <div id="bar"></div>
+  <div id="example-slider" /> 
 
   <script type="text/javascript">
-    var SliderObj = new Slider.Slider();
+//    var SliderObj = new Slider.Slider();
+//    var SliderView = new Slider.SliderView({el: $("#example-slider"), model: SliderObj});
+  var SliderOne = new Slider.Slider();
+  var SliderTwo = new Slider.Slider();
 
-    var Sliderview = new Slider.SliderView({el: $("#example-slider"), 
-					    idAttr: "yksi", 
-					    model: SliderObj});
+    var ProgramObj = new Program.Program();
+    var ProgramView = new Program.ProgramView({el: $("#foo"), model: ProgramObj});
 
-/*    var AppView = Backbone.View.extend ({
-	initialize: function() {
-	    this.render();
-	},
+//    ProgramView.addSlider (SliderOne);
+//    ProgramView.addSlider (SliderTwo);
+    new Program.ItemView ({el: $("#bar"), model: ProgramObj});
 
-	render: function() {
-	    var _this = this;
-	    setTimeout (function() {_this.$el.html ("there")}, 1000);
-	}
-    })
-
-    var foo = new AppView({el: $("#example-slider")});
-*/
 </script>
 </body>
 </html>

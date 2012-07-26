@@ -22,9 +22,8 @@
 		name: "unnamed",
 		brightness: 0
 	    };
-	}
+	},
 
-	
     });
 
     Slider.SliderView = Backbone.View.extend({
@@ -35,24 +34,28 @@
 	widget: {},
 	$widget: {},
 
-	template: _.template("<div class='slider'>\
-<%= name %>\
-<div class='slider-widget' id='<%= id %>' />\
-</div>"),
+	template: _.template("<%= name %>\
+<div class='slider-widget' />"),
 
 	events: {
 	    "slide .slider-widget" : "updateFromUI",
 	},
 
 	initialize: function() {
+	    var _this = this;
+	    this.model.bind("change", this.updateUIFromModel, this);
 	    this.render();
 	},
 
+	updateUIFromModel: function() {
+	    $widget.slider("value", this.model.get("brightness"));
+	},
+
 	render: function () {
-	    this.$el.html (this.template ({name: this.model.get('name'), 
-					   id: this.options.idAttr}));
-	    $widget = $("#"+this.options.idAttr)
-	    widget = $widget.slider();
+	    this.$el.html (this.template ({name: this.model.get('name')}));
+	    $widget = this.$(".slider-widget");
+	    widget = $widget.slider({orientation: "vertical"});
+
 	    return this;
 	},
 	
