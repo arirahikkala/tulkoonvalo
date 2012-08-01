@@ -54,7 +54,7 @@
 	render: function () {
 	    this.$el.html (this.template ({name: this.model.get('name')}));
 	    $widget = this.$(".slider-widget");
-	    widget = $widget.slider({orientation: "vertical"});
+	    widget = $widget.slider({orientation: "vertical", value: this.model.get('brightness')});
 
 	    return this;
 	},
