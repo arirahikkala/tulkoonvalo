@@ -26,7 +26,7 @@ function getPrograms() {
 }
 
 function getSliders() {
-	$sql = "select name, brightness from sliders";
+	$sql = "select name, brightness, id from sliders";
 	try {
 		$db = getConnection();
 		$stmt = $db->prepare($sql);

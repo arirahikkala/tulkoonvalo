@@ -30,41 +30,8 @@
     var ProgramView = new Program.ProgramView ({el: $("#foo"), model: ProgramObj});
     var Sliders = new SliderCollectionTest;
 
-//    Sliders.bind ("add", function() { console.log ("hi")});
-
-//    Sliders.bind ("change", function () { Sliders.each (function (slider) { console.log (slider) })});
-
     Sliders.fetch( { success: function (sliders, response) { sliders.each (function (slider) {ProgramView.addSlider (slider)})}});
 
-//    setTimeout (function () { Sliders.each (function (slider) { console.log (slider) } )}, 1000);
-//    setTimeout (function () { Sliders.each (function () { ProgramObj.addSlider (slider)})}, 1000);
-
-
-//    var SliderObj = new Slider.Slider();
-//    var SliderView = new Slider.SliderView({el: $("#example-slider"), model: SliderObj});
-
-//    SliderObj.bind("change", function() { $("#bar").html(SliderObj.get("brightness")) });
-
-
-//  var SliderOne = new Slider.Slider();
-//  var SliderTwo = new Slider.Slider();
-
-//    var ProgramObj = new Program.Program({ name: "ohjelma"});
-//    var OtherProgramObj = new Program.Program( {name: "toinen ohjelma"});
-//    var ProgramView = new Program.ProgramView({el: $("#foo"), model: ProgramObj});
-
-//    ProgramView.addSlider (SliderOne);
-//    ProgramView.addSlider (SliderTwo);
-//    new Program.ItemView ({el: $("#bar"), model: ProgramObj});
-
-//    var ProgramListObj = new ProgramList.ProgramList();
-//    ProgramListObj.add (ProgramObj);
-//    var MenuView = new ProgramList.MultipleChoiceMenu ({el: $("#foo"), model: ProgramListObj});
-//    ProgramListObj.add (OtherProgramObj);
-//    setTimeout (function() { ProgramObj.set ({name : "hhjelma"})}, 5000);
-//    var iv = new Program.ItemView ({el: $("#bar"), model: ProgramObj});
-
-//    ProgramListObj.add (OtherProgramObj);
 </script>
 </body>
 </html>

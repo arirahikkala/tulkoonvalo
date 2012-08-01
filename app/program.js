@@ -13,7 +13,7 @@
 
     Program.SliderList = Backbone.Collection.extend ({
 	url: function() { 
-	    return this.parent.get("id")+"/sliders/";
+	    return "/programs/"+this.parent.get("id")+"/sliders/";
 	}
     });
 
@@ -43,20 +43,26 @@
 	},
 
 	initialize: function() {
-	    this.model.bind ("change", this.render());
+	    this.model.bind ("change", this.render, this);
+	    this.model.bind ("add", this.addSlider, this);
+	    this.model.bind ("remove", this.remove, this);
+	    this.render();
 	},
 
 	render: function() {
 	    this.$el.html ("<div class='program' />");
 	    _.each(this.model.get("sliders"), function (x) { addSlider (x)});
-	    
 	}
     })
 
 
     // a view of a program as a list item, i.e. just the name
     Program.ItemView = Backbone.View.extend ({
+	el: 'span',
+
 	initialize: function() {
+	    this.model.bind ("remove", this.remove, this);
+	    this.model.bind ("change:name", this.render, this);
 	    this.render();
 	},
 

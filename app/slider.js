@@ -38,15 +38,16 @@
 <div class='slider-widget' />"),
 
 	events: {
-	    "slide .slider-widget" : "updateFromUI",
+	    "slide .slider-widget" : "updateValueFromUI",
 	},
 
 	initialize: function() {
-	    this.model.bind("change", this.updateUIFromModel, this);
+	    this.model.bind("change", this.updateValueFromModel, this);
+	    this.model.bind("remove", this.remove, this);
 	    this.render();
 	},
 
-	updateUIFromModel: function() {
+	updateValueFromModel: function() {
 	    $widget.slider("value", this.model.get("brightness"));
 	},
 
@@ -58,7 +59,7 @@
 	    return this;
 	},
 	
-	updateFromUI: function() {
+	updateValueFromUI: function() {
 	    this.model.set("brightness", $widget.slider("option", "value"));
 	},
     });

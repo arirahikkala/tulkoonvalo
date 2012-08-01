@@ -37,7 +37,7 @@
 	initialize: function (opts) {
 	    this.cid = opts.model.cid;
 	    this.container = opts.container;
-	    opts.model.on ("change", this.renderWithOpts(opts));
+	    opts.model.on ("change", function (opts) { this.renderWithOpts(opts) } );
 	    this.renderWithOpts (opts);
 	},
 
@@ -67,11 +67,11 @@
 	},
 
 	initialize: function () {
-	    var _this = this;
-	    this.model.bind ("add", function () { _this.render(); });
-	    this.model.bind ("remove", function () { _this.render(); });
+	    this.model.bind ("add", this.render, this);
+	    this.model.bind ("remove", this.render, this);
 	    // todo: figure out a way to bind changes to programs in the menuitem constructor rather than here
-	    this.model.bind ("change", function () { _this.render(); });
+	    // (so that the entire menu won't need to be rerendered for any change to a program)
+	    this.model.bind ("change", this.render, this);
 	    this.render();
 	},
 
