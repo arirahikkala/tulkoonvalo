@@ -22,23 +22,55 @@
     // a program item, as an element in a multiple choice menu
     // not exported!
     MultiChoiceMenuItem = Backbone.View.extend ({
-	initialize: function (program) {
-	    var view = new Program.ItemView ({model: program});
-	    var item_el = view.render().el;
-	    var check = $("<input class='toggle' type='checkbox' />");
-	    this.$el.html ("<div>" + item_el + check + "</div>");
+	events: {
+	    "change .toggle" : function() { this.updateContainer(); },
+	},
+
+	updateContainer: function () {
+	    if (this.$(".toggle").attr("checked")) {
+		this.container.selected[this.cid] = true;
+	    } else {
+		delete (this.container.selected[this.cid]);
+	    }
+	},
+
+	initialize: function (opts) {
+	    this.cid = opts.model.cid;
+	    this.container = opts.container;
+	    opts.model.on ("change", this.renderWithOpts(opts));
+	    this.renderWithOpts (opts);
+	},
+
+	renderWithOpts: function (opts) {
+	    console.log ("hi " + this.cid + ", new name: " + opts.model.get("name"));
+	    var view = new Program.ItemView ({model: opts.model});
+	    var item_el = view.render().$el;
+	    var check;
+	    if (opts.isSelected)
+		check = "<input class='toggle' checked='checked' type='checkbox';'/>";
+	    else
+		check = "<input class='toggle' type='checkbox';'/>";
+
+	    this.$el.html ("<div>" + item_el.html() + check + "</div>");
 	}
     })
 
     ProgramList.MultipleChoiceMenu = Backbone.View.extend ({
+	selected: {},
+
 	addProgramItem: function (program) {
-	    var item = new MultiChoiceMenuItem ({model: program});
+	    var item = new MultiChoiceMenuItem ({model: program, container: this, isSelected: program.cid in this.selected});
 	    var item_el = item.render().el;
+
 	    this.$(".program-list").append(item_el);
+	    
 	},
 
 	initialize: function () {
 	    var _this = this;
+	    this.model.bind ("add", function () { _this.render(); });
+	    this.model.bind ("remove", function () { _this.render(); });
+	    // todo: figure out a way to bind changes to programs in the menuitem constructor rather than here
 	    this.model.bind ("change", function () { _this.render(); });
 	    this.render();
 	},
@@ -47,7 +79,8 @@
 	    this.$el.html ("<div class='program-list' />");
 	    var _this = this;
 	    _this.model.each (function (x) { _this.addProgramItem (x)});
-	}
+	},
+
     });
 
     ProgramList.SingleChoiceMenu = Backbone.View.extend ({

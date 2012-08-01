@@ -28,7 +28,7 @@
 
 	addSlider: function() {
 	    
-	}
+	},
     });
     
     // an expanded view of a program, with all content shown
@@ -38,17 +38,17 @@
 	className: "program",
 
 	addSlider: function(slider) {
-	    alert ("hi");
 	    var view = new Slider.SliderView({model: slider});
 	    this.$(".program").append(view.render().el);
 	},
 
 	initialize: function() {
-	    this.$el.html ("<div class='program' />");
-	    _.each(this.model.get("sliders"), function (x) { addSlider (x)});
+	    this.model.bind ("change", this.render());
 	},
 
 	render: function() {
+	    this.$el.html ("<div class='program' />");
+	    _.each(this.model.get("sliders"), function (x) { addSlider (x)});
 	    
 	}
     })
@@ -62,7 +62,7 @@
 
 	render: function() {
 //	    console.log (this.model);
-	    this.$el.html ("<div class='program-item'>" + this.model.model.get("name") + "</div>");
+	    this.$el.html ("<span class='program-item'>" + this.model.get("name") + "</span>");
 	    return this;
 	}
     })
