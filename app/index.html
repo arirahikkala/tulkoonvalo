@@ -22,7 +22,17 @@
   <div id="example-slider" /> 
 
   <script type="text/javascript">
-    var SliderCollectionTest = Backbone.Collection.extend ({
+    $.jstree._themes="../lib/jstree/themes/";
+    var testTree = $("#bar").jstree ({
+	"json_data": {
+	    "ajax": {
+		"url": "../server/slidersTree"
+	    }
+	},
+	"plugins": ["themes", "json_data"]});
+	    
+
+/*    var SliderCollectionTest = Backbone.Collection.extend ({
 	model: Slider.Slider,
 	url: "../server/sliders"
     });
@@ -31,7 +41,7 @@
     var Sliders = new SliderCollectionTest;
 
     Sliders.fetch( { success: function (sliders, response) { sliders.each (function (slider) {ProgramView.addSlider (slider)})}});
-
+*/
 </script>
 </body>
 </html>
