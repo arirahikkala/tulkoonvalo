@@ -16,21 +16,35 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `sliders`
+-- Table structure for table `lights`
 --
 
-DROP TABLE IF EXISTS `sliders`;
+DROP TABLE IF EXISTS `lights`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `sliders` (
+CREATE TABLE `lights` (
   `name` text,
   `brightness` int(11) DEFAULT NULL,
   `parent` int(11) DEFAULT NULL,
   `id` int(11) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`),
   KEY `parent` (`parent`),
-  CONSTRAINT `sliders_ibfk_1` FOREIGN KEY (`parent`) REFERENCES `sliders` (`id`)
+  CONSTRAINT `lights_ibfk_1` FOREIGN KEY (`parent`) REFERENCES `lights` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `programs`
+--
+
+DROP TABLE IF EXISTS `programs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `programs` (
+  `name` text,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -42,4 +56,4 @@ CREATE TABLE `sliders` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2012-08-03 16:20:53
+-- Dump completed on 2012-08-04 12:22:53
