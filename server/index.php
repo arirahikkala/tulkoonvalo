@@ -6,6 +6,8 @@ $app = new Slim();
 
 $app->get('/programs', 'getPrograms');
 $app->get('/lights', 'getLightsTree');
+$app->get('/lightsFlat', 'getLights');
+$app->put('/lightsFlat/:id', 'updateLightBrightness');
 $app->run();
 
 function getPrograms() {
@@ -98,6 +100,24 @@ function getLights() {
 
 }
 
+function updateLightBrightness($id) {
+	$sql = "update lights set brightness=? where id=?";
+	$requestBody = json_decode (Slim::getInstance()->request()->getBody());
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);
+		$stmt->execute(array ($requestBody->brightness, $id));
+
+		echo "{}";
+//		echo json_encode ($lights, JSON_PRETTY_PRINT);
+
+	}
+	
+	catch(PDOException $e) {
+		echo '{"error":{"text":'. $e->getMessage() .'}}';
+	}
+
+}
 
 function getConnection() {
 	require ("config.php");

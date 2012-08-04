@@ -1,0 +1,23 @@
+GET urls:
+
+/programs/: [{ id: 1, name: foo, lines: [...] }]
+/programs/1/: { id: 1, name: foo, lines: [...] }
+/programs/1/lines/: [{ id: 1, sensor_trigger: abc, time_trigger: bar, lights: [{ id: 25, brightness: 0, name: aula }]]
+/programs/1/lines/1: { id: 1, sensor_trigger: abc, time_trigger: bar, lights: [{ id: 25, brightness: 0, name: aula }]}
+/programs/1/lines/1/lights/25: { id: 25, brightness: 0, name: aula }
+
+/lights/: [{ id: 25, brightness: 100, name: aula, parent: null}, { id: 26, brightness: 70, name: toimisto, parent: null }, { id: 27, brightness: 0, name: desklamp, parent: 26 }]
+
+POST urls:
+
+/programs: takes { name: foo, lines: [...] }
+
+DELETE urls:
+
+/programs/1
+
+PUT urls:
+
+/programs/1: name, lines
+/programs/1/lines/1: sensor_trigger, time_trigger, lights
+/lights/1: brightness, name, parent

@@ -38,7 +38,7 @@
 <div class='light-widget' />"),
 
 	events: {
-	    "slide .light-widget" : "updateValueFromUI",
+	    "slidechange .light-widget" : "updateValueFromUI",
 	},
 
 	initialize: function() {
@@ -60,7 +60,8 @@
 	},
 	
 	updateValueFromUI: function() {
-	    this.model.set("brightness", $widget.light("option", "value"));
+	    this.model.set("brightness", $widget.slider("option", "value"));
+	    this.model.save();
 	},
     });
 }).call(this);

@@ -46,6 +46,42 @@ CREATE TABLE `programs` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `programs_lines`
+--
+
+DROP TABLE IF EXISTS `programs_lines`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `programs_lines` (
+  `program_id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `sensor_trigger` text,
+  `time_trigger` text,
+  PRIMARY KEY (`id`),
+  KEY `program_id` (`program_id`),
+  CONSTRAINT `programs_lines_ibfk_1` FOREIGN KEY (`program_id`) REFERENCES `programs` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `programs_lines_lights`
+--
+
+DROP TABLE IF EXISTS `programs_lines_lights`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `programs_lines_lights` (
+  `line_id` int(11) NOT NULL,
+  `light_id` int(11) NOT NULL,
+  `brightness` int(11) DEFAULT NULL,
+  KEY `line_id` (`line_id`),
+  KEY `light_id` (`light_id`),
+  CONSTRAINT `programs_lines_lights_ibfk_1` FOREIGN KEY (`line_id`) REFERENCES `programs_lines` (`id`),
+  CONSTRAINT `programs_lines_lights_ibfk_2` FOREIGN KEY (`light_id`) REFERENCES `lights` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -56,4 +92,4 @@ CREATE TABLE `programs` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2012-08-04 12:22:53
+-- Dump completed on 2012-08-04 14:28:32

@@ -1,28 +1,28 @@
 (function() {
     var root = this;
-    var Program = {};
+    var Programline = {};
 
     if (typeof exports !== 'undefined') {
 	if (typeof module !== 'undefined' && module.exports) {
-	    exports = module.exports = Program;
+	    exports = module.exports = Programline;
 	}
-	exports.Program = Program;
+	exports.ProgramLine = ProgramLine;
     } else {
-	root['Program'] = Program;
+	root['ProgramLine'] = ProgramLine;
     }
 
-    Program.LightList = Backbone.Collection.extend ({
+    ProgramLine.LightList = Backbone.Collection.extend ({
 	url: function() { 
-	    return "/programs/"+this.parent.get("id")+"/lights/";
+	    return "/programlines/"+this.parent.get("id")+"/lights/";
 	}
     });
 
     // attributes: lights (array of Light), name (string)
-    Program.Program = Backbone.Model.extend ({
+    ProgramLine.ProgramLine = Backbone.Model.extend ({
 	defaults: function() {
 	    return {
-		lights: new Program.LightList([], { parent: this }),
-		name: "unnamed program"
+		lights: new ProgramLine.LightList([], { parent: this }),
+		name: "unnamed programline"
 	    };
 	},
 
@@ -31,15 +31,15 @@
 	},
     });
     
-    // an expanded view of a program, with all content shown
-    Program.ProgramView = Backbone.View.extend ({
+    // an expanded view of a programline, with all content shown
+    ProgramLine.ProgramLineView = Backbone.View.extend ({
 	tagName: "div",
 
-	className: "program",
+	className: "programline",
 
 	addLight: function(light) {
 	    var view = new Light.LightView({model: light});
-	    this.$(".program").append(view.render().el);
+	    this.$(".programline").append(view.render().el);
 	},
 
 	initialize: function() {
@@ -50,14 +50,14 @@
 	},
 
 	render: function() {
-	    this.$el.html ("<div class='program' />");
+	    this.$el.html ("<div class='programline' />");
 	    _.each(this.model.get("lights"), function (x) { addLight (x)});
 	}
     })
 
 
-    // a view of a program as a list item, i.e. just the name
-    Program.ItemView = Backbone.View.extend ({
+    // a view of a programline as a list item, i.e. just the name
+    ProgramLine.ItemView = Backbone.View.extend ({
 	el: 'span',
 
 	initialize: function() {
@@ -68,7 +68,7 @@
 
 	render: function() {
 //	    console.log (this.model);
-	    this.$el.html ("<span class='program-item'>" + this.model.get("name") + "</span>");
+	    this.$el.html ("<span class='programline-item'>" + this.model.get("name") + "</span>");
 	    return this;
 	}
     })

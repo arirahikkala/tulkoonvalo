@@ -22,12 +22,14 @@
   <div id="lightsList"></div>
   <div id="programList"></div>
   <script type="text/javascript">
+    Backbone.emulateHTTP = true;
     var Programs = new ProgramList.ProgramList;
 
     var AppRouter = Backbone.Router.extend ({
 	routes: {
 	    "programs": "programsView",
 	    "controls": "controlsView",
+	    "test": "testView",
 	    "": "programsView"
 	},
 
@@ -42,23 +44,29 @@
 		    }
 		},
 		"plugins": ["themes", "json_data", "checkbox"]});
+	},
+
+	testView: function () {
+	    $("body").append ("<div id='testLight'>aoeu</div>");
+
+	    var LightCollectionTest = Backbone.Collection.extend ({
+		model: Light.Light,
+		url: "../server/lightsFlat"
+	    });
+	    
+	    var Lights = new LightCollectionTest;
+
+	    var ProgramObj = new Program.Program({name: "ohjelma"});
+	    var ProgramView = new Program.ProgramView ({el: $("#testLight"), model: ProgramObj});
+	    
+	    Lights.fetch( { success: function (lights, response) { lights.each (function (light) {ProgramView.addLight (light)})}});
 	}
 	
     });
     var appRouter = new AppRouter;
     Backbone.history.start();
 /*
-    var LightCollectionTest = Backbone.Collection.extend ({
-	model: Light.Light,
-	url: "../server/lights"
-    });
 
-    var Lights = new LightCollectionTest;
-
-    var ProgramObj = new Program.Program({name: "ohjelma"});
-    var ProgramView = new Program.ProgramView ({el: $("#foo"), model: ProgramObj});
-
-    Lights.fetch( { success: function (lights, response) { lights.each (function (light) {ProgramView.addLight (light)})}});
 */
 
 </script>
