@@ -4,24 +4,80 @@ require 'slim/Slim.php';
 
 $app = new Slim();
 
-$app->get('/programs', 'getPrograms');
+//$app->get('/programs(:/program(/lines/:line))', 'getPrograms');
+$app->get('/programs/', function() { getPrograms ();});
+$app->get('/programs/:program/', function($program) { getPrograms ("programs", $program);});
+$app->get('/programs/:program/lines/', function ($program) { getPrograms ("lines", $program);});
+$app->get('/programs/:program/lines/:line/', function ($program, $line) { getPrograms ("lines", $program, $line);});
+$app->get('/programs/:program/lines/:line/lights/', function ($program, $line) { getPrograms ("lights", $program, $line);});
+$app->get('/programs/:program/lines/:line/lights/:light/', 
+	  function ($program, $line, $light) { getPrograms ("lights", $program, $line, $light);});
+
 $app->get('/lights', 'getLightsTree');
 $app->get('/lightsFlat', 'getLights');
 $app->put('/lightsFlat/:id', 'updateLightBrightness');
 $app->run();
 
-function getPrograms() {
-	$sql = "select name from programs";
+function getPrograms($listwhat = "programs", $program = null, $line = null, $light = null) {
+	$sql = "select p.id as programid, p.name as programname, l.id as lineid, l.time_trigger, l.sensor_trigger, ll.light_id as lightid, ll.brightness, li.name as lightname from programs p left join programs_lines l on p.id = l.program_id left join programs_lines_lights ll on l.id = ll.line_id join lights li on ll.light_id = li.id";
+	$args = [];
+
+	if (!is_null ($light)) {
+		$sql .= " where p.id = :programid and l.id = :lineid and ll.light_id = :lightid";
+		$args[":programid"] = $program;
+		$args[":lineid"] = $line;
+		$args[":lightid"] = $light;
+	} else if (!is_null ($line)) {
+		$sql .= " where p.id = :programid and l.id = :lineid";
+		$args[":programid"] = $program;
+		$args[":lineid"] = $line;
+	} else if (!is_null ($program)) {
+		$sql .= " where p.id = :programid";
+		$args[":programid"] = $program;
+	}
+
+	$sql .= " order by programid, lineid, lightid";
 	try {
 		$db = getConnection();
 		$stmt = $db->prepare($sql);
-		$stmt->execute();
+		$stmt->execute ($args);
 		$programs = $stmt->fetchAll (PDO::FETCH_OBJ);
 
-		echo json_encode ($programs);
+		if ($stmt->rowCount() == 0) {
+			echo "{}";
+			return;
+		}
+
+		$data = [];
+		foreach ($programs as $p) {
+			$pid = intval ($p->programid);
+			$lineid = intval ($p->lineid);
+			$lightid = intval ($p->lightid);
+
+			$data[$pid]['name'] = $p->programname;
+			$data[$pid]['id'] = $pid;
+			$data[$pid]['lines'][$lineid]['timeTrigger'] = $p->time_trigger;
+			$data[$pid]['lines'][$lineid]['sensorTrigger'] = $p->sensor_trigger;
+			$data[$pid]['lines'][$lineid]['lights'][$lightid]['id'] = $lightid;
+			$data[$pid]['lines'][$lineid]['lights'][$lightid]['name'] = $p->lightname;
+			$data[$pid]['lines'][$lineid]['lights'][$lightid]['brightness'] = $p->brightness;
+		}
+
+		if (!is_null ($program))
+			$data = $data[$program];
+		if ($listwhat == "lines" || $listwhat == "lights")
+			$data = $data['lines'];
+		if (!is_null ($line))
+			$data = $data[$line];
+		if ($listwhat == "lights")
+			$data = $data['lights'];
+		if (!is_null ($light))
+			$data = $data[$light];
+
+		echo json_encode ($data, JSON_PRETTY_PRINT);
 	}
 	
-	catch(PDOException $e) {
+	catch(Exception $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}';
 	}
 

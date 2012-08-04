@@ -17,6 +17,10 @@
 
     // attributes: name (string), brightness (float)
     Light.Light = Backbone.Model.extend({
+	// note for implementing url: Will need to provide an argument to determine whether this is a program line light, or a "canonical" light, url depends on that
+
+	
+
 	defaults: function() {
 	    return {
 		name: "unnamed",
@@ -61,7 +65,6 @@
 	
 	updateValueFromUI: function() {
 	    this.model.set("brightness", $widget.slider("option", "value"));
-	    this.model.save();
 	},
     });
 }).call(this);

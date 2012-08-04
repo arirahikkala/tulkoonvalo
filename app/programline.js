@@ -1,6 +1,6 @@
 (function() {
     var root = this;
-    var Programline = {};
+    var ProgramLine = {};
 
     if (typeof exports !== 'undefined') {
 	if (typeof module !== 'undefined' && module.exports) {
@@ -13,7 +13,7 @@
 
     ProgramLine.LightList = Backbone.Collection.extend ({
 	url: function() { 
-	    return "/programlines/"+this.parent.get("id")+"/lights/";
+	    return "/programs/"+this.parent.get("id")+"/lights/";
 	}
     });
 
@@ -56,20 +56,4 @@
     })
 
 
-    // a view of a programline as a list item, i.e. just the name
-    ProgramLine.ItemView = Backbone.View.extend ({
-	el: 'span',
-
-	initialize: function() {
-	    this.model.bind ("remove", this.remove, this);
-	    this.model.bind ("change:name", this.render, this);
-	    this.render();
-	},
-
-	render: function() {
-//	    console.log (this.model);
-	    this.$el.html ("<span class='programline-item'>" + this.model.get("name") + "</span>");
-	    return this;
-	}
-    })
 }).call(this);

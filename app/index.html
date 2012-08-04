@@ -13,6 +13,7 @@
   <script type="text/javascript" src="../lib/jstree/jquery.jstree.js"></script>
   <script type="text/javascript" src="light.js"></script>
   <script type="text/javascript" src="program.js"></script>
+  <script type="text/javascript" src="programline.js"></script>
   <script type="text/javascript" src="programlist.js"></script>
   <link rel="stylesheet" href="../lib/jqueryui/css/ui-lightness/jquery-ui-1.8.21.custom.css" />
 
@@ -43,11 +44,14 @@
 			"url": "../server/lights"
 		    }
 		},
-		"plugins": ["themes", "json_data", "checkbox"]});
+		"checkbox": {
+		    "two_state": "true"
+		},
+		"plugins": ["themes", "json_data", "checkbox", ]});
 	},
 
 	testView: function () {
-	    $("body").append ("<div id='testLight'>aoeu</div>");
+	    $("body").append ("<div id='testLight'></div>");
 
 	    var LightCollectionTest = Backbone.Collection.extend ({
 		model: Light.Light,
@@ -56,8 +60,8 @@
 	    
 	    var Lights = new LightCollectionTest;
 
-	    var ProgramObj = new Program.Program({name: "ohjelma"});
-	    var ProgramView = new Program.ProgramView ({el: $("#testLight"), model: ProgramObj});
+	    var ProgramObj = new ProgramLine.ProgramLine({name: "ohjelma"});
+	    var ProgramView = new ProgramLine.ProgramLineView ({el: $("#testLight"), model: ProgramObj});
 	    
 	    Lights.fetch( { success: function (lights, response) { lights.each (function (light) {ProgramView.addLight (light)})}});
 	}
