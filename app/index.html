@@ -4,6 +4,7 @@
   <title>WebDALI</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <style type="text/css">
+    .slider-widget { margin: 10px 10px 15px 10px; }
   </style>
   <script type="text/javascript" src="../lib/jqueryui/js/jquery-1.7.2.min.js"></script>
   <script type="text/javascript" src="../lib/underscore.js"></script>
@@ -17,31 +18,49 @@
 
 </head>
 <body>
-  <div id="foo"></div>
-  <div id="bar"></div>
-  <div id="example-slider" /> 
-
+  <div id="programMenu"></div>
+  <div id="lightsList"></div>
+  <div id="programList"></div>
   <script type="text/javascript">
-    $.jstree._themes="../lib/jstree/themes/";
-    var testTree = $("#bar").jstree ({
-	"json_data": {
-	    "ajax": {
-		"url": "../server/slidersTree"
-	    }
-	},
-	"plugins": ["themes", "json_data"]});
-	    
+    var Programs = new ProgramList.ProgramList;
 
-/*    var SliderCollectionTest = Backbone.Collection.extend ({
+    var AppRouter = Backbone.Router.extend ({
+	routes: {
+	    "programs": "programsView",
+	    "controls": "controlsView",
+	    "": "programsView"
+	},
+
+	programsView: function () {
+	    var ProgramMenu = new ProgramList.SingleChoiceMenu({ model: Programs, el: $("#programMenu") });
+
+	    $.jstree._themes="../lib/jstree/themes/";
+	    var testTree = $("#lightsList").jstree ({
+		"json_data": {
+		    "ajax": {
+			"url": "../server/sliders"
+		    }
+		},
+		"plugins": ["themes", "json_data", "checkbox"]});
+	}
+	
+    });
+    var appRouter = new AppRouter;
+    Backbone.history.start();
+/*
+    var SliderCollectionTest = Backbone.Collection.extend ({
 	model: Slider.Slider,
 	url: "../server/sliders"
     });
+
+    var Sliders = new SliderCollectionTest;
+
     var ProgramObj = new Program.Program({name: "ohjelma"});
     var ProgramView = new Program.ProgramView ({el: $("#foo"), model: ProgramObj});
-    var Sliders = new SliderCollectionTest;
 
     Sliders.fetch( { success: function (sliders, response) { sliders.each (function (slider) {ProgramView.addSlider (slider)})}});
 */
+
 </script>
 </body>
 </html>

@@ -42,7 +42,6 @@
 	},
 
 	renderWithOpts: function (opts) {
-	    console.log ("hi " + this.cid + ", new name: " + opts.model.get("name"));
 	    var view = new Program.ItemView ({model: opts.model});
 	    var item_el = view.render().$el;
 	    var check;
@@ -53,7 +52,21 @@
 
 	    this.$el.html ("<div>" + item_el.html() + check + "</div>");
 	}
-    })
+    });
+
+    ProgramList.SingleChoiceMenuItem = Backbone.View.extend ({
+	initialize: function (opts) {
+	    this.cid = opts.model.cid;
+	    this.container = opts.container;
+	    opts.model.on ("change", function (opts) { this.renderWithOpts (opts)});
+	    this.renderWithOpts (opts);
+	},
+
+	renderWithOpts: function (opts) {
+	    var view = new Program.ItemView ({model: opts.model});
+	    this.$el.html (view.render().el);
+	}
+    });
 
     ProgramList.MultipleChoiceMenu = Backbone.View.extend ({
 	selected: {},
@@ -84,7 +97,30 @@
     });
 
     ProgramList.SingleChoiceMenu = Backbone.View.extend ({
-	
+	selected: {},
+
+	addProgramItem: function (program) {
+	    var item = new SingleChoiceMenuItem ({model: program, container: this, isSelected: program.cid in this.selected});
+	    var item_el = item.render().el;
+
+	    this.$(".program-list").append(item_el);
+	    
+	},
+
+	initialize: function () {
+	    this.model.bind ("add", this.render, this);
+	    this.model.bind ("remove", this.render, this);
+	    // todo: figure out a way to bind changes to programs in the menuitem constructor rather than here
+	    // (so that the entire menu won't need to be rerendered for any change to a program)
+	    this.model.bind ("change", this.render, this);
+	    this.render();
+	},
+
+	render: function() {
+	    this.$el.html ("<div class='program-list' />");
+	    var _this = this;
+	    _this.model.each (function (x) { _this.addProgramItem (x)});
+	},	
     });
 
 }).call(this);
