@@ -11,22 +11,22 @@
 	root['Program'] = Program;
     }
 
-    Program.SliderList = Backbone.Collection.extend ({
+    Program.LightList = Backbone.Collection.extend ({
 	url: function() { 
-	    return "/programs/"+this.parent.get("id")+"/sliders/";
+	    return "/programs/"+this.parent.get("id")+"/lights/";
 	}
     });
 
-    // attributes: sliders (array of Slider), name (string)
+    // attributes: lights (array of Light), name (string)
     Program.Program = Backbone.Model.extend ({
 	defaults: function() {
 	    return {
-		sliders: new Program.SliderList([], { parent: this }),
+		lights: new Program.LightList([], { parent: this }),
 		name: "unnamed program"
 	    };
 	},
 
-	addSlider: function() {
+	addLight: function() {
 	    
 	},
     });
@@ -37,21 +37,21 @@
 
 	className: "program",
 
-	addSlider: function(slider) {
-	    var view = new Slider.SliderView({model: slider});
+	addLight: function(light) {
+	    var view = new Light.LightView({model: light});
 	    this.$(".program").append(view.render().el);
 	},
 
 	initialize: function() {
 	    this.model.bind ("change", this.render, this);
-	    this.model.bind ("add", this.addSlider, this);
+	    this.model.bind ("add", this.addLight, this);
 	    this.model.bind ("remove", this.remove, this);
 	    this.render();
 	},
 
 	render: function() {
 	    this.$el.html ("<div class='program' />");
-	    _.each(this.model.get("sliders"), function (x) { addSlider (x)});
+	    _.each(this.model.get("lights"), function (x) { addLight (x)});
 	}
     })
 

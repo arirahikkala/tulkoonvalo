@@ -5,7 +5,7 @@ require 'slim/Slim.php';
 $app = new Slim();
 
 $app->get('/programs', 'getPrograms');
-$app->get('/sliders', 'getSlidersTree');
+$app->get('/lights', 'getLightsTree');
 $app->run();
 
 function getPrograms() {
@@ -25,8 +25,8 @@ function getPrograms() {
 
 }
 
-// put attributes in a slider into the places where jstree expects them
-function stuffSliderAttributes ($element)
+// put attributes in a light into the places where jstree expects them
+function stuffLightAttributes ($element)
 {
 	$rv = [];
 	foreach ($element as $k => $v) {
@@ -47,29 +47,29 @@ function stuffSliderAttributes ($element)
 // arguments: $root: An array with an 'id' element
 //            $list: An array of arrays with a 'parent' and an 'id' element
 // returns: A tree of elements, with each element's children in ['children']
-function reconstructSliderTree ($root, $list)
+function reconstructLightTree ($root, $list)
 {
 	$root['children'] = [];
 	foreach ($list as $v) {
 		if ($v['parent'] == $root['id']) {
-			$root['children'][] = reconstructSliderTree ($v, $list);
+			$root['children'][] = reconstructLightTree ($v, $list);
 		}
 	}
-	return stuffSliderAttributes ($root);
+	return stuffLightAttributes ($root);
 }
 
-function getSlidersTree() {
-	$sql = "select name, brightness, parent, id from sliders";
+function getLightsTree() {
+	$sql = "select name, brightness, parent, id from lights";
 	try {
 		$db = getConnection();
 		$stmt = $db->prepare($sql);
 		$stmt->execute();
-		$sliders = $stmt->fetchAll (PDO::FETCH_ASSOC);
+		$lights = $stmt->fetchAll (PDO::FETCH_ASSOC);
 		$tree = [];
 
-		foreach ($sliders as $key => $s) {
+		foreach ($lights as $key => $s) {
 			if (is_null ($s['parent'])) {
-				$tree[] = reconstructSliderTree ($s, $sliders);
+				$tree[] = reconstructLightTree ($s, $lights);
 			}
 		}
 
@@ -81,15 +81,15 @@ function getSlidersTree() {
 	}
 }
 
-function getSliders() {
-	$sql = "select name, brightness, parent, id from sliders";
+function getLights() {
+	$sql = "select name, brightness, parent, id from lights";
 	try {
 		$db = getConnection();
 		$stmt = $db->prepare($sql);
 		$stmt->execute();
-		$sliders = $stmt->fetchAll (PDO::FETCH_OBJ);
+		$lights = $stmt->fetchAll (PDO::FETCH_OBJ);
 
-		echo json_encode ($sliders, JSON_PRETTY_PRINT);
+		echo json_encode ($lights, JSON_PRETTY_PRINT);
 	}
 	
 	catch(PDOException $e) {

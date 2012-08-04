@@ -4,14 +4,14 @@
   <title>WebDALI</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <style type="text/css">
-    .slider-widget { margin: 10px 10px 15px 10px; }
+    .light-widget { margin: 10px 10px 15px 10px; }
   </style>
   <script type="text/javascript" src="../lib/jqueryui/js/jquery-1.7.2.min.js"></script>
   <script type="text/javascript" src="../lib/underscore.js"></script>
   <script type="text/javascript" src="../lib/backbone.js"></script>
   <script type="text/javascript" src="../lib/jqueryui/js/jquery-ui-1.8.21.custom.min.js"></script>
   <script type="text/javascript" src="../lib/jstree/jquery.jstree.js"></script>
-  <script type="text/javascript" src="slider.js"></script>
+  <script type="text/javascript" src="light.js"></script>
   <script type="text/javascript" src="program.js"></script>
   <script type="text/javascript" src="programlist.js"></script>
   <link rel="stylesheet" href="../lib/jqueryui/css/ui-lightness/jquery-ui-1.8.21.custom.css" />
@@ -38,7 +38,7 @@
 	    var testTree = $("#lightsList").jstree ({
 		"json_data": {
 		    "ajax": {
-			"url": "../server/sliders"
+			"url": "../server/lights"
 		    }
 		},
 		"plugins": ["themes", "json_data", "checkbox"]});
@@ -48,17 +48,17 @@
     var appRouter = new AppRouter;
     Backbone.history.start();
 /*
-    var SliderCollectionTest = Backbone.Collection.extend ({
-	model: Slider.Slider,
-	url: "../server/sliders"
+    var LightCollectionTest = Backbone.Collection.extend ({
+	model: Light.Light,
+	url: "../server/lights"
     });
 
-    var Sliders = new SliderCollectionTest;
+    var Lights = new LightCollectionTest;
 
     var ProgramObj = new Program.Program({name: "ohjelma"});
     var ProgramView = new Program.ProgramView ({el: $("#foo"), model: ProgramObj});
 
-    Sliders.fetch( { success: function (sliders, response) { sliders.each (function (slider) {ProgramView.addSlider (slider)})}});
+    Lights.fetch( { success: function (lights, response) { lights.each (function (light) {ProgramView.addLight (light)})}});
 */
 
 </script>

@@ -1,22 +1,22 @@
 (function() {
     var root = this;
-    var Slider = {};
+    var Light = {};
 
-    // export the name Slider, either using CommonJS modules or just assigning
+    // export the name Light, either using CommonJS modules or just assigning
     // it to the root object directly; copied from underscore.js
     if (typeof exports !== 'undefined') {
 	if (typeof module !== 'undefined' && module.exports) {
-	    exports = module.exports = Slider;
+	    exports = module.exports = Light;
 	}
-	exports.Slider = Slider;
+	exports.Light = Light;
     } else {
-	root['Slider'] = Slider;
+	root['Light'] = Light;
     }
     
  
 
     // attributes: name (string), brightness (float)
-    Slider.Slider = Backbone.Model.extend({
+    Light.Light = Backbone.Model.extend({
 	defaults: function() {
 	    return {
 		name: "unnamed",
@@ -26,19 +26,19 @@
 
     });
 
-    Slider.SliderView = Backbone.View.extend({
+    Light.LightView = Backbone.View.extend({
 	tagName: "div",
 
-	className: "slider",
+	className: "light",
 
 	widget: {},
 	$widget: {},
 
 	template: _.template("<%= name %>\
-<div class='slider-widget' />"),
+<div class='light-widget' />"),
 
 	events: {
-	    "slide .slider-widget" : "updateValueFromUI",
+	    "slide .light-widget" : "updateValueFromUI",
 	},
 
 	initialize: function() {
@@ -53,14 +53,14 @@
 
 	render: function () {
 	    this.$el.html (this.template ({name: this.model.get('name')}));
-	    $widget = this.$(".slider-widget");
+	    $widget = this.$(".light-widget");
 	    widget = $widget.slider({orientation: "vertical", value: this.model.get('brightness')});
 
 	    return this;
 	},
 	
 	updateValueFromUI: function() {
-	    this.model.set("brightness", $widget.slider("option", "value"));
+	    this.model.set("brightness", $widget.light("option", "value"));
 	},
     });
 }).call(this);
