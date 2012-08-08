@@ -43,11 +43,16 @@
 		    "ajax": {
 			"url": "../server/lights"
 		    }
-		},
+        },
+
+        "ui" : {
+            "select_limit" : 1,
+        },
+
 		"checkbox": {
 		    "two_state": "true"
 		},
-		"plugins": ["themes", "json_data", "checkbox", ]});
+    "plugins": ["themes", "json_data", "checkbox", "ui"]});
 	},
 
 	testView: function () {

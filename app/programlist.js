@@ -76,7 +76,7 @@
 	    var item_el = item.render().el;
 
 	    this.$(".program-list").append(item_el);
-	    
+
 	},
 
 	initialize: function () {
@@ -104,7 +104,7 @@
 	    var item_el = item.render().el;
 
 	    this.$(".program-list").append(item_el);
-	    
+
 	},
 
 	initialize: function () {
@@ -113,6 +113,17 @@
 	    // todo: figure out a way to bind changes to programs in the menuitem constructor rather than here
 	    // (so that the entire menu won't need to be rerendered for any change to a program)
 	    this.model.bind ("change", this.render, this);
+
+        $("#lightsList").bind (
+
+            "select_node.jstree", function(evt, data) {
+                //selected node object to data object: data.inst.get_json()[0];
+              //  console.log(data.inst.get_text());
+                  this.itemSelected();
+            }
+
+        );
+
 	    this.render();
 	},
 
@@ -120,7 +131,7 @@
 	    this.$el.html ("<div class='program-list' />");
 	    var _this = this;
 	    _this.model.each (function (x) { _this.addProgramItem (x)});
-	},	
+	},
     });
 
 }).call(this);
