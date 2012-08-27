@@ -35,7 +35,8 @@
 	      "programs": "programsView",
 	      "controls": "controlsView",
 	      "test": "testView",
-	      "": "programsView"
+	      "groups": "groupsView",
+	      "": "controlsView"
 	  },
 
 	  programsView: function () {
@@ -59,29 +60,81 @@
 		  "plugins": ["themes", "json_data", "checkbox", "ui"]});
 	  },
 
-	  topOfMainView: function() {
+	  topOfMainView: function(page) {
 	      $("body").empty();
 	      $("body").append ("<div id='container'></div>");
 	      $("#container").append ("<div id='usual' class='usual'></div>");
 	      $("#usual").append ("<ul class='testi'>");
-	      $("#usual ul").append ("<li><a href='#kontrollit' class='selected'>Controls</a></li>");
-	      $("#usual ul").append ("<li><a href='#ohjelmat'>Groups</a></li>");
-	      $("#usual ul").append ("<li><a href='#setti'>Scenes</a></li>");
-	      $("#usual ul").append ("<li><a href='#help'>Help</a></li>");
-	      $("#usual").append ("<div id='kontrollit' class='divit'> Testaussivu<br></div>");
-	      $("#usual").append ("<div id='ohjelmat' class='divit'> ohjelmasivu</div>");
-	      $("#usual").append ("<div id='setti' class='divit'> settiSivu</div>");
+
+	      switch(page) {
+	      	case "controls":
+  				$("#usual ul").append ("<li><a href='#controls' class='selected'>Controls</a></li>");
+	      		$("#usual ul").append ("<li><a href='#groups'>Groups</a></li>");
+	      		$("#usual ul").append ("<li><a href='#scenes'>Scenes</a></li>");
+	      		$("#usual ul").append ("<li><a href='#help'>Help</a></li>");
+  			break;
+			case "groups":
+				$("#usual ul").append ("<li><a href='#controls'>Controls</a></li>");
+	      		$("#usual ul").append ("<li><a href='#groups' class='selected'>Groups</a></li>");
+	      		$("#usual ul").append ("<li><a href='#scenes'>Scenes</a></li>");
+	      		$("#usual ul").append ("<li><a href='#help'>Help</a></li>");
+ 			break;
+ 			case "scenes":
+ 				$("#usual ul").append ("<li><a href='#controls'>Controls</a></li>");
+	      		$("#usual ul").append ("<li><a href='#groups'>Groups</a></li>");
+	      		$("#usual ul").append ("<li><a href='#scenes' class='selected'>Scenes</a></li>");
+	      		$("#usual ul").append ("<li><a href='#help'>Help</a></li>");
+ 			break;
+ 			case "help":
+ 				$("#usual ul").append ("<li><a href='#controls'>Controls</a></li>");
+	      		$("#usual ul").append ("<li><a href='#groups'>Groups</a></li>");
+	      		$("#usual ul").append ("<li><a href='#scenes'>Scenes</a></li>");
+	      		$("#usual ul").append ("<li><a href='#help' class='selected'>Help</a></li>");	
+	      	break;
+
+			default:
+			$("#usual ul").append ("<li><a href='#controls' class='selected'>Controls</a></li>");
+	      	$("#usual ul").append ("<li><a href='#groups'>Groups</a></li>");
+	      	$("#usual ul").append ("<li><a href='#scenes'>Scenes</a></li>");
+	      	$("#usual ul").append ("<li><a href='#help'>Help</a></li>");
+	  }
+
+
+	      $("#usual").append ("<div id='controls' class='divit'> Testaussivu<br></div>");
+	      $("#usual").append ("<div id='groups' class='divit'> ohjelmasivu</div>");
+	      $("#usual").append ("<div id='scenes' class='divit'> settiSivu</div>");
 	      $("#usual").append ("<div id='help' class='divit'> Ohjeita blaa blaa</div>");
 
 	      $("#usual ul").idTabs();
 
 	  },
 
+	  makeLightTree: function () {
+	  		$.jstree._themes="../lib/jstree/themes/";
+	      var testTree = $("#lights").jstree ({
+		  "json_data": {
+		      "ajax": {
+			  "url": "../server/lights"
+		      }
+		  },
+
+		  "ui" : {
+		      "select_limit" : 1,
+		  },
+
+		  "checkbox": {
+		      "two_state": "true"
+		  },
+		  "plugins": ["themes", "json_data", "checkbox", "ui"]});
+
+
+	  },
+
 	  controlsView: function() {
-	      this.topOfMainView();
+	      this.topOfMainView("controls");
 	      
-	      $("#kontrollit").append ("<br/>");
-	      $("#kontrollit").append ("<div id='lights';></div>");
+	      $("#controls").append ("<br/>");
+	      $("#controls").append ("<div id='lights';></div>");
 	      
 	      var lightsMenu = new ProgramList.SingleChoiceMenu({ model: Programs, el: $("#lights") });
 
@@ -104,10 +157,10 @@
 
 
 
-	      $("#kontrollit").append ("<div id='programs';>Scenes</div>");
-	      $("#kontrollit").append ("<div id='program' class='eiVierekkain';>Programs</div>");
-	      $("#kontrollit").append ("<div id='htmlEmbedded' class='eiVierekkain';>HTMLEMBEDDED</div>");
-	      //$("#kontrollit").append ("<br style='clear: left;'/>");
+	      $("#controls").append ("<div id='programs';>Scenes</div>");
+	      $("#controls").append ("<div id='program' class='eiVierekkain';>Programs</div>");
+	      $("#controls").append ("<div id='htmlEmbedded' class='eiVierekkain';>HTMLEMBEDDED</div>");
+	      //$("#controls").append ("<br style='clear: left;'/>");
 
 	      $("#programs").append("<div id='bar'></div>");
 	      $("#programs").append("<div id='foo'></div>");
@@ -133,6 +186,14 @@
 
 
 
+	  },
+
+	  groupsView: function () {
+	      this.topOfMainView("groups");
+
+	      $("#groups").append ("<br/>");
+	      $("#groups").append ("<div id='lights';></div>");
+	      this.makeLightTree();
 	  },
 
 	  testView: function () {
