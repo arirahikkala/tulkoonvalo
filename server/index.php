@@ -81,10 +81,9 @@ function getPrograms($listwhat = "programs", $program = null, $line = null, $lig
 	catch(Exception $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}';
 	}
-
 }
 
-// put attributes in a light into the places where jstree expects them
+// put attributes into the places where jstree expects them
 function stuffLightAttributes ($element)
 {
 	$rv = [];

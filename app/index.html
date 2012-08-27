@@ -1,157 +1,163 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <title>WebDALI</title>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <style type="text/css">
-    .light-widget { margin: 10px 10px 15px 10px; }
-  </style>
-  <script type="text/javascript" src="../lib/jqueryui/js/jquery-1.7.2.min.js"></script>
-  <script type="text/javascript" src="../lib/underscore.js"></script>
-  <script type="text/javascript" src="../lib/backbone.js"></script>
-  <script type="text/javascript" src="../lib/jqueryui/js/jquery-ui-1.8.21.custom.min.js"></script>
-  <script type="text/javascript" src="../lib/jstree/jquery.jstree.js"></script>
-  <script type="text/javascript" src="../lib/jquery.idTabs.min.js"></script>
-  <script type="text/javascript" src="light.js"></script>
-  <script type="text/javascript" src="program.js"></script>
-  <script type="text/javascript" src="programline.js"></script>
-  <script type="text/javascript" src="programlist.js"></script>
-  <link rel="stylesheet" href="../lib/jqueryui/css/ui-lightness/jquery-ui-1.8.21.custom.css" />
-  <link rel="stylesheet" href="../lib/idTabStyle.css" />
+  <head>
+    <title>WebDALI</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <style type="text/css">
+      .light-widget { margin: 10px 10px 15px 10px; }
+    </style>
+    <script type="text/javascript" src="../lib/jqueryui/js/jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" src="../lib/underscore.js"></script>
+    <script type="text/javascript" src="../lib/backbone.js"></script>
+    <script type="text/javascript" src="../lib/jqueryui/js/jquery-ui-1.8.21.custom.min.js"></script>
+    <script type="text/javascript" src="../lib/jstree/jquery.jstree.js"></script>
+    <script type="text/javascript" src="../lib/jquery.idTabs.min.js"></script>
+    <script type="text/javascript" src="light.js"></script>
+    <script type="text/javascript" src="program.js"></script>
+    <script type="text/javascript" src="programline.js"></script>
+    <script type="text/javascript" src="programlist.js"></script>
+    <link rel="stylesheet" href="../lib/jqueryui/css/ui-lightness/jquery-ui-1.8.21.custom.css" />
+    <link rel="stylesheet" href="../lib/idTabStyle.css" />
 
-</head>
-<body>
-  <div id="programMenu"></div>
-  <div id="lightsList"></div>
-  <div id="programList"></div>
-  <script type="text/javascript">
-    Backbone.emulateHTTP = true;
-    var Programs = new ProgramList.ProgramList;
+  </head>
+  <body>
+    <div id="programMenu"></div>
+    <div id="lightsList"></div>
+    <div id="programList"></div>
+    <script type="text/javascript">
+      // todo: truncate document content when switching view! (with #("body").empty();)
+      // put the stuff at the beginning of controlsView into a function of its own as it's going to be shared
+      Backbone.emulateHTTP = true;
+      var Programs = new ProgramList.ProgramList;
 
-    var AppRouter = Backbone.Router.extend ({
-	routes: {
-	    "programs": "programsView",
-	    "controls": "controlsView",
-	    "test": "testView",
-	    "": "programsView"
-	},
+      var AppRouter = Backbone.Router.extend ({
+	  routes: {
+	      "programs": "programsView",
+	      "controls": "controlsView",
+	      "test": "testView",
+	      "": "programsView"
+	  },
 
-	programsView: function () {
-	    var ProgramMenu = new ProgramList.SingleChoiceMenu({ model: Programs, el: $("#programMenu") });
+	  programsView: function () {
+	      var ProgramMenu = new ProgramList.SingleChoiceMenu({ model: Programs, el: $("#programMenu") });
 
-	    $.jstree._themes="../lib/jstree/themes/";
-	    var testTree = $("#lightsList").jstree ({
-		"json_data": {
-		    "ajax": {
-			"url": "../server/lights"
-		    }
-        },
+	      $.jstree._themes="../lib/jstree/themes/";
+	      var testTree = $("#lightsList").jstree ({
+		  "json_data": {
+		      "ajax": {
+			  "url": "../server/lights"
+		      }
+		  },
 
-        "ui" : {
-            "select_limit" : 1,
-        },
+		  "ui" : {
+		      "select_limit" : 1,
+		  },
 
-		"checkbox": {
-		    "two_state": "true"
-		},
-    "plugins": ["themes", "json_data", "checkbox", "ui"]});
-	},
+		  "checkbox": {
+		      "two_state": "true"
+		  },
+		  "plugins": ["themes", "json_data", "checkbox", "ui"]});
+	  },
 
-	controlsView: function() {
+	  topOfMainView: function() {
+	      $("body").empty();
+	      $("body").append ("<div id='container'></div>");
+	      $("#container").append ("<div id='usual' class='usual'></div>");
+	      $("#usual").append ("<ul class='testi'>");
+	      $("#usual ul").append ("<li><a href='#kontrollit' class='selected'>Controls</a></li>");
+	      $("#usual ul").append ("<li><a href='#ohjelmat'>Groups</a></li>");
+	      $("#usual ul").append ("<li><a href='#setti'>Scenes</a></li>");
+	      $("#usual ul").append ("<li><a href='#help'>Help</a></li>");
+	      $("#usual").append ("<div id='kontrollit' class='divit'> Testaussivu<br></div>");
+	      $("#usual").append ("<div id='ohjelmat' class='divit'> ohjelmasivu</div>");
+	      $("#usual").append ("<div id='setti' class='divit'> settiSivu</div>");
+	      $("#usual").append ("<div id='help' class='divit'> Ohjeita blaa blaa</div>");
 
-		$("body").append ("<div id='container'></div>");
-		$("#container").append ("<div id='usual' class='usual'></div>");
-		$("#usual").append ("<ul class='testi'>");
-			$("#usual ul").append ("<li><a href='#kontrollit' class='selected'>Controls</a></li>");
-			$("#usual ul").append ("<li><a href='#ohjelmat'>Groups</a></li>");
-			$("#usual ul").append ("<li><a href='#setti'>Scenes</a></li>");
-			$("#usual ul").append ("<li><a href='#help'>Help</a></li>");
-		$("#usual").append ("<div id='kontrollit' class='divit'> Testaussivu<br></div>");
-		$("#usual").append ("<div id='ohjelmat' class='divit'> ohjelmasivu</div>");
-		$("#usual").append ("<div id='setti' class='divit'> settiSivu</div>");
-		$("#usual").append ("<div id='help' class='divit'> Ohjeita blaa blaa</div>");
+	      $("#usual ul").idTabs();
 
-		$("#usual ul").idTabs();
+	  },
 
+	  controlsView: function() {
+	      this.topOfMainView();
+	      
+	      $("#kontrollit").append ("<br/>");
+	      $("#kontrollit").append ("<div id='lights';></div>");
+	      
+	      var lightsMenu = new ProgramList.SingleChoiceMenu({ model: Programs, el: $("#lights") });
 
-		$("#kontrollit").append ("<br/>");
-		$("#kontrollit").append ("<div id='lights';></div>");
+	      $.jstree._themes="../lib/jstree/themes/";
+	      var testTree = $("#lights").jstree ({
+		  "json_data": {
+		      "ajax": {
+			  "url": "../server/lights"
+		      }
+		  },
 
-		var lightsMenu = new ProgramList.SingleChoiceMenu({ model: Programs, el: $("#lights") });
+		  "ui" : {
+		      "select_limit" : 1,
+		  },
 
-	    $.jstree._themes="../lib/jstree/themes/";
-	    var testTree = $("#lights").jstree ({
-		"json_data": {
-		    "ajax": {
-			"url": "../server/lights"
-		    }
-        },
-
-        "ui" : {
-            "select_limit" : 1,
-        },
-
-		"checkbox": {
-		    "two_state": "true"
-		},
-    "plugins": ["themes", "json_data", "checkbox", "ui"]});
-
-
-
-		$("#kontrollit").append ("<div id='programs';>Scenes</div>");
-		$("#kontrollit").append ("<div id='program' class='eiVierekkain';>Programs</div>");
-		$("#kontrollit").append ("<div id='htmlEmbedded' class='eiVierekkain';>HTMLEMBEDDED</div>");
-		//$("#kontrollit").append ("<br style='clear: left;'/>");
-
-		$("#programs").append("<div id='bar'></div>");
-		$("#programs").append("<div id='foo'></div>");
-
-		//var ProgramMenu = new ProgramList.SingleChoiceMenu({ model: Programs, el: $("#bar") });
-
-		$.jstree._themes="../lib/jstree/themes/";
-	    var programTree = $("#foo").jstree ({
-		"json_data": {
-		    "ajax": {
-			"url": "../server/lights"
-		    }
-        },
-
-        "ui" : {
-            "select_limit" : 1,
-        },
-
-		"checkbox": {
-		    "two_state": "false"
-		},
-    "plugins": ["themes", "json_data", "checkbox", "ui"]});
+		  "checkbox": {
+		      "two_state": "true"
+		  },
+		  "plugins": ["themes", "json_data", "checkbox", "ui"]});
 
 
 
-	},
+	      $("#kontrollit").append ("<div id='programs';>Scenes</div>");
+	      $("#kontrollit").append ("<div id='program' class='eiVierekkain';>Programs</div>");
+	      $("#kontrollit").append ("<div id='htmlEmbedded' class='eiVierekkain';>HTMLEMBEDDED</div>");
+	      //$("#kontrollit").append ("<br style='clear: left;'/>");
 
-	testView: function () {
-	    $("body").append ("<div id='testLight'></div>");
+	      $("#programs").append("<div id='bar'></div>");
+	      $("#programs").append("<div id='foo'></div>");
 
-	    var LightCollectionTest = Backbone.Collection.extend ({
-		model: Light.Light,
-		url: "../server/lightsFlat"
-	    });
-	    
-	    var Lights = new LightCollectionTest;
+	      //var ProgramMenu = new ProgramList.SingleChoiceMenu({ model: Programs, el: $("#bar") });
 
-	    var ProgramObj = new ProgramLine.ProgramLine({name: "ohjelma"});
-	    var ProgramView = new ProgramLine.ProgramLineView ({el: $("#testLight"), model: ProgramObj});
-	    
-	    Lights.fetch( { success: function (lights, response) { lights.each (function (light) {ProgramView.addLight (light)})}});
-	}
-	
-    });
-    var appRouter = new AppRouter;
-    Backbone.history.start();
-/*
+	      $.jstree._themes="../lib/jstree/themes/";
+	      var programTree = $("#foo").jstree ({
+		  "json_data": {
+		      "ajax": {
+			  "url": "../server/lights"
+		      }
+		  },
 
-*/
+		  "ui" : {
+		      "select_limit" : 1,
+		  },
 
-</script>
-</body>
+		  "checkbox": {
+		      "two_state": "false"
+		  },
+		  "plugins": ["themes", "json_data", "checkbox", "ui"]});
+
+
+
+	  },
+
+	  testView: function () {
+	      $("body").append ("<div id='testLight'></div>");
+
+	      var LightCollectionTest = Backbone.Collection.extend ({
+		  model: Light.Light,
+		  url: "../server/lightsFlat"
+	      });
+	      
+	      var Lights = new LightCollectionTest;
+
+	      var ProgramObj = new ProgramLine.ProgramLine({name: "ohjelma"});
+	      var ProgramView = new ProgramLine.ProgramLineView ({el: $("#testLight"), model: ProgramObj});
+	      
+	      Lights.fetch( { success: function (lights, response) { lights.each (function (light) {ProgramView.addLight (light)})}});
+	  }
+	  
+      });
+      var appRouter = new AppRouter;
+      Backbone.history.start();
+      /*
+
+       */
+
+    </script>
+  </body>
 </html>
