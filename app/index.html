@@ -11,11 +11,13 @@
   <script type="text/javascript" src="../lib/backbone.js"></script>
   <script type="text/javascript" src="../lib/jqueryui/js/jquery-ui-1.8.21.custom.min.js"></script>
   <script type="text/javascript" src="../lib/jstree/jquery.jstree.js"></script>
+  <script type="text/javascript" src="../lib/jquery.idTabs.min.js"></script>
   <script type="text/javascript" src="light.js"></script>
   <script type="text/javascript" src="program.js"></script>
   <script type="text/javascript" src="programline.js"></script>
   <script type="text/javascript" src="programlist.js"></script>
   <link rel="stylesheet" href="../lib/jqueryui/css/ui-lightness/jquery-ui-1.8.21.custom.css" />
+  <link rel="stylesheet" href="../lib/idTabStyle.css" />
 
 </head>
 <body>
@@ -53,6 +55,78 @@
 		    "two_state": "true"
 		},
     "plugins": ["themes", "json_data", "checkbox", "ui"]});
+	},
+
+	controlsView: function() {
+
+		$("body").append ("<div id='container'></div>");
+		$("#container").append ("<div id='usual' class='usual'></div>");
+		$("#usual").append ("<ul class='testi'>");
+			$("#usual ul").append ("<li><a href='#kontrollit' class='selected'>Controls</a></li>");
+			$("#usual ul").append ("<li><a href='#ohjelmat'>Groups</a></li>");
+			$("#usual ul").append ("<li><a href='#setti'>Scenes</a></li>");
+			$("#usual ul").append ("<li><a href='#help'>Help</a></li>");
+		$("#usual").append ("<div id='kontrollit' class='divit'> Testaussivu<br></div>");
+		$("#usual").append ("<div id='ohjelmat' class='divit'> ohjelmasivu</div>");
+		$("#usual").append ("<div id='setti' class='divit'> settiSivu</div>");
+		$("#usual").append ("<div id='help' class='divit'> Ohjeita blaa blaa</div>");
+
+		$("#usual ul").idTabs();
+
+
+		$("#kontrollit").append ("<br/>");
+		$("#kontrollit").append ("<div id='lights';></div>");
+
+		var lightsMenu = new ProgramList.SingleChoiceMenu({ model: Programs, el: $("#lights") });
+
+	    $.jstree._themes="../lib/jstree/themes/";
+	    var testTree = $("#lights").jstree ({
+		"json_data": {
+		    "ajax": {
+			"url": "../server/lights"
+		    }
+        },
+
+        "ui" : {
+            "select_limit" : 1,
+        },
+
+		"checkbox": {
+		    "two_state": "true"
+		},
+    "plugins": ["themes", "json_data", "checkbox", "ui"]});
+
+
+
+		$("#kontrollit").append ("<div id='programs';>Scenes</div>");
+		$("#kontrollit").append ("<div id='program' class='eiVierekkain';>Programs</div>");
+		$("#kontrollit").append ("<div id='htmlEmbedded' class='eiVierekkain';>HTMLEMBEDDED</div>");
+		//$("#kontrollit").append ("<br style='clear: left;'/>");
+
+		$("#programs").append("<div id='bar'></div>");
+		$("#programs").append("<div id='foo'></div>");
+
+		//var ProgramMenu = new ProgramList.SingleChoiceMenu({ model: Programs, el: $("#bar") });
+
+		$.jstree._themes="../lib/jstree/themes/";
+	    var programTree = $("#foo").jstree ({
+		"json_data": {
+		    "ajax": {
+			"url": "../server/lights"
+		    }
+        },
+
+        "ui" : {
+            "select_limit" : 1,
+        },
+
+		"checkbox": {
+		    "two_state": "false"
+		},
+    "plugins": ["themes", "json_data", "checkbox", "ui"]});
+
+
+
 	},
 
 	testView: function () {
