@@ -66,46 +66,17 @@
 	      $("#container").append ("<div id='usual' class='usual'></div>");
 	      $("#usual").append ("<ul class='testi'>");
 
-	      switch(page) {
-	      	case "controls":
-  				$("#usual ul").append ("<li><a href='#controls' class='selected'>Controls</a></li>");
-	      		$("#usual ul").append ("<li><a href='#groups'>Groups</a></li>");
-	      		$("#usual ul").append ("<li><a href='#scenes'>Scenes</a></li>");
-	      		$("#usual ul").append ("<li><a href='#help'>Help</a></li>");
-  			break;
-			case "groups":
-				$("#usual ul").append ("<li><a href='#controls'>Controls</a></li>");
-	      		$("#usual ul").append ("<li><a href='#groups' class='selected'>Groups</a></li>");
-	      		$("#usual ul").append ("<li><a href='#scenes'>Scenes</a></li>");
-	      		$("#usual ul").append ("<li><a href='#help'>Help</a></li>");
- 			break;
- 			case "scenes":
- 				$("#usual ul").append ("<li><a href='#controls'>Controls</a></li>");
-	      		$("#usual ul").append ("<li><a href='#groups'>Groups</a></li>");
-	      		$("#usual ul").append ("<li><a href='#scenes' class='selected'>Scenes</a></li>");
-	      		$("#usual ul").append ("<li><a href='#help'>Help</a></li>");
- 			break;
- 			case "help":
- 				$("#usual ul").append ("<li><a href='#controls'>Controls</a></li>");
-	      		$("#usual ul").append ("<li><a href='#groups'>Groups</a></li>");
-	      		$("#usual ul").append ("<li><a href='#scenes'>Scenes</a></li>");
-	      		$("#usual ul").append ("<li><a href='#help' class='selected'>Help</a></li>");	
-	      	break;
-
-			default:
-			$("#usual ul").append ("<li><a href='#controls' class='selected'>Controls</a></li>");
-	      	$("#usual ul").append ("<li><a href='#groups'>Groups</a></li>");
-	      	$("#usual ul").append ("<li><a href='#scenes'>Scenes</a></li>");
-	      	$("#usual ul").append ("<li><a href='#help'>Help</a></li>");
-	  }
-
+  	      $("#usual ul").append ("<li><a href='#controls' " + (page == "controls" ? "class='selected'" : "") + ">Controls</a></li>");
+	      $("#usual ul").append ("<li><a href='#groups' " + (page == "groups" ? "class='selected'" : "") + ">Groups</a></li>");
+	      $("#usual ul").append ("<li><a href='#scenes' " + (page == "scenes" ? "class='selected'" : "") + ">Scenes</a></li>");
+	      $("#usual ul").append ("<li><a href='#help' " + (page == "help" ? "class='selected'" : "") + ">Help</a></li>");
 
 	      $("#usual").append ("<div id='controls' class='divit'> Testaussivu<br></div>");
 	      $("#usual").append ("<div id='groups' class='divit'> ohjelmasivu</div>");
 	      $("#usual").append ("<div id='scenes' class='divit'> settiSivu</div>");
 	      $("#usual").append ("<div id='help' class='divit'> Ohjeita blaa blaa</div>");
 
-	      $("#usual ul").idTabs();
+	      $("#usual ul").idTabs(true);
 
 	  },
 
