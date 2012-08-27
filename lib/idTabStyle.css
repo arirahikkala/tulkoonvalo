@@ -1,0 +1,129 @@
+#usual {
+	background:#181818;
+	color:#111;
+	padding:15px 20px;
+	width:50%;
+	border:1px solid #222;
+	margin:8px auto;
+	height:100%;
+}
+
+#usual li { list-style:none; float:left;}
+#usual ul.testi {
+	list-style: none;
+	margin-left:0;
+	padding-left: 1em;
+	text-indent: 0em;
+
+}
+#usual ul.testi a {
+	display:block;
+	padding:6px 10px;
+	text-decoration:none!important;
+	margin:1px;
+	margin-left:-16px;
+	margin-right:18px;
+	font:10px Verdana;
+	color:#FFF;
+	background:#444;
+}
+
+#programs {
+	float:left;
+	border: 1px solid black;
+	width:41%;
+	margin-left:3%;
+	margin-bottom: 4%;
+	height: 45%;
+	//clear:both;
+
+}
+
+#lights {
+	float:right;
+	border: 1px solid black;
+	width:41%;
+	margin-right:3%;
+	margin-bottom: 4%;
+	height: 45%;
+	overflow:auto;
+
+}
+#lights ul a {
+	background:#FFFFFF;
+	//clear:both;
+
+}
+
+#lights li {
+	clear: both;
+}
+
+#programs {
+	float:left;
+	border: 1px solid black;
+	width:41%;
+	margin-right:3%;
+	margin-bottom: 4%;
+	height: 45%;
+	overflow:auto;
+
+}
+#programs ul a {
+	background:#FFFFFF;
+	//clear:both;
+
+}
+
+#programs li {
+	clear: both;
+}
+
+.eiVierekkain {
+	float:left;
+	clear:both;
+	border: 1px solid black;
+	width: 68%;
+	height: 15%;
+	margin-bottom: 4%;
+	margin-left: 3%;
+
+}
+
+#usual ul a:hover {
+	color:#FFF;
+	background:#111;
+}
+
+body {height: 100%;}
+
+html { height: 100%;}
+
+#usual ul a.selected {
+	margin-bottom:0;
+	color:#000;
+	background:#FFFFEE;
+	border-bottom:1px solid snow;
+	cursor:default;
+}
+
+#usual > div {
+	padding:10px 10px 8px 10px;
+	*padding-top:3px;
+	*margin-top:-15px;
+	clear:left;
+	background:snow;
+	font:10pt Georgia;
+}
+#usual div a { color:#000; font-weight:bold;}
+
+#container {
+
+	height:100%;
+}
+
+.divit {
+	height:90%;
+	//border:1px solid #F00;
+
+}
