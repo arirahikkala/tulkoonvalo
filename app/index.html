@@ -22,7 +22,6 @@
   </head>
   <body>
     <div id="programMenu"></div>
-    <div id="lightsList"></div>
     <div id="programList"></div>
     <script type="text/javascript">
       // todo: truncate document content when switching view! (with #("body").empty();)
@@ -35,15 +34,31 @@
 	      "programs": "programsView",
 	      "controls": "controlsView",
 	      "test": "testView",
+	      "help": "helpView",
 	      "groups": "groupsView",
 	      "": "controlsView"
 	  },
 
 	  programsView: function () {
-	      var ProgramMenu = new ProgramList.SingleChoiceMenu({ model: Programs, el: $("#programMenu") });
+//	      var ProgramMenu = new ProgramList.SingleChoiceMenu({ model: Programs, el: $("#programMenu") });
+
+
+	      this.topOfMainView("programs");
+	      $("#programs").append("<br/>");
+	      $("#programs").append("<div id='lightList' class='lights'></div>");
+	      $("#programs").append("<div id='programsContainer' class='programs'></div>");
+	      $("#programsContainer").append("<div id='programList'></div>");
+	      $("#programsContainer").append ("<div id='createProgram' class='eiVierekkain'</div>");
+	      $("#programs").append ("<div id='deleteProgram' class='eiVierekkain'></div>");
+	      $("#createProgram").append("<hr>");
+	      $("#createProgram").append("<input type='text' value='name...' name='programName'/>");
+	      $("#createProgram").append("<input type='button' value='Add' name='cProgram'/>");
+	      $("#deleteProgram").append("<input type='button' value='Delete program' name='dProgram'/>");
+	      $("#programs").append("<div id='programSetup' class='eiVierekkain'</div>");
+
 
 	      $.jstree._themes="../lib/jstree/themes/";
-	      var testTree = $("#lightsList").jstree ({
+	      var lightTree = $("#lightList").jstree ({
 		  "json_data": {
 		      "ajax": {
 			  "url": "../server/lights"
@@ -58,6 +73,26 @@
 		      "two_state": "true"
 		  },
 		  "plugins": ["themes", "json_data", "checkbox", "ui"]});
+
+
+
+	     $.jstree._themes="../lib/jstree/themes/";
+	      var lightTree = $("#programList").jstree ({
+		  "json_data": {
+		      "ajax": {
+			  "url": "../server/lights"
+		      }
+		  },
+
+		  "ui" : {
+		      "select_limit" : 1,
+		  },
+
+		  "checkbox": {
+		      "two_state": "true"
+		  },
+		  "plugins": ["themes", "json_data", "ui"]});
+
 	  },
 
 	  topOfMainView: function(page) {
@@ -68,21 +103,21 @@
 
   	      $("#usual ul").append ("<li><a href='#controls' " + (page == "controls" ? "class='selected'" : "") + ">Controls</a></li>");
 	      $("#usual ul").append ("<li><a href='#groups' " + (page == "groups" ? "class='selected'" : "") + ">Groups</a></li>");
-	      $("#usual ul").append ("<li><a href='#scenes' " + (page == "scenes" ? "class='selected'" : "") + ">Scenes</a></li>");
+	      $("#usual ul").append ("<li><a href='#programs' " + (page == "programs" ? "class='selected'" : "") + ">Programs</a></li>");
 	      $("#usual ul").append ("<li><a href='#help' " + (page == "help" ? "class='selected'" : "") + ">Help</a></li>");
 
-	      $("#usual").append ("<div id='controls' class='divit'> Testaussivu<br></div>");
-	      $("#usual").append ("<div id='groups' class='divit'> ohjelmasivu</div>");
-	      $("#usual").append ("<div id='scenes' class='divit'> settiSivu</div>");
-	      $("#usual").append ("<div id='help' class='divit'> Ohjeita blaa blaa</div>");
+	      $("#usual").append ("<div id='controls' class='divit'> Controls<br></div>");
+	      $("#usual").append ("<div id='groups' class='divit'>Groups<br></div>");
+	      $("#usual").append ("<div id='programs' class='divit'> Programs<br></div>");
+	      $("#usual").append ("<div id='help' class='divit'> Help page</div>");
 
 	      $("#usual ul").idTabs(true);
 
 	  },
 
-	  makeLightTree: function () {
+	  makeLightTree: function (div) {
 	  		$.jstree._themes="../lib/jstree/themes/";
-	      var testTree = $("#lights").jstree ({
+	      var testTree = $(div).jstree ({
 		  "json_data": {
 		      "ajax": {
 			  "url": "../server/lights"
@@ -105,36 +140,19 @@
 	      this.topOfMainView("controls");
 	      
 	      $("#controls").append ("<br/>");
-	      $("#controls").append ("<div id='lights';></div>");
+	      $("#controls").append ("<div class='lights' id='lightList';></div>");
 	      
-	      var lightsMenu = new ProgramList.SingleChoiceMenu({ model: Programs, el: $("#lights") });
+	      //var lightsMenu = new ProgramList.SingleChoiceMenu({ model: Programs, el: $("#lights") });
 
-	      $.jstree._themes="../lib/jstree/themes/";
-	      var testTree = $("#lights").jstree ({
-		  "json_data": {
-		      "ajax": {
-			  "url": "../server/lights"
-		      }
-		  },
+	      this.makeLightTree("#lightList");
 
-		  "ui" : {
-		      "select_limit" : 1,
-		  },
-
-		  "checkbox": {
-		      "two_state": "true"
-		  },
-		  "plugins": ["themes", "json_data", "checkbox", "ui"]});
-
-
-
-	      $("#controls").append ("<div id='programs';>Scenes</div>");
+	      $("#controls").append ("<div class='programs' id='programsList';></div>");
 	      $("#controls").append ("<div id='program' class='eiVierekkain';>Programs</div>");
 	      $("#controls").append ("<div id='htmlEmbedded' class='eiVierekkain';>HTMLEMBEDDED</div>");
 	      //$("#controls").append ("<br style='clear: left;'/>");
 
-	      $("#programs").append("<div id='bar'></div>");
-	      $("#programs").append("<div id='foo'></div>");
+	      $("#programsList").append("<div id='bar'></div>");
+	      $("#programsList").append("<div id='foo'></div>");
 
 	      //var ProgramMenu = new ProgramList.SingleChoiceMenu({ model: Programs, el: $("#bar") });
 
@@ -163,8 +181,46 @@
 	      this.topOfMainView("groups");
 
 	      $("#groups").append ("<br/>");
-	      $("#groups").append ("<div id='lights';></div>");
-	      this.makeLightTree();
+	      $("#groups").append ("<div id='groupContainer' class='programs'></div>");
+	      $("#groupContainer").append ("<div id='bigLights'></div>");
+	      $("#groupContainer").append ("<div id='groupAdd' class='eiVierekkain'></div>");
+	      $("#groups").append ("<div id='groupRemove' class='eiVierekkain'></div>");
+
+	      $("#groupAdd").append("<hr class='groupsSettings'><br/>");
+	      $("#groupAdd").append("<input type='text' value='Name...' name='gName'/ class='groupsSettings'>");
+	      $("#groupAdd").append("<input type='submit' value='Add' name='sGroup'/><br/><br/>");
+
+	      $("#groupRemove").append("<input type='submit' value='Remove group' name='rGroup' class='groupsSettings'/>");
+
+	      $.jstree._themes="../lib/jstree/themes/";
+	      var programTree = $("#bigLights").jstree ({
+		  "json_data": {
+		      "ajax": {
+			  "url": "../server/lights"
+		      }
+		  },
+
+		  "ui" : {
+		      "select_limit" : 1,
+		  },
+
+		  "checkbox": {
+		      "two_state": "false"
+		  },
+		  "plugins": ["themes", "json_data", "dnd", "ui"]});
+
+
+	  },
+
+	  helpView: function () {
+	  	  this.topOfMainView("help");
+
+	  	  $("#help").append("<br/>");
+	  	  $("#help").append("<br/>");
+	  	  $("#help").append("Please select an PDF file if you need any assistance: <br/><br/>");
+	  	  $("#help").append("<a href='../doc/controlsHelp.pdf'>Control page's help PDF File</a><br/>");
+	  	  $("#help").append("<a href='../doc/groupHelp.pdf'>Group page's help PDF File</a><br/>");
+	  	  $("#help").append("<a href='../doc/programHelp.pdf'>Program page's help PDF File</a><br/>");
 	  },
 
 	  testView: function () {

@@ -28,7 +28,7 @@
 	background:#444;
 }
 
-#programs {
+.programs {
 	float:left;
 	border: 1px solid black;
 	width:41%;
@@ -39,7 +39,19 @@
 
 }
 
-#lights {
+#bigLights {
+
+	float:left;
+	border: none;
+	width:93%;
+	margin-left:3%;
+	margin-bottom: 4%;
+	height: auto;
+	//clear:both;
+
+}
+
+.lights {
 	float:right;
 	border: 1px solid black;
 	width:41%;
@@ -49,17 +61,61 @@
 	overflow:auto;
 
 }
-#lights ul a {
+.lights ul a {
 	background:#FFFFFF;
 	//clear:both;
 
 }
 
-#lights li {
+
+#deleteProgram {
+
+	border:none;
+	height:auto;
+}
+
+#programsContainer {
+	position: relative;
+}
+
+#groupContainer {
+	position: relative;
+}
+
+#helpContainer {
+	height:auto;
+	padding-bottom: 1%;
+}
+
+#groupRemove {
+	height:auto;
+	width:auto;
+	border:none;
+}
+#groupAdd {
+	position: absolute;
+	bottom: 0px;
+	border:none;
+	height:auto;
+	margin: 0 0 0 0;
+}
+#createProgram {
+	position: absolute;
+	bottom: 0px;
+	//margin-top: 20%;
+	border:none;
+	height:auto;
+}
+
+.groupsSettings {
+	margin: 0 1% 0 3%;
+}
+
+.lights li {
 	clear: both;
 }
 
-#programs {
+.programs {
 	float:left;
 	border: 1px solid black;
 	width:41%;
@@ -69,13 +125,23 @@
 	overflow:auto;
 
 }
-#programs ul a {
+.programs ul a {
 	background:#FFFFFF;
 	//clear:both;
 
 }
 
-#programs li {
+.programs li {
+	clear: both;
+}
+
+#bigLights ul a {
+	background:#FFFFFF;
+	//clear:both;
+
+}
+
+#bigLights li {
 	clear: both;
 }
 
@@ -83,7 +149,7 @@
 	float:left;
 	clear:both;
 	border: 1px solid black;
-	width: 68%;
+	width: 93.7%;
 	height: 15%;
 	margin-bottom: 4%;
 	margin-left: 3%;
@@ -95,7 +161,7 @@
 	background:#111;
 }
 
-body {height: 100%;}
+body {height: 100%;font-size:100%;}
 
 html { height: 100%;}
 
