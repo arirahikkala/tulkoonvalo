@@ -89,7 +89,7 @@ function stuffLightAttributes ($element)
 	$rv = [];
 	foreach ($element as $k => $v) {
 		if ($k == "parent") {}
-		else if ($k == "name") { $rv['data'] = $v; }
+		else if ($k == "name") { $rv['data'] = str_replace('\' ', '\'', ucwords(str_replace('\'', '\' ', strtolower($v))));}
 		else if ($k == "children") { $rv['children'] = $v; }
 		else { $rv['attr'][$k] = $v; }
 	}
