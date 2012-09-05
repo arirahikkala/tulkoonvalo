@@ -12,11 +12,8 @@
     }
 
     ProgramList.ProgramList = Backbone.Collection.extend ({
-	// by default program lists are stored in alphabetical order by name
-	// (should this be a view detail?)
-//	comparator: function (model) {
-//	    return model.get("name");
-//	}
+	url: "../server/programs/",
+	model: Program.Program
     });
 
     // a program item, as an element in a multiple choice menu
@@ -49,12 +46,23 @@
 		check = "<input class='toggle' checked='checked' type='checkbox';'/>";
 	    else
 		check = "<input class='toggle' type='checkbox';'/>";
-
 	    this.$el.html ("<div>" + item_el.html() + check + "</div>");
 	}
     });
 
     ProgramList.SingleChoiceMenuItem = Backbone.View.extend ({
+	events: {
+	    "change .toggle" : function() { this.updateContainer(); },
+	},
+
+	updateContainer: function () {
+	    if (this.$(".toggle").attr("checked")) {
+		this.container.selected[this.cid] = true;
+	    } else {
+		delete (this.container.selected[this.cid]);
+	    }
+	},
+
 	initialize: function (opts) {
 	    this.cid = opts.model.cid;
 	    this.container = opts.container;
@@ -62,20 +70,28 @@
 	    this.renderWithOpts (opts);
 	},
 
+	// yes, using the names like that is okay (as long as there's only one menu like this in the document)
 	renderWithOpts: function (opts) {
+	    var radio;
+	    if (opts.isSelected)
+		check = "<input class='radio' name='singlechoicemenu' checked='checked' type='checkbox';'/>";
+	    else
+		check = "<input class='radio' name='singlechoicemenu' type='checkbox';'/>";
 	    var view = new Program.ItemView ({model: opts.model});
 	    this.$el.html (view.render().el);
 	}
     });
 
     ProgramList.MultipleChoiceMenu = Backbone.View.extend ({
+	tagName: 'div',
+	className: 'program-list',
+
 	selected: {},
 
 	addProgramItem: function (program) {
 	    var item = new MultiChoiceMenuItem ({model: program, container: this, isSelected: program.cid in this.selected});
 	    var item_el = item.render().el;
-
-	    this.$(".program-list").append(item_el);
+	    this.$el.append(item_el);
 
 	},
 
@@ -84,12 +100,12 @@
 	    this.model.bind ("remove", this.render, this);
 	    // todo: figure out a way to bind changes to programs in the menuitem constructor rather than here
 	    // (so that the entire menu won't need to be rerendered for any change to a program)
-	    this.model.bind ("change", this.render, this);
+	    this.model.bind ("update", this.render, this);
 	    this.render();
 	},
 
 	render: function() {
-	    this.$el.html ("<div class='program-list' />");
+	    this.$el.empty();
 	    var _this = this;
 	    _this.model.each (function (x) { _this.addProgramItem (x)});
 	},
@@ -97,13 +113,16 @@
     });
 
     ProgramList.SingleChoiceMenu = Backbone.View.extend ({
+	tagName: 'div',
+	className: 'program-list',
+
 	selected: {},
 
 	addProgramItem: function (program) {
-	    var item = new SingleChoiceMenuItem ({model: program, container: this, isSelected: program.cid in this.selected});
+	    var item = new ProgramList.SingleChoiceMenuItem ({model: program, container: this, isSelected: program.cid in this.selected});
 	    var item_el = item.render().el;
-
-	    this.$(".program-list").append(item_el);
+	    this.$el.append(item_el);
+	    console.log (item_el);
 
 	},
 
@@ -128,7 +147,7 @@
 	},
 
 	render: function() {
-	    this.$el.html ("<div class='program-list' />");
+	    this.$el.empty();
 	    var _this = this;
 	    _this.model.each (function (x) { _this.addProgramItem (x)});
 	},

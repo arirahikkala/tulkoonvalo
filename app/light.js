@@ -16,7 +16,9 @@
  
 
     // attributes: name (string), brightness (float)
-    Light.Light = Backbone.Model.extend({
+    Light.Light = Backbone.RelationalModel.extend({
+	idAttribute: "lightid",
+	urlRoot: "../server/lights/",
 	defaults: function() {
 	    return {
 		name: "unnamed",
@@ -31,7 +33,7 @@
 
 	className: "light",
 
-	template: _.template("<%= name %>\
+	template: _.template("<div class='light-name'><%= name %></div>\
 <div class='light-widget' />"),
 
 	events: {

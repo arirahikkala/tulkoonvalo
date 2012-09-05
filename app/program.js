@@ -11,19 +11,22 @@
 	root['Program'] = Program;
     }
 
-    Program.ProgramLineList = Backbone.Collection.extend ({
-	url: function() { 
-	    return "/programs/"+this.get("id")+"/lines/";
-	}
-    });
+    Program.Program = Backbone.RelationalModel.extend ({
+	idAttribute: 'programid',
 
-    Program.Program = Backbone.Model.extend ({
-	
+	relations: [{
+	    type: Backbone.HasMany,
+	    key: 'lines',
+	    relatedModel: 'ProgramLine.ProgramLine',
+	}],
+
+
     });
 
     // a view of a program as a list item, i.e. just the name
     Program.ItemView = Backbone.View.extend ({
-	el: 'span',
+	tagName: 'span',
+	tagClass: 'program-item',
 
 	initialize: function() {
 	    this.model.bind ("remove", this.remove, this);

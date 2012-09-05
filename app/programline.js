@@ -11,24 +11,42 @@
 	root['ProgramLine'] = ProgramLine;
     }
 
-    ProgramLine.LightList = Backbone.Collection.extend ({
+/*    ProgramLine.LightList = Backbone.Collection.extend ({
 	url: function() { 
 	    return "/programs/"+this.parent.get("id")+"/lights/";
 	}
     });
-
-    // attributes: lights (array of Light), name (string)
-    ProgramLine.ProgramLine = Backbone.Model.extend ({
+*/
+    // attributes: lights (array of Light), 
+    ProgramLine.ProgramLine = Backbone.RelationalModel.extend ({
 	defaults: function() {
 	    return {
-		lights: new ProgramLine.LightList([], { parent: this }),
-		name: "unnamed programline"
+//		lights: new ProgramLine.LightList([], { parent: this }),
 	    };
 	},
 
-	addLight: function() {
-	    
+	idAttribute: "lineid",
+
+	initialize: function (attrs) {
+	    this.urlRoot = attrs.urlRoot;
 	},
+
+	relations: [{
+	    type: Backbone.HasMany,
+	    key: 'lights',
+	    relatedModel: 'Light.Light',
+	    reverseRelation: {
+		key: 'line',
+		includeInJSON: 'lineid'
+	    },
+//	    collectionType: 'ProgramLine.LightList',
+	}],
+
+	url: function() {
+            var origUrl = Backbone.Model.prototype.url.call(this);
+            return origUrl + (origUrl.charAt(origUrl.length - 1) == '/' ? '' : '/');
+	}
+
     });
     
     // an expanded view of a programline, with all content shown
@@ -38,14 +56,15 @@
 	className: "programline",
 
 	addLight: function(light) {
+	    console.log ("addlight");
 	    var view = new Light.LightView({model: light});
 	    this.$el.append(view.render().el);
 	},
 
 	initialize: function() {
-	    this.model.bind ("change", this.render, this);
-	    this.model.bind ("add", this.addLight, this);
-	    this.model.bind ("remove", this.remove, this);
+	    this.model.bind ("update:lights", this.render, this);
+	    this.model.bind ("add:lights", this.addLight, this);
+	    this.model.bind ("remove:lights", this.remove, this);
 	    this.render();
 	},
 

@@ -60,26 +60,66 @@ function getPrograms($listwhat = "programs", $program = null, $line = null, $lig
 			$lightid = intval ($p->lightid);
 
 			$data[$pid]['name'] = $p->programname;
-			$data[$pid]['id'] = $pid;
+			$data[$pid]['programid'] = $pid;
+			$data[$pid]['lines'][$lineid]['lineid'] = $p->lineid;
 			$data[$pid]['lines'][$lineid]['timeTrigger'] = $p->time_trigger;
 			$data[$pid]['lines'][$lineid]['sensorTrigger'] = $p->sensor_trigger;
-			$data[$pid]['lines'][$lineid]['lights'][$lightid]['id'] = $lightid;
+			$data[$pid]['lines'][$lineid]['lights'][$lightid]['lightid'] = $lightid;
 			$data[$pid]['lines'][$lineid]['lights'][$lightid]['name'] = $p->lightname;
 			$data[$pid]['lines'][$lineid]['lights'][$lightid]['brightness'] = $p->brightness;
 		}
 
-		if (!is_null ($program))
+		// drill down to the data that was actually asked for... (yeah, this function is big and lazy)
+		// stay tuned to find out wtf $drillDepth does!
+		$drillDepth = 0;
+		if (!is_null ($program)) {
 			$data = $data[$program];
-		if ($listwhat == "lines" || $listwhat == "lights")
+			$drillDepth++;
+		}
+		if ($listwhat == "lines" || $listwhat == "lights") {
 			$data = $data['lines'];
-		if (!is_null ($line))
+			$drillDepth++;
+		}
+		if (!is_null ($line)) {
 			$data = $data[$line];
-		if ($listwhat == "lights")
+			$drillDepth++;
+		}
+		if ($listwhat == "lights") {
 			$data = $data['lights'];
-		if (!is_null ($light))
+			$drillDepth++;
+		}
+		if (!is_null ($light)) {
 			$data = $data[$light];
-
-		echo json_encode ($data, JSON_PRETTY_PRINT);
+			$drillDepth++;
+		}
+		
+		// somewhat wtf code follows, and you finally find out what that $drillDepth is all for!
+                // (though who am I kidding, this whole function is incredibly wtf)
+		if ($drillDepth == 4) {
+			$data = array_values ($data);
+		} else if ($drillDepth == 3) { 
+			$data['lights'] = array_values($data['lights']);
+		} else if ($drillDepth == 2) {
+			foreach (array_keys ($data) as $lid) {
+				$data[$lid]['lights'] = array_values ($data[$lid]['lights']);
+			}
+			$data = array_values($data);
+		} else if ($drillDepth == 1) {
+			foreach (array_keys ($data['lines']) as $lid) {
+				$data['lines'][$lid]['lights'] = array_values ($data['lines'][$lid]['lights']);
+			}
+			$data['lines'] = array_values($data['lines']);
+		} else if ($drillDepth == 0) {
+			foreach (array_keys ($data) as $pid) {
+				foreach (array_keys ($data[$pid]['lines']) as $lid) {
+					$data[$pid]['lines'][$lid]['lights'] = array_values ($data[$pid]['lines'][$lid]['lights']);
+				}
+				$data[$pid]['lines'] = array_values ($data[$pid]['lines']);
+			}
+			$data = array_values($data);
+		}
+		
+                echo json_encode ($data, JSON_PRETTY_PRINT);
 	}
 
 	

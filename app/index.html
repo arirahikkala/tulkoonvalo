@@ -4,12 +4,14 @@
     <title>WebDALI</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <style type="text/css">
+      .light-name { height: 1em; overflow-y: hidden; }
       .light-widget { margin: 1em auto 0 auto; }
       .light { float: left; width: 5em; overflow: hidden; margin: 0 5px 0 5px; text-align: center}
     </style>
     <script type="text/javascript" src="../lib/jqueryui/js/jquery-1.7.2.min.js"></script>
     <script type="text/javascript" src="../lib/underscore.js"></script>
     <script type="text/javascript" src="../lib/backbone.js"></script>
+    <script type="text/javascript" src="../lib/backbone-relational.js"></script>
     <script type="text/javascript" src="../lib/jqueryui/js/jquery-ui-1.8.21.custom.min.js"></script>
     <script type="text/javascript" src="../lib/jstree/jquery.jstree.js"></script>
     <script type="text/javascript" src="../lib/jquery.idTabs.min.js"></script>
@@ -73,6 +75,9 @@
       $("#addGroup").bind ("click", function() { $.jstree._reference ("#lightGroups").create() });
       var Programs = new ProgramList.ProgramList;
 
+      // todo: Bootstrap this into the page itself
+      Programs.fetch({async: false}); 
+      console.log (Programs);
 
       $("#lightGroups").hide();
       $("#lightGroups").jstree ({
@@ -153,6 +158,10 @@
 		    }
 		    else {
 			$(data.rslt.obj).attr("id", r);
+			// todo: This refresh is used to put the newly generated node in the right place
+			// it'd be better to just have it in the right place in the first place, that way
+			// there would be no need to refresh (which closes the tree and is generally annoying)
+			data.inst.refresh();
 		    }
 		})
 	});
@@ -168,18 +177,13 @@
 	      "": "controlsView"
 	  },
 
-	  programsView: function () {
-	      $("#programsLightGroups").empty();
-	      $.jstree._reference($("#lightGroups")).show_checkboxes();
-	      $("#lightGroups").show();
-	      $("#programsLightGroups").append($("#lightGroups"));
-	  },
-
 	  controlsView: function() {
 	      $("#controlsLightGroups").empty();
 	      $.jstree._reference($("#lightGroups")).show_checkboxes();
 	      $("#lightGroups").show();
 	      $("#controlsLightGroups").append($("#lightGroups"));
+	      var menu = new ProgramList.MultipleChoiceMenu ({ el: $("#controlsProgramsList"), model: Programs});
+	      
 	  },
 
 	  groupsView: function () {
@@ -189,14 +193,27 @@
 	      $("#groupsLightGroups").append($("#lightGroups"));
 	  },
 
+	  programsView: function () {
+	      $("#programsLightGroups").empty();
+	      $.jstree._reference($("#lightGroups")).show_checkboxes();
+	      $("#lightGroups").show();
+	      $("#programsLightGroups").append($("#lightGroups"));
+	      var menu = new ProgramList.SingleChoiceMenu ({ el: $("#controlsProgramsList"), model: Programs});
+
+	  },
+
 	  helpView: function () {
 	  },
 
 	  testView: function () {
-//	      this.topOfMainView("test");
 	      $("#test").html ("<div id='testLight'></div>");
 
-	      var LightCollectionTest = Backbone.Collection.extend ({
+	      var line = new ProgramLine.ProgramLine({ lineid: 1, urlRoot: "../server/programs/1/lines"});
+	      ProgramView = new ProgramLine.ProgramLineView ({el: $("#testLight"), model: line});
+	      line.fetch({success: function() { console.log (line); line.trigger ("reset")}});
+	      setTimeout (function () { line.trigger ("change");  }, 5000);
+
+/*	      var LightCollectionTest = Backbone.Collection.extend ({
 		  model: Light.Light,
 		  url: "../server/lights"
 	      });
@@ -207,7 +224,7 @@
 	      ProgramView = new ProgramLine.ProgramLineView ({el: $("#testLight"), model: ProgramObj});
 	      
 	      Lights.fetch( { success: function (lights, response) { lights.each (function (light) {ProgramView.addLight (light)})}});
-	      
+*/	      
 	  }
 	  
       });
