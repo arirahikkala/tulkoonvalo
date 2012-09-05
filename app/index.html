@@ -4,7 +4,8 @@
     <title>WebDALI</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <style type="text/css">
-      .light-widget { margin: 10px 10px 15px 10px; }
+      .light-widget { margin: 1em auto 0 auto; }
+      .light { float: left; width: 5em; overflow: hidden; margin: 0 5px 0 5px; text-align: center}
     </style>
     <script type="text/javascript" src="../lib/jqueryui/js/jquery-1.7.2.min.js"></script>
     <script type="text/javascript" src="../lib/underscore.js"></script>
@@ -21,13 +22,141 @@
 
   </head>
   <body>
-    <div id="programMenu"></div>
-    <div id="programList"></div>
+    <!-- the lightGroups view is shared between multiple tabs, so, might as well make it "global" -->
+    <div id="lightGroups"></div>
+
+    <div id="container">
+    <div id="usual" class="usual">
+    <ul class="tabs">
+      <li><a href="#controls">Controls</a></li>
+      <li><a href="#groups">Groups</a></li>
+      <li><a href="#programs">Programs</a></li>
+      <li><a href="#help">Help</a></li>
+      <li><a href="#test">(test)</a></li>
+    </ul>
+    <div id="controls" class="divit"><h2>Controls</h2>
+      <div class="lights" id="controlsLightGroups"></div>
+      <div class="programs" id="controlsProgramsList"></div>
+      <div class="eiVierekkain" id="controlsProgram"></div>
+      <div class="eiVierekkain" id="htmlEmbed"></div>
+    </div>
+    <div id="groups" class="divit"><h2>Groups</h2>
+      <div id="groupContainer" class="programs">
+	<div id="groupsLightGroups"></div>
+	<div id="groupAdd" class="eiVierekkain">
+	  <input id="addGroup" type="submit" value="Add" />
+	</div>
+      </div>
+      <div id="groupRemove" class="eiVierekkain">
+	<input id="deleteGroup" type="submit" value="Remove group" />
+      </div>
+    </div>
+    <div id="programs" class="divit"><h2>Programs</h2>
+      <div id="programsLightGroups" class="lights"></div>
+      <div id="programsContainer" class="programs">
+	<div id="programsProgramList"></div>
+	<div id="createProgram" class="eiVierekkain"><input type='text' value='Name...' name='programName'/><input type='button' value='Add' name='cProgram'/></div>
+      </div>
+      <div id="deleteProgram" class="eiVierekkain"><input type="button" value="Delete program"></div>
+      <div id="programSetup" class="eiVierekkain"></div>
+    </div>
+    <div id="help" class="divit">Help<br /></div>
+    <div id="test" class="divit">Test<br /></div>
+    </div>
+
+    </div>
     <script type="text/javascript">
-      // todo: truncate document content when switching view! (with #("body").empty();)
-      // put the stuff at the beginning of controlsView into a function of its own as it's going to be shared
+      $.jstree._themes="../lib/jstree/themes/";
       Backbone.emulateHTTP = true;
+      $("#usual ul").idTabs(true);
+      $("#deleteGroup").bind ("click", function() { $.jstree._reference("#lightGroups").remove() });
+      $("#addGroup").bind ("click", function() { $.jstree._reference ("#lightGroups").create() });
       var Programs = new ProgramList.ProgramList;
+
+
+      $("#lightGroups").hide();
+      $("#lightGroups").jstree ({
+	  "json_data": {
+	      "ajax": {
+		  "url": "../server/lightsTree"
+	      }
+	  },
+	  "dnd": {
+	      "drop_finish": function() { 
+		  console.log ("dropped");
+	      }
+	  },
+	  "checkbox": {
+  	      "two_state": "false",
+
+	  },
+	  "types": {
+	      "light": {
+		  max_children: 0
+	      }
+	  },
+	  "plugins": ["themes", "json_data", "checkbox", "ui", "dnd", "crrm", "types"]})
+    .bind ("move_node.jstree check_node.jstree uncheck_node.jstree", function (e, d) { console.log (e); console.log (d);})
+    .bind("rename.jstree", function (e, data) {
+	console.log (data.rslt.obj.attr("id"));
+	$.post(
+	    "../server/lights/" + data.rslt.obj.attr("id") + "/name", 
+			JSON.stringify ({
+				"name" : data.rslt.new_name
+			}), 
+			function (r) {
+			    if(r !== "{}") {
+				$.jstree.rollback(data.rlbk);
+			    }
+			}
+		);
+	})
+    .bind("dblclick.jstree", function () { 
+	$("#lightGroups").jstree("rename", null)
+    })
+    .bind("move_node.jstree", function (e, data) {
+	console.log (data);
+	$.post ("../server/lights/" + data.rslt.o.attr("id") + "/parent",
+		JSON.stringify ({
+		    "parent" : data.rslt.cr === -1 ? 1 : data.rslt.np.attr("id")
+		}),
+		function (r) {
+		    if(r !== "{}") {
+			$.jstree.rollback(data.rlbk);
+		    }
+		}
+	);
+    })
+	.bind("remove.jstree", function (e, data) {
+		data.rslt.obj.each(function () {
+			$.ajax({
+				async : false,
+				type: 'DELETE',
+				url: "../server/lights/" + this.id,
+				success : function (r) {
+					if(r !== "{}") {
+						data.inst.refresh();
+					}
+				}
+			});
+		});
+	})
+	.bind("create.jstree", function (e, data) {
+	    $.post (
+		"../server/lights",
+		JSON.stringify ({
+		    name: data.rslt.name}),
+		function (r) {
+		    var res = JSON.parse (r);
+		    if (r['error'] !== undefined) {
+			$.jstree.rollback(data.rlbk);
+		    }
+		    else {
+			$(data.rslt.obj).attr("id", r);
+		    }
+		})
+	});
+    $.jstree._reference($("#lightGroups")).hide_checkboxes();
 
       var AppRouter = Backbone.Router.extend ({
 	  routes: {
@@ -40,211 +169,50 @@
 	  },
 
 	  programsView: function () {
-//	      var ProgramMenu = new ProgramList.SingleChoiceMenu({ model: Programs, el: $("#programMenu") });
-
-
-	      this.topOfMainView("programs");
-	      $("#programs").append("<br/>");
-	      $("#programs").append("<div id='lightList' class='lights'></div>");
-	      $("#programs").append("<div id='programsContainer' class='programs'></div>");
-	      $("#programsContainer").append("<div id='programList'></div>");
-	      $("#programsContainer").append ("<div id='createProgram' class='eiVierekkain'</div>");
-	      $("#programs").append ("<div id='deleteProgram' class='eiVierekkain'></div>");
-	      $("#createProgram").append("<hr>");
-	      $("#createProgram").append("<input type='text' value='Name...' name='programName'/>");
-	      $("#createProgram").append("<input type='button' value='Add' name='cProgram'/>");
-	      $("#deleteProgram").append("<input type='button' value='Delete program' name='dProgram'/>");
-	      $("#programs").append("<div id='programSetup' class='eiVierekkain'</div>");
-
-
-	      $.jstree._themes="../lib/jstree/themes/";
-	      var lightTree = $("#lightList").jstree ({
-		  "json_data": {
-		      "ajax": {
-			  "url": "../server/lights"
-		      }
-		  },
-
-		  "ui" : {
-		      "select_limit" : 1,
-		  },
-
-		  "checkbox": {
-		      "two_state": "true"
-		  },
-		  "plugins": ["themes", "json_data", "checkbox", "ui"]});
-
-
-
-	     $.jstree._themes="../lib/jstree/themes/";
-	      var lightTree = $("#programList").jstree ({
-		  "json_data": {
-		      "ajax": {
-			  "url": "../server/lights"
-		      }
-		  },
-
-		  "ui" : {
-		      "select_limit" : 1,
-		  },
-
-		  "checkbox": {
-		      "two_state": "true"
-		  },
-		  "plugins": ["themes", "json_data", "ui"]});
-
-	  },
-
-	  topOfMainView: function(page) {
-	      $("body").empty();
-	      $("body").append ("<div id='container'></div>");
-	      $("#container").append ("<div id='usual' class='usual'></div>");
-	      $("#usual").append ("<ul class='testi'>");
-
-  	      $("#usual ul").append ("<li><a href='#controls' " + (page == "controls" ? "class='selected'" : "") + ">Controls</a></li>");
-	      $("#usual ul").append ("<li><a href='#groups' " + (page == "groups" ? "class='selected'" : "") + ">Groups</a></li>");
-	      $("#usual ul").append ("<li><a href='#programs' " + (page == "programs" ? "class='selected'" : "") + ">Programs</a></li>");
-	      $("#usual ul").append ("<li><a href='#help' " + (page == "help" ? "class='selected'" : "") + ">Help</a></li>");
-
-	      $("#usual").append ("<div id='controls' class='divit'> Controls<br></div>");
-	      $("#usual").append ("<div id='groups' class='divit'>Groups<br></div>");
-	      $("#usual").append ("<div id='programs' class='divit'> Programs<br></div>");
-	      $("#usual").append ("<div id='help' class='divit'> Help page</div>");
-
-	      $("#usual ul").idTabs(true);
-
-	  },
-
-	  makeLightTree: function (div) {
-	  		$.jstree._themes="../lib/jstree/themes/";
-	      var testTree = $(div).jstree ({
-		  "json_data": {
-		      "ajax": {
-			  "url": "../server/lights"
-		      }
-		  },
-
-		  "ui" : {
-		      "select_limit" : 1,
-		  },
-
-		  "checkbox": {
-		      "two_state": "true"
-		  },
-		  "plugins": ["themes", "json_data", "checkbox", "ui"]});
-
-
+	      $("#programsLightGroups").empty();
+	      $.jstree._reference($("#lightGroups")).show_checkboxes();
+	      $("#lightGroups").show();
+	      $("#programsLightGroups").append($("#lightGroups"));
 	  },
 
 	  controlsView: function() {
-	      this.topOfMainView("controls");
-	      
-	      $("#controls").append ("<br/>");
-	      $("#controls").append ("<div class='lights' id='lightList';></div>");
-	      
-	      //var lightsMenu = new ProgramList.SingleChoiceMenu({ model: Programs, el: $("#lights") });
-
-	      this.makeLightTree("#lightList");
-
-	      $("#controls").append ("<div class='programs' id='programsList';></div>");
-	      $("#controls").append ("<div id='program' class='eiVierekkain';>Programs</div>");
-	      $("#controls").append ("<div id='htmlEmbedded' class='eiVierekkain';>HTMLEMBEDDED</div>");
-	      //$("#controls").append ("<br style='clear: left;'/>");
-
-	      $("#programsList").append("<div id='bar'></div>");
-	      $("#programsList").append("<div id='foo'></div>");
-
-	      //var ProgramMenu = new ProgramList.SingleChoiceMenu({ model: Programs, el: $("#bar") });
-
-	      $.jstree._themes="../lib/jstree/themes/";
-	      var programTree = $("#foo").jstree ({
-		  "json_data": {
-		      "ajax": {
-			  "url": "../server/lights"
-		      }
-		  },
-
-		  "ui" : {
-		      "select_limit" : 1,
-		  },
-
-		  "checkbox": {
-		      "two_state": "false"
-		  },
-		  "plugins": ["themes", "json_data", "checkbox", "ui"]});
-
-
-
+	      $("#controlsLightGroups").empty();
+	      $.jstree._reference($("#lightGroups")).show_checkboxes();
+	      $("#lightGroups").show();
+	      $("#controlsLightGroups").append($("#lightGroups"));
 	  },
 
 	  groupsView: function () {
-	      this.topOfMainView("groups");
-
-	      $("#groups").append ("<br/>");
-	      $("#groups").append ("<div id='groupContainer' class='programs'></div>");
-	      $("#groupContainer").append ("<div id='bigLights'></div>");
-	      $("#groupContainer").append ("<div id='groupAdd' class='eiVierekkain'></div>");
-	      $("#groups").append ("<div id='groupRemove' class='eiVierekkain'></div>");
-
-	      $("#groupAdd").append("<hr class='groupsSettings'><br/>");
-	      $("#groupAdd").append("<input type='text' value='Name...' name='gName'/ class='groupsSettings'>");
-	      $("#groupAdd").append("<input type='submit' value='Add' name='sGroup'/><br/><br/>");
-
-	      $("#groupRemove").append("<input type='submit' value='Remove group' name='rGroup' class='groupsSettings'/>");
-
-	      $.jstree._themes="../lib/jstree/themes/";
-	      var programTree = $("#bigLights").jstree ({
-		  "json_data": {
-		      "ajax": {
-			  "url": "../server/lights"
-		      }
-		  },
-
-		  "ui" : {
-		      "select_limit" : 1,
-		  },
-
-		  "checkbox": {
-		      "two_state": "false"
-		  },
-		  "plugins": ["themes", "json_data", "dnd", "ui"]});
-
-
+	      $("#groupsLightGroups").empty();
+	      $.jstree._reference($("#lightGroups")).hide_checkboxes();
+	      $("#lightGroups").show();
+	      $("#groupsLightGroups").append($("#lightGroups"));
 	  },
 
 	  helpView: function () {
-	  	  this.topOfMainView("help");
-
-	  	  $("#help").append("<br/>");
-	  	  $("#help").append("<br/>");
-	  	  $("#help").append("Please select an PDF file if you need any assistance: <br/><br/>");
-	  	  $("#help").append("<a href='../doc/controlsHelp.pdf'>Control page's help PDF File</a><br/>");
-	  	  $("#help").append("<a href='../doc/groupHelp.pdf'>Group page's help PDF File</a><br/>");
-	  	  $("#help").append("<a href='../doc/programHelp.pdf'>Program page's help PDF File</a><br/>");
 	  },
 
 	  testView: function () {
-	      $("body").append ("<div id='testLight'></div>");
+//	      this.topOfMainView("test");
+	      $("#test").html ("<div id='testLight'></div>");
 
 	      var LightCollectionTest = Backbone.Collection.extend ({
 		  model: Light.Light,
-		  url: "../server/lightsFlat"
+		  url: "../server/lights"
 	      });
 	      
-	      var Lights = new LightCollectionTest;
+	      Lights = new LightCollectionTest;
 
 	      var ProgramObj = new ProgramLine.ProgramLine({name: "ohjelma"});
-	      var ProgramView = new ProgramLine.ProgramLineView ({el: $("#testLight"), model: ProgramObj});
+	      ProgramView = new ProgramLine.ProgramLineView ({el: $("#testLight"), model: ProgramObj});
 	      
 	      Lights.fetch( { success: function (lights, response) { lights.each (function (light) {ProgramView.addLight (light)})}});
+	      
 	  }
 	  
       });
       var appRouter = new AppRouter;
       Backbone.history.start();
-      /*
-
-       */
 
     </script>
   </body>

@@ -13,9 +13,14 @@ $app->get('/programs/:program/lines/:line/lights/', function ($program, $line) {
 $app->get('/programs/:program/lines/:line/lights/:light/', 
 	  function ($program, $line, $light) { getPrograms ("lights", $program, $line, $light);});
 
-$app->get('/lights', 'getLightsTree');
-$app->get('/lightsFlat', 'getLights');
-$app->put('/lightsFlat/:id', 'updateLightBrightness');
+$app->get('/lightsTree', 'getLightsTree');
+
+$app->get('/lights', 'getLights');
+$app->post('/lights/:id/brightness', 'updateCanonicalLightBrightness');
+$app->post('/lights/:id/name', 'updateCanonicalGroupName');
+$app->post('/lights/:id/parent', 'updateCanonicalGroupParent');
+$app->delete('/lights/:id', 'removeGroup');
+$app->post('/lights', 'addGroup'); 
 $app->run();
 
 function getPrograms($listwhat = "programs", $program = null, $line = null, $light = null) {
@@ -89,6 +94,7 @@ function stuffLightAttributes ($element)
 	$rv = [];
 	foreach ($element as $k => $v) {
 		if ($k == "parent") {}
+		else if ($k == "isGroup") { $rv['attr']['rel'] = $v ? "group" : "light"; }
 		else if ($k == "name") { $rv['data'] = str_replace('\' ', '\'', ucwords(str_replace('\'', '\' ', strtolower($v))));}
 		else if ($k == "children") { $rv['children'] = $v; }
 		else { $rv['attr'][$k] = $v; }
@@ -117,7 +123,7 @@ function reconstructLightTree ($root, $list)
 }
 
 function getLightsTree() {
-	$sql = "select name, brightness, parent, id from lights";
+	$sql = "select name, brightness, parent, id, isGroup from lights";
 	try {
 		$db = getConnection();
 		$stmt = $db->prepare($sql);
@@ -156,7 +162,7 @@ function getLights() {
 
 }
 
-function updateLightBrightness($id) {
+function updateCanonicalLightBrightness($id) {
 	$sql = "update lights set brightness=? where id=?";
 	$requestBody = json_decode (Slim::getInstance()->request()->getBody());
 	try {
@@ -165,13 +171,102 @@ function updateLightBrightness($id) {
 		$stmt->execute(array ($requestBody->brightness, $id));
 
 		echo "{}";
-//		echo json_encode ($lights, JSON_PRETTY_PRINT);
 
 	}
 	
 	catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}';
 	}
+
+}
+
+// todo: check for and prevent loopy parentage structures
+function updateCanonicalGroupParent ($id) {
+	$sql = "update lights set parent=? where id=?";
+	$requestBody = json_decode (Slim::getInstance()->request()->getBody());
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);
+		$stmt->execute(array ($requestBody->parent, $id));
+
+		echo "{}";
+
+	}
+	
+	catch(PDOException $e) {
+		echo '{"error":{"text":'. $e->getMessage() .'}}';
+	}
+}
+
+function updateCanonicalGroupName ($id)
+{
+	$sql = "update lights set name=? where id=?";
+	$requestBody = json_decode (Slim::getInstance()->request()->getBody());
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);
+		$stmt->execute(array ($requestBody->name, $id));
+
+		echo "{}";
+
+	}
+	
+	catch(PDOException $e) {
+		echo '{"error":{"text":'. $e->getMessage() .'}}';
+	}
+	
+}
+
+function removeGroup ($id)
+{
+	if ($id == 1) {
+		echo '{"error": {"text": "The root group can not be removed."}}';
+		return;
+	}
+
+	$sql = "select isGroup from lights where id=?";
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);
+		$stmt->execute (array ($id));
+		$result = $stmt->fetchAll (PDO::FETCH_OBJ);
+		if (!isset ($result[0])) {
+			echo '{"error": {"text": No group with that id exists!"';
+		}
+		else if (! $result[0]->isGroup) {
+			echo '{"error": {"text": "Lights can not be removed through this interface."}}';
+		}
+		if (isset ($result[0]) && $result[0]->isGroup) {
+			$sql = "delete from lights where id=?";
+			$stmt = $db->prepare($sql);
+			$stmt->execute (array ($id));
+			echo "{}";
+		}
+		else {
+			echo '{"error": {"text": "Lights can not be removed through this interface."}}';
+		}
+	}
+	catch(PDOException $e) {
+		echo '{"error":{"text":'. $e->getMessage() .'}}';
+	}
+}
+
+function addGroup ()
+{
+	$sql = "insert into lights (name, brightness, parent, isGroup) values (?, ?, ?, ?)";
+	$requestBody = json_decode (Slim::getInstance()->request()->getBody());
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);
+		$stmt->execute(array ($requestBody->name, null, 1, true));
+		
+		print ("{id: '" + $db->lastInsertId('id') + "'}");
+	}
+	
+	catch(PDOException $e) {
+		echo '{"error":{"text":'. $e->getMessage() .'}}';
+	}
+	
 
 }
 

@@ -39,7 +39,7 @@
 
 	addLight: function(light) {
 	    var view = new Light.LightView({model: light});
-	    this.$(".programline").append(view.render().el);
+	    this.$el.append(view.render().el);
 	},
 
 	initialize: function() {
@@ -50,7 +50,6 @@
 	},
 
 	render: function() {
-	    this.$el.html ("<div class='programline' />");
 	    _.each(this.model.get("lights"), function (x) { addLight (x)});
 	}
     })

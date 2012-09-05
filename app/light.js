@@ -17,10 +17,6 @@
 
     // attributes: name (string), brightness (float)
     Light.Light = Backbone.Model.extend({
-	// note for implementing url: Will need to provide an argument to determine whether this is a program line light, or a "canonical" light, url depends on that
-
-	
-
 	defaults: function() {
 	    return {
 		name: "unnamed",
@@ -35,9 +31,6 @@
 
 	className: "light",
 
-	widget: {},
-	$widget: {},
-
 	template: _.template("<%= name %>\
 <div class='light-widget' />"),
 
@@ -49,22 +42,27 @@
 	    this.model.bind("change", this.updateValueFromModel, this);
 	    this.model.bind("remove", this.remove, this);
 	    this.render();
+	    var _this = this;
 	},
 
 	updateValueFromModel: function() {
-	    $widget.slider("value", this.model.get("brightness"));
+	    this.$(".light-widget").slider("value", this.model.get("brightness"));
 	},
 
 	render: function () {
 	    this.$el.html (this.template ({name: this.model.get('name')}));
-	    $widget = this.$(".light-widget");
-	    widget = $widget.slider({orientation: "vertical", value: this.model.get('brightness')});
-
+	    this.$(".light-widget").slider({orientation: "vertical", value: this.model.get('brightness')});
 	    return this;
 	},
 	
-	updateValueFromUI: function() {
-	    this.model.set("brightness", $widget.slider("option", "value"));
+	updateValueFromUI: function(ev, ui) {
+	    this.model.set("brightness", this.$(".light-widget").slider("option", "value"));
+	    // if originalEvent is undefined, the event was created programmatically
+	    // check so that we don't loop
+	    if (ev.originalEvent !== undefined)
+		this.model.save();
+
+	    return false;
 	},
     });
 }).call(this);
