@@ -43,16 +43,16 @@
 	    var item_el = view.render().$el;
 	    var check;
 	    if (opts.isSelected)
-		check = "<input class='toggle' checked='checked' type='checkbox';'/>";
+		check = "<input type='toggle' checked='checked' type='checkbox';'/>";
 	    else
-		check = "<input class='toggle' type='checkbox';'/>";
+		check = "<input type='toggle' type='checkbox';'/>";
 	    this.$el.html ("<div>" + item_el.html() + check + "</div>");
 	}
     });
 
     ProgramList.SingleChoiceMenuItem = Backbone.View.extend ({
 	events: {
-	    "change .toggle" : function() { this.updateContainer(); },
+	    "change .radio" : function() { this.updateContainer(); },
 	},
 
 	updateContainer: function () {
@@ -74,11 +74,11 @@
 	renderWithOpts: function (opts) {
 	    var radio;
 	    if (opts.isSelected)
-		check = "<input class='radio' name='singlechoicemenu' checked='checked' type='checkbox';'/>";
+		radio = "<input class='radio' type='radio' name='singlechoicemenu' checked='checked' type='checkbox';'/>";
 	    else
-		check = "<input class='radio' name='singlechoicemenu' type='checkbox';'/>";
+		radio = "<input class='radio' type='radio' name='singlechoicemenu' type='checkbox';'/>";
 	    var view = new Program.ItemView ({model: opts.model});
-	    this.$el.html (view.render().el);
+	    this.$el.html ("<div>" + view.render().$el.html() + radio + "</div>");
 	}
     });
 
