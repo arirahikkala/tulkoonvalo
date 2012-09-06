@@ -1,0 +1,81 @@
+Stuff related to light groups:
+
+jstree has a "types" feature that allows you to use different icons for different types of things.
+- Set up getting the correct types from the server
+- Constrain child types (lights should never have children, only lightgroups)
+- Add different icons for lights
+
+- Design question: Should lights be ordered? (Currently they're grouped with parents, but have no order recorded beyond that)
+
+- There is currently a single root light group, the one whose ID is 1 (see removeGroup in server/index.php). This should probably be relaxed.
+
+- Fix adding nodes to the light group tree (i.e. force them to go in the right place without refreshing; see the callback bound to "create.jstree" in the lightGroups jstree)
+
+- Fix the behavior of the lightGroups element when loading the page; make it show immediately and avoid showing checkboxes when they shouldn't be shown
+
+Stuff related to programs:
+
+getPrograms is huge and unwieldy and terrible. Figure out how to make it more sane.
+
+getPrograms does not show programs that consist of one line containing no lights; it also probably does not show programs that contain no lines at all. The SQL should be correct (all joins in it are left joins), it goes wrong at some later point. Fix this so that all programs get shown even if they have no content.
+
+Throw away the checkboxes and radio buttons from the program lists, replace with a simpler click-to-select interface.
+
+Actually implement programs management (both the UI, and updating data to the server):
+
+In the Programs tab:
+- Remove program
+- Add program (with a given name)
+- Add program line
+- Add lights to program lines
+- Remove lights from program lines
+- Modify light brightness in program line
+- Add light groups to program lines
+- Remove light groups from program lines
+- Remove program line
+
+In the Controls tab:
+
+- Add program to control
+- Remove program from control
+
+
+Other stuff toward feature-completeness:
+
+The whole triggers shebang. Figure out how data about sensor triggers gets to the program in the first place. Design the interface for triggers in the programs list. Design the necessary database tables for triggers.
+
+Implement the features related to light groups in the controls tab.
+
+- Add light / light group to control
+- Remove light / light group from control
+
+
+Other stuff toward better quality:
+
+Bootstrap data in the page load. Currently the lightgroups stuff is loaded dynamically and shows a loading circle (provided by jstree), and the programs are loaded synchronously. What should happen instead is that the server puts the dynamic data right into the page source when serving it in the first place.
+
+Design question: Should server communications be made more consistent? Currently everything is JSON but one half is jstree and the other is Backbone stuff; they have completely different structures.
+
+Do user testing.
+
+Optimise re-rendering where possible (i.e. bind events to the most specific thing possible, only rerender what actually needs to be rerendered). Applies both to Backbone views and to the light groups (i.e. avoid resetting the whole tree).
+
+Remove the help PDFs, replace with help pages that it's more likely users will actually be able to (and want to) open.
+
+
+
+Add pretty icons to places
+
+Automatise testing
+
+See how things need to be restructured for automatisation of testing
+
+Add the embedded controllers
+
+Add triggers (figure out how to actually do the UI for triggers)
+
+Check that the database schema is OK (i.e. whatever program is supposed to populate it with lights can actually do it)
+
+Do user testing
+
+
