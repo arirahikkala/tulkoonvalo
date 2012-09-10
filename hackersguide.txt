@@ -1,5 +1,74 @@
-GLOSSARY
+WEBDALI HACKERS GUIDE
 
-Control
+1. Installing
+2. Design introduction
+3. Technical introduction
+4. Tasks
 
-Program
+
+1. INSTALLING
+
+Start by just unpacking the repository into a directory served by Apache with support for running PHP. All required libraries come in the repository in the lib/ directory.
+
+The file db.sql contains the current database schema and some example data. It can be imported at least into mysql simply by creating a database, let's call it webdali, and user credentials for that database (let's call them "daliuser" with password "dalipass") by running "mysql webdali -u daliuser -pdalipass < db.sql".
+
+Create a file named config.php in the server subdirectory to tell WebDALI how to access the database. Example content:
+
+  <?php
+
+  $dbhost="127.0.0.1";
+  $dbuser="daliuser";
+  $dbpass="dalipass";
+  $dbname="webdali";
+
+  ?>
+
+Once all that's done, navigate to app/index.html with your web browser and you should be seeing a page with the controls view and some example data.
+
+
+2. DESIGN INTRODUCTION
+
+WebDALI's internals are probably best explained in terms of the really fairly simple information model.
+
+First, there's the /lights/. These go in the "lights" table in the database. There's currently some example content for this table in db.sql, the intent is that eventually the DALI backend will prepopulate this table. Each light has a /brightness/ in this table. This is the "canonical" brightness - if possible to implement in the backend, it should track the state of the actual physical light at any time. If not, it should be whatever value it has been set to previously.
+
+Lights form /light groups/. These are also in the lights table, and are currently represented simply with a "parent" field on lights. Groups can contain groups and there is no limit to how many members there can be in a group, so there needs to be a mapping layer on the backend to drive DALI groups (which are a lot more restricted).
+
+The meat of complexity, much of it unimplemented, is in /programs/, or /scenes/. A program consists of a name and a list of /program lines/ ordered by priority. Each program line consists of a /trigger/ - which can be "up" or "down", aka on or off - and a set of lights and light groups. Several program lines' triggers can be "up" and different lines in a program can contain different sets of lights - each light is driven by the first line with an up trigger that mentions that light.
+
+In other words, the brightness of a light is determined, in order, by:
+
+  1. The last manual controller (light switch, slider, etc.) to have modified that brightness within the last <time period to be determined>
+
+  And if there has been no manual control, by...
+
+  2. The highest-priority (i.e. first in the list) program line that:
+   - is in the currently running program (there is only one of these at a time)
+   - is "up" according to the trigger on that line
+   - defines a brightness for that light, either by group or by reference to that specific light
+  And if there is no program controlling that light at a given moment, by...
+
+  3. Itself, i.e. it keeps whatever brightness it happens to have (these should probably start at zero)
+
+WebDALI itself is not actually concerned with this hierarchy of control, but it's useful to know to understand what the data model is actually useful for. WebDALI itself only manages data.
+
+Detailed design of exactly how triggers work is yet to be done. Most likely there will have to be a separate table for sensor triggers, and at least changes in the programs_lines table to represent time triggers usefully.
+
+
+
+3. CODE WALKTHROUGH
+
+WebDALI is implemented as a single-page web app. You load app/index.html once and then never navigate off of it. All communication with the server is done by sending chunks of JSON back and forth
+
+Almost all code related to the UI of the light groups proper is in app/index.html, attached to the jstree on $("#lightGroups"). This code is largely functional, though note the related tasks in the task list. See comments in the code for more detail.
+
+Code related to the hierarchy of programs - programs, menus of programs, program lines, and lists of program lines - are all in separate JavaScript files built after Backbone examples, in app/light.js, app/programline.js, app/program.js and app/programlist.js. These files provide models and different views for the whole hierarchy of data, which with the help of Backbone-Relational, can be simply loaded from the server as one full ProgramList.
+
+The same files also provide different widgets providing views into different parts of the structure. For instance program.js provides a view of program that only shows its name, and once implemented, will also provide a "full view" that shows all of the program lines and the lights in them. These widgets are then used to build the UI in the different view functions in app/index.html. Again, see comments in the code itself for more detail.
+
+app/light.js, app/programline.js, app/program.js and app/programlist.js are not completely functional. See app/light.js as the simplest (and best commented) reference for how we're using Backbone models and views in general. The rest are uncommented as it's not really certain how much of the code even works in the first place.
+
+
+4. TASKS
+
+In tasks.txt

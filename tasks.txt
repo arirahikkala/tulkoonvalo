@@ -1,81 +1,135 @@
-Stuff related to light groups:
+==Tasks on the way toward a technically feature-complete v1.0==
+
+=== Stuff related to controls===
+
+T1 Design question: Do controls need a representation in the database? Or is it more reasonable to list their entire content in the embed code itself?
+
+T2 Figure out how to actually get the data to the DALI controller when the user twiddles the controls. (and avoid spamming the server)
+
+T3 Figure out how to track the "source" of a light's brightness: Is a light, at a given time, controlled by a program, or has it been overridden by a manual setting? If so, how should a control show it? Where does that information go in the database?
+
+(anything about adding content to controls is listed under the programs and light groups headings)
+
+===Stuff related to light groups===
 
 jstree has a "types" feature that allows you to use different icons for different types of things.
-- Set up getting the correct types from the server
-- Constrain child types (lights should never have children, only lightgroups)
-- Add different icons for lights
+T4 - Set up getting the correct types from the server
+T5 - Constrain child types (lights should never have children, only lightgroups)
+T6 - Fix the behavior of the lightGroups element when loading the page; make it show immediately and avoid showing checkboxes when they shouldn't be shown
 
-- Design question: Should lights be ordered? (Currently they're grouped with parents, but have no order recorded beyond that)
+T7 Instead of putting lightGroups in the document structure and hiding it at the start, generate it from scratch and don't put it in the document at all before it's to be shown.
 
-- There is currently a single root light group, the one whose ID is 1 (see removeGroup in server/index.php). This should probably be relaxed.
+Related to controls, implement:
 
-- Fix adding nodes to the light group tree (i.e. force them to go in the right place without refreshing; see the callback bound to "create.jstree" in the lightGroups jstree)
+T8 - Add light / light group to control
+T9 - Remove light / light group from control
 
-- Fix the behavior of the lightGroups element when loading the page; make it show immediately and avoid showing checkboxes when they shouldn't be shown
+T65 Place new lightgroups in the correct position. Currently when creating a lightgroup, the new group as a child of the root group. It should be added as a child of the selected group instead.
 
-Stuff related to programs:
+T67 Prevent parentage loops in index.php:updateCanonicalGroupParent. (i.e. it should not be possible to say that light 1's parent is light 2 and light 2's parent is light 1)
 
-getPrograms is huge and unwieldy and terrible. Figure out how to make it more sane.
+T68 Replace the updateGroup* functions with one slightly larger function that just gets a new light as a JSON object and updates that into the database
 
-getPrograms does not show programs that consist of one line containing no lights; it also probably does not show programs that contain no lines at all. The SQL should be correct (all joins in it are left joins), it goes wrong at some later point. Fix this so that all programs get shown even if they have no content.
+===Stuff related to programs===
 
-Throw away the checkboxes and radio buttons from the program lists, replace with a simpler click-to-select interface.
+T10 getPrograms does not show programs that consist of one line containing no lights; it also probably does not show programs that contain no lines at all. The SQL should be correct (all joins in it are left joins), it goes wrong at some later point. Fix this so that all programs get shown even if they have no content.
 
-Actually implement programs management (both the UI, and updating data to the server):
+T11 Throw away the checkboxes and radio buttons from the program lists, replace with a simpler click-to-select interface.
+
+T12 Actually implement programs management (both the UI, and updating data to the server):
 
 In the Programs tab:
-- Remove program
-- Add program (with a given name)
-- Add program line
-- Add lights to program lines
-- Remove lights from program lines
-- Modify light brightness in program line
-- Add light groups to program lines
-- Remove light groups from program lines
-- Remove program line
+T13 - Remove program
+T14 - Add program (with a given name)
+T15 - Add program line
+T16 - Add lights to program lines
+T17 - Remove lights from program lines
+T18 - Modify light brightness in program line
+T19 - Add light groups to program lines
+T20 - Remove light groups from program lines
+T21 - Remove program line
+
+T22 Implement ordering for program lines. (database changes, plus a reordering widget)
 
 In the Controls tab:
 
-- Add program to control
-- Remove program from control
+T23 - Add program to control
+T24 - Remove program from control
 
 
-Other stuff toward feature-completeness:
+===Stuff related to triggers===
 
-The whole triggers shebang. Figure out how data about sensor triggers gets to the program in the first place. Design the interface for triggers in the programs list. Design the necessary database tables for triggers.
+T25 Figure out how sensors get populated into the database.
 
-Implement the features related to light groups in the controls tab.
+T26 Design the necessary database schema changes. (currently the only representation of triggers in the database is that program lines have a sensor_trigger and a time_trigger field, both of which are just strings)
 
-- Add light / light group to control
-- Remove light / light group from control
+T27 Design question: There probably needs to be some delay (possibly configurable) on switching from sensor-triggered to time-triggered program lines. (so that, for instance, the lights don't immediately get turned off when the motion sensor stops being up). This is a back-end issue, but configuring the delay length might need to go in the front-end.
 
+T28 Design a UI for time triggers.
 
-Other stuff toward better quality:
+In the Programs tab:
 
-Bootstrap data in the page load. Currently the lightgroups stuff is loaded dynamically and shows a loading circle (provided by jstree), and the programs are loaded synchronously. What should happen instead is that the server puts the dynamic data right into the page source when serving it in the first place.
-
-Design question: Should server communications be made more consistent? Currently everything is JSON but one half is jstree and the other is Backbone stuff; they have completely different structures.
-
-Do user testing.
-
-Optimise re-rendering where possible (i.e. bind events to the most specific thing possible, only rerender what actually needs to be rerendered). Applies both to Backbone views and to the light groups (i.e. avoid resetting the whole tree).
-
-Remove the help PDFs, replace with help pages that it's more likely users will actually be able to (and want to) open.
+T29 - Choose program line trigger
 
 
+===Stuff that's more of an overarching concern really===
 
-Add pretty icons to places
+T30 Figure out what happens if there are external changes to the lights table. Do lights get removed from program lines if they are removed from the lights list? (currently there's foreign key constraint disallowing the database from removing lights if they are used in a program; most likely these should be either be replaced with ON DELETE CASCADE or by removing the constraint and figuring out what to do at the front-end instead)
 
-Automatise testing
+T31 Figure out what happens if there are external changes to sensors.
 
-See how things need to be restructured for automatisation of testing
+T32 Start actually thinking about what to do if the client's and server's data are out of sync (most likely because someone else is also changing stuff on the server).
 
-Add the embedded controllers
+T33 Start doing error management properly. Figure out when and how to show errors to the user, whether they're detected by the client or the server.
 
-Add triggers (figure out how to actually do the UI for triggers)
+T34 Test on different browsers?
 
-Check that the database schema is OK (i.e. whatever program is supposed to populate it with lights can actually do it)
-
-Do user testing
+T35 Add UI notifications that changes have been stored on the server succesfully?
 
 
+===Other stuff===
+
+Other bug fixes:
+T36 - Fix reloading behavior (currently, on reloading, the page just goes into the controls tab, but without actually running controlsView)
+T37 - Avoid scrolling down when clicking on tab headers (i.e.: currently when you click on, say, "controls" at the top, the browser will try to scroll down to the beginning of the "controls" div, which leaves the tabs partially or completely off screen)
+T66 - Make the app actually navigate to the right page if the user navigates to a different fragment identifier (for instance #controls instead of #groups) after loading the page.
+
+T38 Figure out how to determine whether Backbone.emulateHTTP is actually necessary on a given installation.
+
+T39 Deployment. (At least an installation script setting the database schema and making a config.php)
+
+T40 Remove the help PDFs, replace with help pages that it's more likely users will actually be able to (and want to) open.
+
+T50 Other UI cleanups, style changes. Use Twitter Bootstrap?
+T51 - De-link the currently active tab?
+
+T52 Code style matters. Limit code lines to a given non-arbitrary width?
+
+T53 Reorganise and clean up the CSS.
+
+
+==Stuff that might or might not be necessary for v1.0 but that's probably good to get to at some point==
+
+T54 Build process. Currently there's a lot of stuff strewn about different JS files that all get loaded separately. Look at how different webapps get built - how they put all of their stuff in a single file that loads fast - and apply that to make a build script.
+
+T55 Add different icons for lights and lightgroups.
+
+T56 Design question: Should lights be ordered? (Currently they're grouped with parents, but have no order recorded beyond that)
+
+T57 There is currently a single root light group, the one whose ID is 1 (see removeGroup in server/index.php). This should probably be relaxed, if jstree acts nicely with multiple root groups (in particular, check if it's possible for the user to actually make new root groups with the drag-and-drop functionality - if not, then there should be a single root group)
+
+T58 Fix adding nodes to the light group tree (i.e. force them to go in the right place without refreshing; see the callback bound to "create.jstree" in the lightGroups jstree)
+
+T59 getPrograms is huge and unwieldy and terrible. Figure out how to make it more sane.
+
+T60 Bootstrap data in the page load. Currently the lightgroups stuff is loaded dynamically and shows a loading circle (provided by jstree), and the programs are loaded synchronously. What should happen instead is that the server puts the dynamic data right into the page source when serving it in the first place.
+
+T61 Design question: Should server communications be made more consistent? Currently everything is JSON but one half is jstree (which requires a specific sort of structure for the data) and the other is Backbone stuff (which is just ad-hoc representations more or less defined by the code itself)
+
+T62 Do user testing. Do it another time too :P
+
+T63 Optimise re-rendering where possible (i.e. bind events to the most specific thing possible, only rerender what actually needs to be rerendered). Applies both to Backbone views and to the light groups (i.e. avoid resetting the whole tree).
+
+T64 Add pretty icons.
+
+T69 Simplify the name exports in light.js etc.; currently they're putting in extra effort so that you could technically use them server-side with node.js, which is useless for us

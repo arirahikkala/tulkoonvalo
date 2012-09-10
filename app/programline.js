@@ -11,12 +11,6 @@
 	root['ProgramLine'] = ProgramLine;
     }
 
-/*    ProgramLine.LightList = Backbone.Collection.extend ({
-	url: function() { 
-	    return "/programs/"+this.parent.get("id")+"/lights/";
-	}
-    });
-*/
     // attributes: lights (array of Light), 
     ProgramLine.ProgramLine = Backbone.RelationalModel.extend ({
 	defaults: function() {
@@ -35,11 +29,6 @@
 	    type: Backbone.HasMany,
 	    key: 'lights',
 	    relatedModel: 'Light.Light',
-	    reverseRelation: {
-		key: 'line',
-		includeInJSON: 'lineid'
-	    },
-//	    collectionType: 'ProgramLine.LightList',
 	}],
 
 	url: function() {
