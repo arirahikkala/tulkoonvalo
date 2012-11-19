@@ -1,0 +1,10 @@
+Pääaulassa on isot komeat kattoikkunat. Siellä halutaan olevan aina vähintäänkin 150 luksia mutta ylärajaa ei ole. Sensorit kertovat kuinka kirkasta ulkona on.
+
+Auditorio on iso tila jota käytetään aina silloin kun sattuu olemaan tarvetta tuoda yhteen iso kasa ihmisiä. Kokoukset siis tapahtuvat "satunnaisina" aikoina ja jatkuvat satunnaisen pitkään. Huoneen itäseinällä on isot ikkunat joista tulee tälle puolelle aamuisin reilusti valoa, joskus sen verran että verhot lyödään kiinni jotteivat kokoontujat häikäistyisi. Näkökyky pitäisi olla tilassa aina luonnonvalosta huolimatta.
+
+Rakennuskompleksissa on 146 vessaa. Jokaisessa pitäisi olla valot päällä kymmenen minuuttia siitä eteenpäin kun mikään vessan sensoreista (liikesensori ovessa ja paikallaolosensori) on välkähtänyt.
+
+Pihavaloille ei ole valosensoreita. Siellä tarvitaan yksinkertaisesti valot päälle yöaikaan.
+
+Laboratorioissa ja käytävillä pyörii graduopiskelijoita ja muita naimattomia miehiä usein aamukuuteen asti. Jos valot eivät olisi päällä ja kirkkaina tiloissa joissa he ovat, he saattaisivat huomata että on yö ja menisivät nukkumaan työnteon sijaan.
+
