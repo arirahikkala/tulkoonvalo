@@ -23,6 +23,8 @@ Create a file named config.php in the server subdirectory to tell WebDALI how to
 
   ?>
 
+Also it seems that RewriteBase in server/.htaccess needs to be updated. (this might need to be fixed/made more convenient)
+
 Once all that's done, navigate to app/index.html with your web browser and you should be seeing a page with the controls view and some example data.
 
 
