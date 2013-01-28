@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>WebDALI</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <style type="text/css">
+      .light-name { height: 1em; overflow-y: hidden; }
+      .light-widget { margin: 1em auto 0 auto; }
+      .light { float: left; width: 5em; overflow: hidden; margin: 0 5px 0 5px; text-align: center}
+    </style>
+    <script type="text/javascript" src="../lib/jqueryui/js/jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" src="../lib/underscore.js"></script>
+    <script type="text/javascript" src="../lib/backbone.js"></script>
+    <script type="text/javascript" src="../lib/jqueryui/js/jquery-ui-1.8.21.custom.min.js"></script>
+    <script type="text/javascript" src="../lib/jstree/jquery.jstree.js"></script>
+    <script type="text/javascript" src="slider.js"></script>
+    <link rel="stylesheet" href="../lib/jqueryui/css/ui-lightness/jquery-ui-1.8.21.custom.css" />
+
+  </head>
+  <body>
+    <div class="bar" id="sliders"></div> <br/> <br/>
+    <div class="bar" id="sliders2"></div> <br /> <br />
+    <div id="textual"></div>
+    <script type="text/javascript">
+      var SliderFoo = new Slider.Slider({id: 1, value: 0});
+      SliderFoo.bind ("change", function () { $("#textual").html (SliderFoo.get("value"))});
+      SliderFoo.fetch({success: function() { console.log ();
+      new Slider.SliderView ({el: $("#sliders"), model: SliderFoo});
+      new Slider.SliderView ({el: $("#sliders2"), model: SliderFoo});
+
+//      $("#sliders").slider ({value: 10, orientation: "vertical"});
+//each (function (i, e) { $(this).html ("foo") });
+    </script>
+  </body>
+
+</html>
