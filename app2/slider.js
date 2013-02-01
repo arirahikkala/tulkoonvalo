@@ -16,10 +16,14 @@
     Slider.Slider = Backbone.Model.extend({
 	// Backbone uses this to figure out where to .fetch() and .save()
 	urlRoot: "../server2/sliders/",
+	url: function() {
+	    var origUrl = Backbone.Model.prototype.url.call(this);
+	    return origUrl + (origUrl.charAt(origUrl.length - 1) == '/' ? '' : '/');
+	},
 
 	defaults: function() {
 	    return {
-		id: 0,
+		value: 0
 	    };
 	},
 

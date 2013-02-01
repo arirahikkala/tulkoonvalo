@@ -7,6 +7,8 @@
       .light-name { height: 1em; overflow-y: hidden; }
       .light-widget { margin: 1em auto 0 auto; }
       .light { float: left; width: 5em; overflow: hidden; margin: 0 5px 0 5px; text-align: center}
+      .slider-collection { float: left; }
+      .slider { float: left; margin: 1em }
     </style>
     <script type="text/javascript" src="../lib/jqueryui/js/jquery-1.7.2.min.js"></script>
     <script type="text/javascript" src="../lib/underscore.js"></script>
@@ -20,16 +22,43 @@
   <body>
     <div class="bar" id="sliders"></div> <br/> <br/>
     <div class="bar" id="sliders2"></div> <br /> <br />
-    <div id="textual"></div>
+    <input type="button" id="newslider" value="New slider" />
     <script type="text/javascript">
-      var SliderFoo = new Slider.Slider({id: 1, value: 0});
-      SliderFoo.bind ("change", function () { $("#textual").html (SliderFoo.get("value"))});
-      SliderFoo.fetch({success: function() { console.log ();
-      new Slider.SliderView ({el: $("#sliders"), model: SliderFoo});
-      new Slider.SliderView ({el: $("#sliders2"), model: SliderFoo});
+      var SliderCollection = Backbone.Collection.extend ({
+	  model: Slider.Slider,
+	  url: "../server2/sliders/",
 
-//      $("#sliders").slider ({value: 10, orientation: "vertical"});
-//each (function (i, e) { $(this).html ("foo") });
+	  initialize: function() {
+	      this.on ("add", function (c, m) { c.save()});
+	  }
+      });
+
+      var SliderCollectionView = Backbone.View.extend ({
+	  tagName: "div",
+	  className: "slider-collection",
+
+	  initialize: function() {
+	      var _this = this;
+	      this.model.on ("add", function (c, m) { _this.$el.append (new Slider.SliderView ({model: m}).$el)});
+	      this.render();
+	  },
+
+	  render: function() {
+	      console.log ("rendered");
+	      this.$el.empty();
+	      var _this = this;
+	      this.model.each (function (x) { _this.$el.append (new Slider.SliderView ({model: x}).$el)});
+	  }
+      });
+
+      var Sliders = new SliderCollection();
+      var SlidersView = new SliderCollectionView ({model: Sliders, el: $("#sliders")});
+      Sliders.on ("add", function() { console.log ("added")});
+
+      $("#newslider").bind ("click", function () { Sliders.add ({ value: 0 })});
+
+      Sliders.fetch({ success: function() { SlidersView.render();}});
+
     </script>
   </body>
 
