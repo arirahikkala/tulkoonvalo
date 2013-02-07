@@ -73,7 +73,7 @@ function getLights ($ids) {
 				$rv["groups"][] = array ("p" => $i, "c" => $group["c"]);
 		}
 	}
-	print (json_encode ($rv, JSON_PRETTY_PRINT));
+	print (json_encode ($rv));
 }
 
 
