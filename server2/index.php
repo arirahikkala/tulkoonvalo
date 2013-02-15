@@ -11,7 +11,55 @@ $app->post('/sliders/', function() { createNewSlider(); });
 */
 
 $app->get('/lights/:ids/', function($ids) { getLights($ids); });
+$app->get('/newlights/:ids/', function($ids) { newGetLights($ids); });
+$app->get('/children/:id/', function($id) { getChildren($id); });
 $app->run();
+
+function newGetLights ($ids) {
+	
+	// TODO: Delimit ids by something safer
+	$ids_array = preg_split ("/,/", $ids);
+
+	$sql = "select * from lights left join light_activations on lights.permanent_id=light_activations.id where permanent_id=?";
+
+	$lights=array();
+
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);
+
+		foreach ($ids_array as $x) {
+			$stmt->execute(array($x));
+			$lights[] = $stmt->fetchAll (PDO::FETCH_OBJ);
+		}
+		//TODO: If empty...
+	}
+	
+	catch(PDOException $e) {
+		echo '{"error":{"text":'. $e->getMessage() .'}}';
+	}
+
+	print (json_encode ($lights));
+}
+
+function getChildren ($id) {
+
+	$sql = "select * from lights where permanent_id in (select child_id from groups where parent_id=?)";
+
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);
+
+		$stmt->execute(array($id));
+		$children = $stmt->fetchAll (PDO::FETCH_OBJ);
+	}
+	
+	catch(PDOException $e) {
+		echo '{"error":{"text":'. $e->getMessage() .'}}';
+	}
+
+	print (json_encode ($children));
+} 
 
 function getLights ($ids) {
 	$foo = array ("lights" => array (
@@ -26,7 +74,7 @@ function getLights ($ids) {
 				     "isGroup" => false),
 			      array ("name" => "Aula",
 				     "id" => "3",
-				     "isGroup" => true),
+				     "isGroup  p" => true),
 			      array ("name" => "Eteinen",
 				     "id" => "4",
 				     "isGroup" => true,
@@ -149,7 +197,7 @@ function createNewSlider () {
 }
 */
 function getConnection() {
-	$dbh = new PDO("mysql:host=localhost;dbname=webdali", "ari", "foo");	
+	$dbh = new PDO("mysql:host=localhost;dbname=webdali", "root", "");	
 	$dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 	return $dbh;
 }
