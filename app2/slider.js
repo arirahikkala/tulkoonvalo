@@ -23,7 +23,8 @@
 
 	defaults: function() {
 	    return {
-		value: 0
+		value: 0,
+		timer: 7200,
 	    };
 	},
 
@@ -33,6 +34,7 @@
 	// Backbone constructs the view element (.el) with this tag and this class
 	tagName: "div",
 	className: "slider",
+	template: _.template("<div class='slider-widget' /> <input class='timer' type='text' />"),
 
 	// Backbone assigns these events automatically when the view is created
 	events: {
@@ -45,12 +47,15 @@
 	    this.model.bind("remove", this.remove, this);
 	    this.render();
 	    var _this = this;
+	    console.log(this.model.get('value'));
+	    this.updateUIFromModel();
 	},
 
 	// self-explanatory;
 	// (todo: also move over name changes to the UI)
 	updateUIFromModel: function() {
 	    this.$(".slider-widget").slider("value", this.model.get("value"));
+	    this.$(".timer").val(this.model.get("timer"));
 	},
 
 	updateModelFromUI: function(ev, ui) {
@@ -62,12 +67,7 @@
 
 	    return false;
 	},
-
-	// see http://underscorejs.org/#template for documentation on the template syntax
-//	template: _.template("<div class='slider-name'><%= name %></div>\
-//<div class='slider-widget' />"),
-	template: _.template("<div class='slider-widget' />"),
-
+	
 	// re-render the widget
 	// (note: since this is a very simple view and has no subviews, it's okay to just rerender everything)
 	// see http://ianstormtaylor.com/rendering-views-in-backbonejs-isnt-always-simple/ for some 

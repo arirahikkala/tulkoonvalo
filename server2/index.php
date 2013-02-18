@@ -33,6 +33,7 @@ function newGetLights ($ids) {
 			$lights[] = $stmt->fetchAll (PDO::FETCH_OBJ);
 		}
 		//TODO: If empty...
+
 	}
 	
 	catch(PDOException $e) {
@@ -59,7 +60,7 @@ function getChildren ($id) {
 	}
 
 	print (json_encode ($children));
-} 
+}
 
 function getLights ($ids) {
 	$foo = array ("lights" => array (
