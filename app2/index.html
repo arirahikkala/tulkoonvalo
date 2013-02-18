@@ -30,7 +30,7 @@
 	  url: "../server2/sliders/",
 
 	  initialize: function() {
-	      this.on ("add", function (c, m) { c.save()});
+	      this.on ("add", function (m, c) { c.sync()});
 	  }
       });
 
@@ -40,7 +40,7 @@
 
 	  initialize: function() {
 	      var _this = this;
-	      this.model.on ("add", function (c, m) { _this.$el.append (new Slider.SliderView ({model: m}).$el)});
+	      this.model.on ("add", function (m, c) { _this.$el.append (new Slider.SliderView ({model: m}).$el)});
 	      this.render();
 	  },
 
