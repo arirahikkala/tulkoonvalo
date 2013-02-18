@@ -11,7 +11,24 @@ $app->post('/sliders/', function() { createNewSlider(); });
 */
 
 $app->get('/lights/:ids/', function($ids) { getLights($ids); });
+$app->get('/newlights/:ids/', function($ids) { newGetLights($ids); });
 $app->run();
+
+function newGetLights($ids) {
+	$sql = "select * from lights";
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);
+		$stmt->execute();
+		$lights = $stmt->fetchAll (PDO::FETCH_OBJ);
+	}
+	
+	catch(PDOException $e) {
+		echo '{"error":{"text":'. $e->getMessage() .'}}';
+	}
+	
+	print (json_encode ($lights));
+}
 
 function getLights ($ids) {
 	$foo = array ("lights" => array (
@@ -149,7 +166,7 @@ function createNewSlider () {
 }
 */
 function getConnection() {
-	$dbh = new PDO("mysql:host=localhost;dbname=webdali", "ari", "foo");	
+	$dbh = new PDO("mysql:host=localhost;dbname=webdali", "root", "");	
 	$dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 	return $dbh;
 }
