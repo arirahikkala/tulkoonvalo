@@ -32,11 +32,13 @@
 	
 	startTimer: function() {
 			var _this = this;
+			this.set("enabled", 1);
 			
 			interval = setInterval(function() {_this.set("timer", _this.get("timer")-1)}, 1000);
 	},
 	
 	stopTimer: function() {
+			//this.set("enabled", 0);
 			clearInterval(interval);
 	},
 
@@ -46,13 +48,14 @@
 	// Backbone constructs the view element (.el) with this tag and this class
 	tagName: "div",
 	className: "slider",
-	template: _.template("<div class='slider-widget' /><input class='timer-add' type='button' value='+' /><br /><input class='timer' type='text' /><br /><input class='timer-sub' type='button' value='-' /><br /><input class='onoff' type='button' value='On/Off' />"),
+	template: _.template("<div class='slider-widget' /><input class='timer-add' type='button' value='+' /><br /><input class='timer' type='text' /><br /><input class='timer-sub' type='button' value='-' /><br /><input class='onoff' type='button' value='Off' />"),
 
 	// Backbone assigns these events automatically when the view is created
 	events: {
 	    "slidechange .slider-widget" : "sliderChange",
 	    "click .timer-add" : function () {this.timerChange(15)},
 	    "click .timer-sub" : function () {this.timerChange(-15)},
+	    "click .onoff" : function () {this.model.stopTimer()},
 	},
 
 	// Backbone calls this automatically when creating the view
@@ -84,10 +87,13 @@
 	},
 	
 	timerToggle: function() {
+	
 	},
 	
 	sliderChange: function(ev, ui) {
-			timerToggle(1);
+				if ((this.model.get("enabled"))==0){
+					this.model.startTimer();
+	    			}
 			
 	    this.model.set("value", this.$(".slider-widget").slider("option", "value"));
 	    // if originalEvent is undefined, the event was created programmatically
