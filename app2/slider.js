@@ -12,7 +12,7 @@
     } else {
 	root['Slider'] = Slider;
     }
-
+    
     Slider.Slider = Backbone.Model.extend({
 	// Backbone uses this to figure out where to .fetch() and .save()
 	urlRoot: "../server2/sliders/",
@@ -22,10 +22,22 @@
 	},
 
 	defaults: function() {
-	    return {
-		value: 0,
-		timer: 7200,
-	    };
+	  return {
+			value: 0,
+			timer: 7200,
+			timerDefault: 7200,
+			enabled: 0,
+	  };
+	},
+	
+	startTimer: function() {
+			var _this = this;
+			
+			interval = setInterval(function() {_this.set("timer", _this.get("timer")-1)}, 1000);
+	},
+	
+	stopTimer: function() {
+			clearInterval(interval);
 	},
 
     });
@@ -34,11 +46,13 @@
 	// Backbone constructs the view element (.el) with this tag and this class
 	tagName: "div",
 	className: "slider",
-	template: _.template("<div class='slider-widget' /> <input class='timer' type='text' />"),
+	template: _.template("<div class='slider-widget' /><input class='timer-add' type='button' value='+' /><br /><input class='timer' type='text' /><br /><input class='timer-sub' type='button' value='-' /><br /><input class='onoff' type='button' value='On/Off' />"),
 
 	// Backbone assigns these events automatically when the view is created
 	events: {
-	    "slidechange .slider-widget" : "updateModelFromUI",
+	    "slidechange .slider-widget" : "sliderChange",
+	    "click .timer-add" : function () {this.timerChange(15)},
+	    "click .timer-sub" : function () {this.timerChange(-15)},
 	},
 
 	// Backbone calls this automatically when creating the view
@@ -57,13 +71,29 @@
 	    this.$(".slider-widget").slider("value", this.model.get("value"));
 	    this.$(".timer").val(this.model.get("timer"));
 	},
-
-	updateModelFromUI: function(ev, ui) {
+	
+	timerChange: function(value) {
+	    var newTime = this.model.get("timer") + value;
+	    this.model.set("timer", newTime);
+	},
+	
+	timerParse: function() {
+	},
+	
+	timerFormat: function() {
+	},
+	
+	timerToggle: function() {
+	},
+	
+	sliderChange: function(ev, ui) {
+			timerToggle(1);
+			
 	    this.model.set("value", this.$(".slider-widget").slider("option", "value"));
 	    // if originalEvent is undefined, the event was created programmatically
 	    // thus, this ensures that we don't loop
 	    if (ev.originalEvent !== undefined)
-		this.model.save();
+				this.model.save();
 
 	    return false;
 	},

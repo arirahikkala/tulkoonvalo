@@ -9,7 +9,10 @@
       .light { float: left; width: 5em; overflow: hidden; margin: 0 5px 0 5px; text-align: center}
       .slider-collection { float: left; }
       .slider { float: left; margin: 1em; border: 2px solid red; padding: 25px; }
-      .timer { margin-top: 1em; }
+      .slider-widget { margin:auto; }
+      .timer { width: 3em; font-size: 1em;}
+      .timer-add { margin-top: 1em; }
+      .onoff { margin-top: 1em;}
 
     </style>
     <script type="text/javascript" src="../lib/jqueryui/js/jquery-1.7.2.min.js"></script>
@@ -23,7 +26,7 @@
   </head>
   <body>
     <div class="bar" id="sliders"></div> <br/> <br/>
-    <div class="bar" id="sliders2"></div> <br /> <br />
+    <div class="slider" id="exampleslider"></div> <br /> <br />
     <input type="button" id="newslider" value="New slider" />
     <script type="text/javascript">
       var SliderCollection = Backbone.Collection.extend ({
@@ -42,6 +45,7 @@
 	  initialize: function() {
 	      var _this = this;
 	      this.model.on ("add", function (m, c) { _this.$el.append (new Slider.SliderView ({model: m}).$el)});
+	      //this.model.on ("timerAdd",
 	      this.render();
 	  },
 
@@ -52,11 +56,15 @@
 	      this.model.each (function (x) { _this.$el.append (new Slider.SliderView ({model: x}).$el)});
 	  }
       });
-
+			var Foo = new Slider.Slider();
+			Foo.startTimer();
+			var fooView = new Slider.SliderView({model: Foo, el: $("#exampleslider")});
+			
       var Sliders = new SliderCollection();
       var SlidersView = new SliderCollectionView ({model: Sliders, el: $("#sliders")});
+      
       Sliders.on ("add", function() { console.log ("added")});
-
+			
       $("#newslider").bind ("click", function () { Sliders.add ({ value: 0 })});
 			
       Sliders.fetch({ success: function() { SlidersView.render();}});
