@@ -55,6 +55,10 @@ function getChildren ($id) {
 		$children = $stmt->fetchAll (PDO::FETCH_OBJ);
 	}
 	
+	function getAllChildren ($id) {
+	
+	}
+	
 	catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}';
 	}

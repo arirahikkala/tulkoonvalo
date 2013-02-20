@@ -24,7 +24,7 @@
 	defaults: function() {
 	  return {
 			value: 0,
-			timer: 7200,
+			timer: 1000,
 			timerDefault: 7200,
 			enabled: 0,
 	  };
@@ -35,7 +35,8 @@
 			console.log("timer started")
 			this.set("enabled", 1);
 			
-			interval = setInterval(function() {_this.set("timer", _this.get("timer")-1)}, 1000);
+			// TODO: -60 here is for testing (should be -1)
+			interval = setInterval(function() {_this.set("timer", _this.get("timer")-60)}, 1000);
 	},
 	
 	stopTimer: function() {
@@ -55,8 +56,8 @@
 	// Backbone assigns these events automatically when the view is created
 	events: {
 	    "slidechange .slider-widget" : "sliderChange",
-	    "click .timer-add" : function () {this.timerChange(15)},
-	    "click .timer-sub" : function () {this.timerChange(-15)},
+	    "click .timer-add" : function () {this.timerChange(900)},
+	    "click .timer-sub" : function () {this.timerChange(-900)},
 	    "click .onoff" : function () {this.model.stopTimer()},
 	},
 
@@ -76,6 +77,7 @@
 			// Disable/enable UI elements and set timer value
 			if (this.model.get("enabled") == 0) {
 				disabled = true;
+				this.model.set("timer", this.model.get("timerDefault"));
 				var timerValue = this.model.get("timerDefault");
 			}
 			else {
@@ -88,7 +90,7 @@
 			this.$(".timer-add").attr("disabled", disabled);
 			this.$(".timer-sub").attr("disabled", disabled);
 			
-			this.$(".timer").val(timerValue);
+			this.timerFormat(timerValue);
 	},
 	
 	updateSliderFromModel: function() {
@@ -96,14 +98,40 @@
 	},
 	
 	timerChange: function(value) {
-	    var newTime = this.model.get("timer") + value;
-	    this.model.set("timer", newTime);
+			console.log(this.model.get("timer"));
+			if (this.timerEndCheck() == true) {
+	    	newTime = 0;
+	    	this.model.set("timer", newTime);
+			}
+	    else {
+	      var newTime =  this.model.get("timer") + value;
+	    	this.model.set("timer", newTime);
+	    }
+	},
+	
+	timerEndCheck: function() {
+	    if (this.model.get("timer") <= 900) {
+	    	this.model.stopTimer();
+	    	return true;
+	    }
+	    else
+	      return false;
 	},
 	
 	timerParse: function() {
 	},
 	
-	timerFormat: function() {
+	timerFormat: function(timerValue) {
+			var hours = Math.floor(timerValue/3600);
+			var minutes = Math.floor((timerValue % 3600) / 60);
+			
+			// Add leading '0'
+			if (hours < 10)
+				hours = "0"+hours.toString();
+			if (minutes < 10)
+				minutes = "0"+minutes.toString();
+				
+			this.$(".timer").val(hours+":"+minutes);
 	},
 	
 	timerToggle: function() {
