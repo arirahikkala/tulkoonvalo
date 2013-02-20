@@ -32,13 +32,15 @@
 	
 	startTimer: function() {
 			var _this = this;
+			console.log("timer started")
 			this.set("enabled", 1);
 			
 			interval = setInterval(function() {_this.set("timer", _this.get("timer")-1)}, 1000);
 	},
 	
 	stopTimer: function() {
-			//this.set("enabled", 0);
+			console.log("timer stopped");
+			this.set("enabled", 0);
 			clearInterval(interval);
 	},
 
@@ -48,7 +50,7 @@
 	// Backbone constructs the view element (.el) with this tag and this class
 	tagName: "div",
 	className: "slider",
-	template: _.template("<div class='slider-widget' /><input class='timer-add' type='button' value='+' /><br /><input class='timer' type='text' /><br /><input class='timer-sub' type='button' value='-' /><br /><input class='onoff' type='button' value='Off' />"),
+	template: _.template("<div class='widget-header' /><div class='slider-widget' /><input class='timer-add' type='button' value='+' /><br /><input class='timer' type='text' readonly='readonly' /><br /><input class='timer-sub' type='button' value='-' /><br /><input class='onoff' type='button' value='Off' />"),
 
 	// Backbone assigns these events automatically when the view is created
 	events: {
@@ -64,15 +66,33 @@
 	    this.model.bind("remove", this.remove, this);
 	    this.render();
 	    var _this = this;
-	    console.log(this.model.get('value'));
 	    this.updateUIFromModel();
 	},
 
 	// self-explanatory;
 	// (todo: also move over name changes to the UI)
 	updateUIFromModel: function() {
-	    this.$(".slider-widget").slider("value", this.model.get("value"));
-	    this.$(".timer").val(this.model.get("timer"));
+	
+			// Disable/enable UI elements and set timer value
+			if (this.model.get("enabled") == 0) {
+				disabled = true;
+				var timerValue = this.model.get("timerDefault");
+			}
+			else {
+				disabled = false;
+				var timerValue = this.model.get("timer");
+			}
+			this.$(".widget-header").html("Header");
+			
+			this.$(".timer").attr("disabled", disabled);
+			this.$(".timer-add").attr("disabled", disabled);
+			this.$(".timer-sub").attr("disabled", disabled);
+			
+			this.$(".timer").val(timerValue);
+	},
+	
+	updateSliderFromModel: function() {
+		this.$(".slider-widget").slider("value", this.model.get("value"));
 	},
 	
 	timerChange: function(value) {
@@ -91,9 +111,8 @@
 	},
 	
 	sliderChange: function(ev, ui) {
-				if ((this.model.get("enabled"))==0){
+			if (this.model.get("enabled") == 0)
 					this.model.startTimer();
-	    			}
 			
 	    this.model.set("value", this.$(".slider-widget").slider("option", "value"));
 	    // if originalEvent is undefined, the event was created programmatically
