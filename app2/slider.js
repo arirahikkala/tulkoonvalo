@@ -24,19 +24,22 @@
 	defaults: function() {
 	  return {
 			value: 0,
-			timer: 1000,
+			timer: 7200,
 			timerDefault: 7200,
+			timerMax: 86400, // 24h
 			enabled: 0,
 	  };
 	},
 	
 	startTimer: function() {
 			var _this = this;
-			console.log("timer started")
+			console.log("timer started",_this.get("timer"));
 			this.set("enabled", 1);
 			
-			// TODO: -60 here is for testing (should be -1)
-			interval = setInterval(function() {_this.set("timer", _this.get("timer")-60)}, 1000);
+			if (_this.get("timer") > 0)
+				interval = setInterval(function() {_this.set("timer", _this.get("timer")-1)}, 1000);
+			else
+				this.stopTimer();
 	},
 	
 	stopTimer: function() {
@@ -90,55 +93,66 @@
 			this.$(".timer-add").attr("disabled", disabled);
 			this.$(".timer-sub").attr("disabled", disabled);
 			
-			this.timerFormat(timerValue);
+			console.log(this.model.get("timer"));
+			this.timerFormat(this.timerEndCheck(-1));
 	},
 	
 	updateSliderFromModel: function() {
 		this.$(".slider-widget").slider("value", this.model.get("value"));
 	},
 	
-	timerChange: function(value) {
-			console.log(this.model.get("timer"));
-			if (this.timerEndCheck() == true) {
-	    	newTime = 0;
-	    	this.model.set("timer", newTime);
-			}
-	    else {
-	      var newTime =  this.model.get("timer") + value;
-	    	this.model.set("timer", newTime);
-	    }
+	// Change timer from buttons
+	timerChange: function(timeAdd) {
+			var newTime = this.timerEndCheck(timeAdd);
+			// TODO: Round the added time to the nearest 15min?
+		  this.model.set("timer", newTime);
 	},
 	
-	timerEndCheck: function() {
-	    if (this.model.get("timer") <= 900) {
-	    	this.model.stopTimer();
-	    	return true;
-	    }
-	    else
-	      return false;
+	// Check if given time can be subtracted from timer
+	timerEndCheck: function(timeValue) {
+			var newTime = this.model.get("timer") + timeValue;
+			
+			// Lower time limit
+	    if (newTime < 0) {
+		    	this.model.stopTimer();
+	  	  	return 0;
+	  	}
+	  	// Upper time limit
+	    else if (newTime > this.model.get("timerMax"))
+	    	return this.model.get("timerMax");
+	    	
+	  	return newTime;
 	},
 	
 	timerParse: function() {
 	},
 	
+	// Format the time on UI
 	timerFormat: function(timerValue) {
 			var hours = Math.floor(timerValue/3600);
 			var minutes = Math.floor((timerValue % 3600) / 60);
+
+			// TODO: Additional proposal for UI (add red color, center font, message when time's up etc.)
+			// Show second countdown when <1 min time
+			if (timerValue < 60) {
+				if (timerValue < 10)
+					timerValue = "0"+timerValue.toString();
+				this.$(".timer").val(timerValue);
+			}
 			
-			// Add leading '0'
-			if (hours < 10)
-				hours = "0"+hours.toString();
-			if (minutes < 10)
-				minutes = "0"+minutes.toString();
+			else {	
+				// Add leading '0'
+				if (hours < 10)
+					hours = "0"+hours.toString();
+				if (minutes < 10)
+					minutes = "0"+minutes.toString();
 				
-			this.$(".timer").val(hours+":"+minutes);
-	},
-	
-	timerToggle: function() {
-	
+				this.$(".timer").val(hours+":"+minutes);
+			}
 	},
 	
 	sliderChange: function(ev, ui) {
+			// If timer not enabled yet do it now
 			if (this.model.get("enabled") == 0)
 					this.model.startTimer();
 			
