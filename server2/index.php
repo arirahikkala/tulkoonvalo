@@ -26,15 +26,14 @@ function getObjectData ($id) {
 	
 	// Get two levels of children
 	foreach ($children as $child) {
-		print(json_encode($child));
 		
 		// Child is a group
 		if ($child->isGroup == 1) {
-			$subChildren = getChildren(array_search("permament_id", $child));
+			$subChildren = getChildren($child->permanent_id);
 			
 			// Does the child have children?
 			if (count($subChildren)) {
-				$child["showArrow"] = 1;
+				$child -> showArrow = 1;
 			}
 			else {
 				// Remove $child (don't display at all)
