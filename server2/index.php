@@ -55,9 +55,9 @@ function getChildren ($id) {
 		$children = $stmt->fetchAll (PDO::FETCH_OBJ);
 	}
 	
-	function getAllChildren ($id) {
+/*	function getAllChildren ($id) {
 	
-	}
+	}*/
 	
 	catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}';
@@ -202,7 +202,8 @@ function createNewSlider () {
 }
 */
 function getConnection() {
-	$dbh = new PDO("mysql:host=localhost;dbname=webdali", "root", "");	
+	require ("config.php");
+	$dbh = new PDO("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass);	
 	$dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 	return $dbh;
 }
