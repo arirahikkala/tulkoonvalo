@@ -17,10 +17,12 @@
 	// Backbone uses this to figure out where to .fetch() and .save()
 	urlRoot: "../server2/sliders/",
 	url: function() {
-	    var origUrl = Backbone.Model.prototype.url.call(this);
-	    return origUrl + (origUrl.charAt(origUrl.length - 1) == '/' ? '' : '/');
+	    //var origUrl = Backbone.Model.prototype.url.call(this);
+	    //return origUrl + (origUrl.charAt(origUrl.length - 1) == '/' ? '' : '/');
+	    return "../server2/data/1/"
 	},
-
+	id: 1, // TODO: Handle me later
+	
 	defaults: function() {
 	  return {
 			value: 0,
@@ -29,9 +31,11 @@
 			timerMax: 86400, // 24h
 			enabled: 0,
 	  };
+	
 	},
 	
 	startTimer: function() {
+			console.log(this.fetch());
 			var _this = this;
 			console.log("timer started",_this.get("timer"));
 			this.set("enabled", 1);
@@ -85,7 +89,7 @@
 			}
 			else {
 				disabled = false;
-				var timerValue = this.model.get("timer");
+				var timerValue = this.model.get("timerDefault");
 			}
 			this.$(".widget-header").html("Header");
 			
@@ -93,7 +97,7 @@
 			this.$(".timer-add").attr("disabled", disabled);
 			this.$(".timer-sub").attr("disabled", disabled);
 			
-			console.log(this.model.get("timer"));
+			//console.log(this.model.get("timer"));
 			this.timerFormat(this.timerEndCheck(-1));
 	},
 	

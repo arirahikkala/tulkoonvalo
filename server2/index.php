@@ -10,13 +10,49 @@ $app->put('/sliders/:id/', function($id) { updateSlider($id); });
 $app->post('/sliders/', function() { createNewSlider(); });
 */
 
+$app->get('/data/:id/', function($id) { getObjectData($id); });
 $app->get('/lights/:ids/', function($ids) { getLights($ids); });
 $app->get('/newlights/:ids/', function($ids) { newGetLights($ids); });
 $app->get('/children/:id/', function($id) { getChildren($id); });
 $app->run();
 
-function newGetLights ($ids) {
+// Get light/group data and children
+function getObjectData ($id) {
+	$retArray = array();
+	$retArray[] = newGetLights($id);
 	
+	$children = getChildren($id);
+	print($children[0]->isGroup);
+	
+	// Get two levels of children
+	foreach ($children as $child) {
+		print(json_encode($child));
+		
+		// Child is a group
+		if ($child->isGroup == 1) {
+			$subChildren = getChildren(array_search("permament_id", $child));
+			
+			// Does the child have children?
+			if (count($subChildren)) {
+				$child["showArrow"] = 1;
+			}
+			else {
+				// Remove $child (don't display at all)
+				unset($children[$child]);
+			}
+		}
+		// Child is light
+		else {
+			$child -> showArrow = 0;
+		}
+		
+	}
+	print(json_encode($children));
+	$retArray[] = getChildren($id);
+	//print (json_encode($retArray));
+}
+
+function newGetLights ($ids) {
 	// TODO: Delimit ids by something safer
 	$ids_array = preg_split ("/,/", $ids);
 
@@ -40,13 +76,13 @@ function newGetLights ($ids) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}';
 	}
 
-	print (json_encode ($lights));
+	return ($lights);
 }
 
 function getChildren ($id) {
 
 	$sql = "select * from lights where permanent_id in (select child_id from groups where parent_id=?)";
-
+	
 	try {
 		$db = getConnection();
 		$stmt = $db->prepare($sql);
@@ -63,7 +99,7 @@ function getChildren ($id) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}';
 	}
 
-	print (json_encode ($children));
+	return ($children);
 }
 
 function getLights ($ids) {
