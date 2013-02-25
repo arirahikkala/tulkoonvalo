@@ -31,11 +31,31 @@
     <script type="text/javascript">
       var SliderCollection = Backbone.Collection.extend ({
 	  model: Slider.Slider,
-	  url: "../server2/sliders/",
-
+	  lightIds : [], // TODO: Proper way of doing things?
+	  
+	  url: function() {
+	  	return "../server2/data/"+this.lightIds
+		},
+		
 	  initialize: function() {
 	      //this.on ("add", function (m, c) { c.sync()});
-	  }
+	  },
+	  
+	  newSlider: function(lightList) {
+	  	console.log("NEWSDLIDER", this);
+		  this.lightIds = lightList;
+		  this.fetch({ success: function() { console.log("Fetch done!"); } });
+	  },
+	  
+	  parse: function(response) {
+	  	// TODO: child button, element insert
+	  	for (var i=0; i< response.length; i++) {
+	  		curLight = response[i][0];
+		  	this.add ({ id: curLight["permament_id"], header: curLight["name"], 
+		  	value: curLight["current_level"], children: response[i][1], collection: this });
+		  }
+	  },
+	  
       });
 
       var SliderCollectionView = Backbone.View.extend ({
@@ -45,7 +65,6 @@
 	  initialize: function() {
 	      var _this = this;
 	      this.model.on ("add", function (m, c) { _this.$el.append (new Slider.SliderView ({model: m}).$el)});
-	      //this.model.on ("timerAdd",
 	      this.render();
 	  },
 
@@ -61,14 +80,14 @@
 			var fooView = new Slider.SliderView({model: Foo, el: $("#exampleslider")});
 			
       var Sliders = new SliderCollection();
-      var SlidersView = new SliderCollectionView ({model: Sliders, el: $("#sliders")});
+      var SlidersView = new SliderCollectionView ({ model: Sliders, el: $("#sliders") });
       
       Sliders.on ("add", function() { console.log ("added")});
 			
-      $("#newslider").bind ("click", function () { Sliders.add ({ value: 0 })});
+      //$("#newslider").bind ("click", function () { Sliders.add ({ value: 0 })});
+			$("#newslider").bind ("click", function () { Sliders.newSlider([6]); });
 			
-      Sliders.fetch({ success: function() { SlidersView.render();}});
-
+			Sliders.newSlider([6,4]);
     </script>
   </body>
 

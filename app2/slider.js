@@ -16,12 +16,12 @@
     Slider.Slider = Backbone.Model.extend({
 	// Backbone uses this to figure out where to .fetch() and .save()
 	urlRoot: "../server2/sliders/",
+	
 	url: function() {
-	    //var origUrl = Backbone.Model.prototype.url.call(this);
-	    //return origUrl + (origUrl.charAt(origUrl.length - 1) == '/' ? '' : '/');
-	    return "../server2/data/1/"
+	    var origUrl = Backbone.Model.prototype.url.call(this);
+	    return origUrl + (origUrl.charAt(origUrl.length - 1) == '/' ? '' : '/');
 	},
-	id: 1, // TODO: Handle me later
+	id: 0, // TODO: Handle me later
 	
 	defaults: function() {
 	  return {
@@ -30,12 +30,15 @@
 			timerDefault: 7200,
 			timerMax: 86400, // 24h
 			enabled: 0,
+			header: "",
+			children: [],
+			showChildren: 0,
+			collection: null,
 	  };
 	
 	},
 	
 	startTimer: function() {
-			console.log(this.fetch());
 			var _this = this;
 			console.log("timer started",_this.get("timer"));
 			this.set("enabled", 1);
@@ -58,7 +61,7 @@
 	// Backbone constructs the view element (.el) with this tag and this class
 	tagName: "div",
 	className: "slider",
-	template: _.template("<div class='widget-header' /><div class='slider-widget' /><input class='timer-add' type='button' value='+' /><br /><input class='timer' type='text' readonly='readonly' /><br /><input class='timer-sub' type='button' value='-' /><br /><input class='onoff' type='button' value='Off' />"),
+	template: _.template("<div class='widget-header' /><div class='slider-widget' /><input class='timer-add' type='button' value='+' /><br /><input class='timer' type='text' readonly='readonly' /><input class='show-children' type='button' value='=>' /><br /><input class='timer-sub' type='button' value='-' /><br /><input class='onoff' type='button' value='Off' />"),
 
 	// Backbone assigns these events automatically when the view is created
 	events: {
@@ -66,8 +69,9 @@
 	    "click .timer-add" : function () {this.timerChange(900)},
 	    "click .timer-sub" : function () {this.timerChange(-900)},
 	    "click .onoff" : function () {this.model.stopTimer()},
+	    "click .show-children": function () { this.toggleChildren() },
 	},
-
+	
 	// Backbone calls this automatically when creating the view
 	initialize: function() {
 	    this.model.bind("change", this.updateUIFromModel, this);
@@ -75,6 +79,19 @@
 	    this.render();
 	    var _this = this;
 	    this.updateUIFromModel();
+	},
+	
+	toggleChildren: function() {
+		// TODO: Remember children, don't fetch again
+		// TODO: Remove children
+		console.log(this.model.get("showChildren"));
+		if (this.model.get("showChildren") == 0) {
+			this.model.set("showChildren", 1);
+			this.model.get("collection").newSlider(this.model.get("children"));
+		}
+		else {
+			this.model.set("showChildren", 0);
+		}
 	},
 
 	// self-explanatory;
@@ -91,8 +108,6 @@
 				disabled = false;
 				var timerValue = this.model.get("timerDefault");
 			}
-			this.$(".widget-header").html("Header");
-			
 			this.$(".timer").attr("disabled", disabled);
 			this.$(".timer-add").attr("disabled", disabled);
 			this.$(".timer-sub").attr("disabled", disabled);
@@ -176,6 +191,7 @@
 	render: function () {
 	    this.$el.html (this.template ({name: this.model.get('name')}));
 	    this.$(".slider-widget").slider({orientation: "vertical", value: this.model.get('value')});
+			this.$(".widget-header").html(this.model.get("header")); // TODO: This OK here?
 	    return this;
 	},
 	

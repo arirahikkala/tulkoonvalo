@@ -17,38 +17,54 @@ $app->get('/children/:id/', function($id) { getChildren($id); });
 $app->run();
 
 // Get light/group data and children
-function getObjectData ($id) {
+// TODO: Need support for multiple IDs
+function getObjectData ($ids) {
+	$ids_array = preg_split ("/,/", $ids);
+	
 	$retArray = array();
-	$retArray[] = newGetLights($id);
+	$counter = 0;
 	
-	$children = getChildren($id);
-	print($children[0]->isGroup);
-	
-	// Get two levels of children
-	foreach ($children as $child) {
+	foreach ($ids_array as $id) {
 		
-		// Child is a group
-		if ($child->isGroup == 1) {
-			$subChildren = getChildren($child->permanent_id);
+		$retArray[$counter] = newGetLights($id);
+		$children = getChildren($id);
+		$childrenIds = array();
+		
+		if (count($children)) {
+			// Extract children IDs
+			foreach ($children as $child) {
+				$childrenIds[] = $child->permanent_id;
+			}
+		}
+		$retArray[$counter][] = $childrenIds;
+		/*
+		// Get two levels of children
+		foreach ($children as $child) {
 			
-			// Does the child have children?
-			if (count($subChildren)) {
-				$child -> showArrow = 1;
+			// Child is a group
+			if ($child->isGroup == 1) {
+				$subChildren = getChildren($child->permanent_id);
+				$childrenIds = array();
+				
+				// Does the child have children?
+				if (count($subChildren)) {
+					//$child -> showArrow = 1;
+				}
+				else {
+					// Remove $child (don't display at all)
+					unset($children[$child]);
+				}
 			}
-			else {
-				// Remove $child (don't display at all)
-				unset($children[$child]);
-			}
+			// Child is light
+			//else {
+			//	$child -> showArrow = 0;
+			//}
 		}
-		// Child is light
-		else {
-			$child -> showArrow = 0;
-		}
-		
+		*/
+		//$retArray[$counter][] = getChildren($id);
+		$counter += 1;
 	}
-	print(json_encode($children));
-	$retArray[] = getChildren($id);
-	//print (json_encode($retArray));
+	print(json_encode($retArray));
 }
 
 function newGetLights ($ids) {
@@ -65,7 +81,7 @@ function newGetLights ($ids) {
 
 		foreach ($ids_array as $x) {
 			$stmt->execute(array($x));
-			$lights[] = $stmt->fetchAll (PDO::FETCH_OBJ);
+			$lights = $stmt->fetchAll (PDO::FETCH_OBJ);
 		}
 		//TODO: If empty...
 
