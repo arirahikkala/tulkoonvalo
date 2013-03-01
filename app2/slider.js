@@ -32,7 +32,8 @@
 			enabled: 0,
 			header: "",
 			children: [],
-			showChildren: 0,
+			showChildren: false,
+			childrenFetched: false,
 			collection: null,
 	  };
 	
@@ -61,7 +62,20 @@
 	// Backbone constructs the view element (.el) with this tag and this class
 	tagName: "div",
 	className: "slider",
-	template: _.template("<div class='widget-header' /><div class='slider-widget' /><input class='timer-add' type='button' value='+' /><br /><input class='timer' type='text' readonly='readonly' /><input class='show-children' type='button' value='=>' /><br /><input class='timer-sub' type='button' value='-' /><br /><input class='onoff' type='button' value='Off' />"),
+	
+	/*var arrowCode: function() {
+		if (this.model.get("children").length > 0)
+			arrowCode = "<input class='timer-sub' type='button' value='-' />";
+		else arrowCode = "";
+	},*/
+
+	
+	template: _.template("<div class='widget-header' /><div class='slider-widget' />\
+	<input class='timer-add' type='button' value='+' /><br />\
+	<input class='timer' type='text' readonly='readonly' />\
+	<input class='show-children' type='button' value='=>' /><br />\
+	<input class='timer-sub' type='button' value='-' /><br />\
+	<input class='onoff' type='button' value='Off' />"),
 
 	// Backbone assigns these events automatically when the view is created
 	events: {
@@ -79,20 +93,36 @@
 	    this.render();
 	    var _this = this;
 	    this.updateUIFromModel();
-	},
+		},
 	
 	toggleChildren: function() {
 		// TODO: Remember children, don't fetch again
 		// TODO: Remove children
-		console.log(this.model.get("showChildren"));
-		if (this.model.get("showChildren") == 0) {
-			this.model.set("showChildren", 1);
-			this.model.get("collection").newSlider(this.model.get("children"));
+			
+		// Fetch children if not done so yet
+		if (this.model.get("childrenFetched") == false) {
+			this.model.set("childrenFetched", true);
+			this.model.get("collection").newSlider(this.model.get("children"), this.$el);
+		}
+		
+		// TODO: Don't show all children when opening
+		// Do the actual show/hide
+		var elIndex = this.$el.index()+1;
+		if (this.model.get("showChildren") == true) {
+			this.model.set("showChildren", false);
+				for (var i=1; i<=this.model.get("children").length; i++) {
+					$("div .slider:nth-child("+(elIndex+i)+")").hide(300);
+				}
 		}
 		else {
-			this.model.set("showChildren", 0);
+			this.model.set("showChildren", true);
+			for (var i=1; i<=this.model.get("children").length; i++) {
+				$("div .slider:nth-child("+(elIndex+i)+")").show(300);
+			}
 		}
 	},
+
+
 
 	// self-explanatory;
 	// (todo: also move over name changes to the UI)

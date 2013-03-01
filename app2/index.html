@@ -8,7 +8,7 @@
       .light-widget { margin: 1em auto 0 auto; }
       .light { float: left; width: 5em; overflow: hidden; margin: 0 5px 0 5px; text-align: center}
       .slider-collection { float: left; }
-      .slider { float: left; margin: 1em; border: 2px solid red; padding: 25px; }
+      .slider { float: left; margin: 0em; border: 2px solid red; padding: 25px; }
       .slider-widget { margin:auto; }
       .timer { width: 3em; font-size: 1em;}
       .timer-add { margin-top: 1em; }
@@ -26,37 +26,58 @@
   </head>
   <body>
     <div class="bar" id="sliders"></div> <br/> <br/>
-    <div class="slider" id="exampleslider"></div> <br /> <br />
+    <div class="sliderX" id="examplesliderX"></div> <br /> <br />
     <input type="button" id="newslider" value="New slider" />
     <script type="text/javascript">
-      var SliderCollection = Backbone.Collection.extend ({
-	  model: Slider.Slider,
-	  lightIds : [], // TODO: Proper way of doing things?
+    var SliderCollection = Backbone.Collection.extend ({
+	  	model: Slider.Slider,
+	  	lightIds : [],
+	  	parentEl: null,
 	  
-	  url: function() {
-	  	return "../server2/data/"+this.lightIds
-		},
+	  	url: function() {
+	  		return "../server2/data/"+this.lightIds
+			},
 		
-	  initialize: function() {
-	      //this.on ("add", function (m, c) { c.sync()});
-	  },
+	  	initialize: function() {
+	    	//this.on ("add", function (m, c) { c.sync()});
+	  	},
 	  
-	  newSlider: function(lightList) {
-	  	console.log("NEWSDLIDER", this);
-		  this.lightIds = lightList;
-		  this.fetch({ success: function() { console.log("Fetch done!"); } });
-	  },
+	  	newSlider: function(lightList, parentEl) {
+		  	this.lightIds = lightList;
+		  	
+		  	// No parents in first creation
+		  	if (parentEl)
+		  		this.parentEl = parentEl;
+		  		
+		  	this.fetch({ success: function() { console.log("Fetch done!"); } });
+	  	},
 	  
-	  parse: function(response) {
-	  	// TODO: child button, element insert
-	  	for (var i=0; i< response.length; i++) {
-	  		curLight = response[i][0];
-		  	this.add ({ id: curLight["permament_id"], header: curLight["name"], 
-		  	value: curLight["current_level"], children: response[i][1], collection: this });
-		  }
-	  },
+	  	parse: function(response) {
+	  		// TODO: child button, element insert
+	  		for (var i=0; i< response.length; i++) {
+	  			curLight = response[i][0];
+		  		this.add ({ id: curLight["permanent_id"], header: curLight["name"], 
+		  		value: curLight["current_level"], children: response[i][1], collection: this });
+
+					// Put children into right places
+					if (this.parentEl) {
+			  		var childEl = $("div .slider:last");
+			  		childEl.hide(); // TODO: Hide when creating not here
+			  		childEl.show(300); // TODO: lol
+			  		this.parentEl.after(childEl);
+					}
+		  	}
+
+	 		},
 	  
-      });
+	  	// Show/hide given element
+			showChildren: function(ids, parentEl, show) {
+				for (var i=0; i<ids.length; i++) {
+					console.log(i);
+				}
+			},
+	  
+		});
 
       var SliderCollectionView = Backbone.View.extend ({
 	  tagName: "div",
@@ -75,9 +96,9 @@
 	      this.model.each (function (x) { _this.$el.append (new Slider.SliderView ({model: x}).$el)});
 	  }
       });
-			var Foo = new Slider.Slider();
-			Foo.startTimer();
-			var fooView = new Slider.SliderView({model: Foo, el: $("#exampleslider")});
+			//var Foo = new Slider.Slider();
+			//Foo.startTimer();
+			//var fooView = new Slider.SliderView({model: Foo, el: $("#exampleslider")});
 			
       var Sliders = new SliderCollection();
       var SlidersView = new SliderCollectionView ({ model: Sliders, el: $("#sliders") });
@@ -87,7 +108,7 @@
       //$("#newslider").bind ("click", function () { Sliders.add ({ value: 0 })});
 			$("#newslider").bind ("click", function () { Sliders.newSlider([6]); });
 			
-			Sliders.newSlider([6,4]);
+			Sliders.newSlider([6,4], null);
     </script>
   </body>
 
