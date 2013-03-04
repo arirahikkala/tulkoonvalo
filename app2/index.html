@@ -53,21 +53,32 @@
 	  	},
 	  
 	  	parse: function(response) {
-	  		// TODO: child button, element insert
+	  		var childWrap = null;
 	  		for (var i=0; i< response.length; i++) {
+	  		
+	  			// TODO: Create a wrapper for the initial sliders too
+	  			// Create a new slider
 	  			curLight = response[i][0];
 		  		this.add ({ id: curLight["permanent_id"], header: curLight["name"], 
 		  		value: curLight["current_level"], children: response[i][1], collection: this });
 
-					// Put children into right places
 					if (this.parentEl) {
-			  		var childEl = $("div .slider:last");
-			  		childEl.hide(); // TODO: Hide when creating not here
-			  		childEl.show(300); // TODO: lol
-			  		this.parentEl.after(childEl);
+						// Create an element for children
+						if (! childWrap) {
+							childWrap = $("<div class='bar' />");
+							this.parentEl.$el.after(childWrap);
+							this.parentEl.model.set("childElement", childWrap);
+						}
+						// Insert the child into the element
+			  		var childEl = $(".slider:last");
+			  		console.log(childEl, childWrap);
+			  		childWrap.append(childEl);
 					}
 		  	}
-
+		  	if (childWrap) {
+				  childWrap.hide();
+				  childWrap.show("fade", 300);
+				}
 	 		},
 	  
 	  	// Show/hide given element
@@ -108,7 +119,7 @@
       //$("#newslider").bind ("click", function () { Sliders.add ({ value: 0 })});
 			$("#newslider").bind ("click", function () { Sliders.newSlider([6]); });
 			
-			Sliders.newSlider([6,4], null);
+			Sliders.newSlider([6,1], null);
     </script>
   </body>
 

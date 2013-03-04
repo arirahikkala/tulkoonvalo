@@ -34,6 +34,7 @@
 			children: [],
 			showChildren: false,
 			childrenFetched: false,
+			childElement: null,
 			collection: null,
 	  };
 	
@@ -96,33 +97,24 @@
 		},
 	
 	toggleChildren: function() {
-		// TODO: Remember children, don't fetch again
-		// TODO: Remove children
-			
+
 		// Fetch children if not done so yet
 		if (this.model.get("childrenFetched") == false) {
 			this.model.set("childrenFetched", true);
-			this.model.get("collection").newSlider(this.model.get("children"), this.$el);
+			this.model.get("collection").newSlider(this.model.get("children"), this);
 		}
 		
-		// TODO: Don't show all children when opening
 		// Do the actual show/hide
 		var elIndex = this.$el.index()+1;
 		if (this.model.get("showChildren") == true) {
 			this.model.set("showChildren", false);
-				for (var i=1; i<=this.model.get("children").length; i++) {
-					$("div .slider:nth-child("+(elIndex+i)+")").hide(300);
-				}
+			this.model.get("childElement").hide("fade", 300);
 		}
 		else {
 			this.model.set("showChildren", true);
-			for (var i=1; i<=this.model.get("children").length; i++) {
-				$("div .slider:nth-child("+(elIndex+i)+")").show(300);
-			}
+			this.model.get("childElement").show("fade", 300);
 		}
 	},
-
-
 
 	// self-explanatory;
 	// (todo: also move over name changes to the UI)
