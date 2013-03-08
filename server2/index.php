@@ -14,55 +14,77 @@ $app->get('/data/:id/', function($id) { getObjectData($id); });
 $app->get('/lights/:ids/', function($ids) { getLights($ids); });
 $app->get('/newlights/:ids/', function($ids) { newGetLights($ids); });
 $app->get('/children/:id/', function($id) { getChildren($id); });
+$app->get('/allchildren/:id/', function($id) { getAllChildren($id); });
+$app->get('/savesliders/:ids/:value/:timer', function($ids, $value, $timer) { saveSliders($ids, $value, $timer); });
+// TODO: Another url for saveSlider instead of "/sliders/"?
+//$app->put('/sliders/:id/', function($id) { saveSlider($id); });
+//$app->get('/sliders/:id/', function($id) { saveSlider($id); }); // For testing
 $app->run();
 
+// Save slider level
+function saveSliders($ids, $value, $timer) {
+	$currentTime = time();
+	
+	// Check timer 24h and "negative" limits
+	if ($timer < 0) // TODO: What happens if this is sent?
+		$timer = 0;
+	else if ($timer > 86400)
+		$timer = 86400;
+	$endTime = $currentTime + $timer;
+	
+	// TODO: This int convert good enough?
+	// Check the slider value
+	$value = (int)$value;
+	if ($value < 0)
+		$value = 0;
+	else if ($value > 100)
+		$value = 100;
+		
+	$ids_array = preg_split ("/,/", $ids);
+	
+	// TODO: IP check here if wanted
+	// TODO: SQL statement seems heavy. Implode it!
+	// Insert the slider values into DB
+	//$sql = "update light_activations set current_level=?, activated_at=from_unixtime(?), ends_at=from_unixtime(?) where id=?";
+	$sql = "insert into light_activations where id in (select id from light_activations where id not in (1))"
+
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);
+		
+		foreach ($ids_array as $cid) {
+			$stmt->execute(array($value,$currentTime,$endTime,$cid));
+		}
+		$stmt->execute();
+	}
+	catch(PDOException $e) {
+		echo '{"error":{"text":'. $e->getMessage() .'}}';
+	}
+}
+
 // Get light/group data and children
-// TODO: Need support for multiple IDs
 function getObjectData ($ids) {
 	$ids_array = preg_split ("/,/", $ids);
 	
 	$retArray = array();
-	$counter = 0;
 	
 	foreach ($ids_array as $id) {
+		$lights = newGetLights($id);
+		$lights = $lights[0]; // PHP version problem
 		
-		$retArray[$counter] = newGetLights($id);
 		$children = getChildren($id);
 		$childrenIds = array();
 		
+		// TODO: Move id extract elsewhere
 		if (count($children)) {
 			// Extract children IDs
 			foreach ($children as $child) {
 				$childrenIds[] = $child->permanent_id;
 			}
 		}
-		$retArray[$counter][] = $childrenIds;
-		/*
-		// Get two levels of children
-		foreach ($children as $child) {
-			
-			// Child is a group
-			if ($child->isGroup == 1) {
-				$subChildren = getChildren($child->permanent_id);
-				$childrenIds = array();
-				
-				// Does the child have children?
-				if (count($subChildren)) {
-					//$child -> showArrow = 1;
-				}
-				else {
-					// Remove $child (don't display at all)
-					unset($children[$child]);
-				}
-			}
-			// Child is light
-			//else {
-			//	$child -> showArrow = 0;
-			//}
-		}
-		*/
-		//$retArray[$counter][] = getChildren($id);
-		$counter += 1;
+		$lights -> children = $childrenIds;
+		$lights -> all_children = getAllChildren($id);
+		$retArray[] = $lights;
 	}
 	print(json_encode($retArray));
 }
@@ -84,9 +106,7 @@ function newGetLights ($ids) {
 			$lights = $stmt->fetchAll (PDO::FETCH_OBJ);
 		}
 		//TODO: If empty...
-
 	}
-	
 	catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}';
 	}
@@ -95,7 +115,6 @@ function newGetLights ($ids) {
 }
 
 function getChildren ($id) {
-
 	$sql = "select * from lights where permanent_id in (select child_id from groups where parent_id=?)";
 	
 	try {
@@ -105,16 +124,28 @@ function getChildren ($id) {
 		$stmt->execute(array($id));
 		$children = $stmt->fetchAll (PDO::FETCH_OBJ);
 	}
-	
-/*	function getAllChildren ($id) {
-	
-	}*/
-	
 	catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}';
 	}
 
 	return ($children);
+}
+
+function getAllChildren ($id) {
+	$allChildren = array();
+	$tempChildren[] = $id;
+
+	// TODO: Should prevent endless cycle in group creation
+	while (count($tempChildren) > 0) {
+		$cid = array_pop($tempChildren);
+		$cChildren = getChildren($cid);
+		
+		foreach ($cChildren as $c) {
+			$allChildren[] = $c -> permanent_id;
+			$tempChildren[] = $c -> permanent_id;
+		}
+	}
+	return($allChildren);
 }
 
 function getLights ($ids) {
@@ -148,7 +179,7 @@ function getLights ($ids) {
 			      array ("p" => "4",
 				     "c" => "5")));
 
-	// TODO: Delimit ids by something safer
+	// TODO: Delimit ids by something safer (in other places too)
 	$ids_array = preg_split ("/,/", $ids);
 
 	$bar = array();

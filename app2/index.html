@@ -33,6 +33,8 @@
 	  	model: Slider.Slider,
 	  	lightIds : [],
 	  	parentEl: null,
+	  	//sliderList: JSON.stringify(new Object()),
+	  	sliderList: {},
 	  
 	  	url: function() {
 	  		return "../server2/data/"+this.lightIds
@@ -49,19 +51,27 @@
 		  	if (parentEl)
 		  		this.parentEl = parentEl;
 		  		
-		  	this.fetch({ success: function() { console.log("Fetch done!"); } });
+		  	this.fetch();
 	  	},
 	  
 	  	parse: function(response) {
 	  		var childWrap = null;
-	  		for (var i=0; i< response.length; i++) {
 	  		
-	  			// TODO: Create a wrapper for the initial sliders too
-	  			// Create a new slider
-	  			curLight = response[i][0];
-		  		this.add ({ id: curLight["permanent_id"], header: curLight["name"], 
-		  		value: curLight["current_level"], children: response[i][1], collection: this });
+	  		for (var i in response) {
+	  			var curLight = response[i];
 
+	  			// Create a new slider
+	    		this.add ({ name: curLight["name"], value: curLight["current_level"], 
+		  		children: curLight["children"], allChildren: curLight["all_children"], 
+		  		collection: this, lightID: curLight["permanent_id"] });
+		  		
+		  		// Keep record of sliders with a certain ID
+		  		var cid = curLight["permanent_id"];
+		  		if (! this.sliderList[cid])
+		  			this.sliderList[cid] = [];
+		  		this.sliderList[cid].push(this.models[this.length-1])
+		  		//console.log("tree", this.sliderList);
+		  		
 					if (this.parentEl) {
 						// Create an element for children
 						if (! childWrap) {
@@ -71,7 +81,6 @@
 						}
 						// Insert the child into the element
 			  		var childEl = $(".slider:last");
-			  		console.log(childEl, childWrap);
 			  		childWrap.append(childEl);
 					}
 		  	}
@@ -79,47 +88,42 @@
 				  childWrap.hide();
 				  childWrap.show("fade", 300);
 				}
+				
+				return this.models;
 	 		},
-	  
-	  	// Show/hide given element
-			showChildren: function(ids, parentEl, show) {
-				for (var i=0; i<ids.length; i++) {
-					console.log(i);
-				}
-			},
-	  
 		});
 
-      var SliderCollectionView = Backbone.View.extend ({
-	  tagName: "div",
-	  className: "slider-collection",
+    var SliderCollectionView = Backbone.View.extend ({
+	  	tagName: "div",
+	  	className: "slider-collection",
 
-	  initialize: function() {
+	  	initialize: function() {
 	      var _this = this;
 	      this.model.on ("add", function (m, c) { _this.$el.append (new Slider.SliderView ({model: m}).$el)});
 	      this.render();
-	  },
+	  	},
 
-	  render: function() {
-	      console.log ("rendered");
+	  	render: function() {
+	      //console.log ("rendered");
 	      this.$el.empty();
 	      var _this = this;
 	      this.model.each (function (x) { _this.$el.append (new Slider.SliderView ({model: x}).$el)});
-	  }
-      });
-			//var Foo = new Slider.Slider();
-			//Foo.startTimer();
-			//var fooView = new Slider.SliderView({model: Foo, el: $("#exampleslider")});
+	  	}
+    });
+    
+		//var Foo = new Slider.Slider();
+		//Foo.startTimer();
+		//var fooView = new Slider.SliderView({model: Foo, el: $("#exampleslider")});
 			
-      var Sliders = new SliderCollection();
-      var SlidersView = new SliderCollectionView ({ model: Sliders, el: $("#sliders") });
+    var Sliders = new SliderCollection();
+    var SlidersView = new SliderCollectionView ({ model: Sliders, el: $("#sliders") });
       
-      Sliders.on ("add", function() { console.log ("added")});
+    //Sliders.on ("add", function() { console.log ("added")});
 			
-      //$("#newslider").bind ("click", function () { Sliders.add ({ value: 0 })});
-			$("#newslider").bind ("click", function () { Sliders.newSlider([6]); });
+    //$("#newslider").bind ("click", function () { Sliders.add ({ value: 0 })});
+		$("#newslider").bind ("click", function () { Sliders.newSlider([6]); });
 			
-			Sliders.newSlider([6,1], null);
+		Sliders.newSlider([6,1], null);
     </script>
   </body>
 

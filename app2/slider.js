@@ -1,37 +1,38 @@
 (function() {
-    var root = this;
-    var Slider = {};
+  var root = this;
+  var Slider = {};
 
-    // export the name Slider, either using CommonJS modules or just assigning
-    // it to the root object directly; copied from underscore.js
-    if (typeof exports !== 'undefined') {
-	if (typeof module !== 'undefined' && module.exports) {
-	    exports = module.exports = Slider;
-	}
-	exports.Slider = Slider;
-    } else {
-	root['Slider'] = Slider;
-    }
+  // export the name Slider, either using CommonJS modules or just assigning
+  // it to the root object directly; copied from underscore.js
+  if (typeof exports !== 'undefined') {
+		if (typeof module !== 'undefined' && module.exports) {
+	  	exports = module.exports = Slider;
+		}
+		exports.Slider = Slider;
+  }
+  else
+		root['Slider'] = Slider;
     
-    Slider.Slider = Backbone.Model.extend({
-	// Backbone uses this to figure out where to .fetch() and .save()
-	urlRoot: "../server2/sliders/",
+  Slider.Slider = Backbone.Model.extend({
+		// Backbone uses this to figure out where to .fetch() and .save()
+		urlRoot: "../server2/sliders/",
 	
 	url: function() {
 	    var origUrl = Backbone.Model.prototype.url.call(this);
 	    return origUrl + (origUrl.charAt(origUrl.length - 1) == '/' ? '' : '/');
 	},
-	id: 0, // TODO: Handle me later
 	
 	defaults: function() {
 	  return {
+	  	lightID: 0,
 			value: 0,
 			timer: 7200,
 			timerDefault: 7200,
 			timerMax: 86400, // 24h
 			enabled: 0,
-			header: "",
-			children: [],
+			name: "",
+			children: null,
+			allChildren: null,
 			showChildren: false,
 			childrenFetched: false,
 			childElement: null,
@@ -42,7 +43,7 @@
 	
 	startTimer: function() {
 			var _this = this;
-			console.log("timer started",_this.get("timer"));
+			//console.log("timer started",_this.get("timer"));
 			this.set("enabled", 1);
 			
 			if (_this.get("timer") > 0)
@@ -64,31 +65,25 @@
 	tagName: "div",
 	className: "slider",
 	
-	/*var arrowCode: function() {
-		if (this.model.get("children").length > 0)
-			arrowCode = "<input class='timer-sub' type='button' value='-' />";
-		else arrowCode = "";
-	},*/
-
-	
 	template: _.template("<div class='widget-header' /><div class='slider-widget' />\
 	<input class='timer-add' type='button' value='+' /><br />\
 	<input class='timer' type='text' readonly='readonly' />\
 	<input class='show-children' type='button' value='=>' /><br />\
 	<input class='timer-sub' type='button' value='-' /><br />\
-	<input class='onoff' type='button' value='Off' />"),
+	<input class='onoff' type='button' value='Off' disabled='disabled' />"),
 
 	// Backbone assigns these events automatically when the view is created
 	events: {
 	    "slidechange .slider-widget" : "sliderChange",
-	    "click .timer-add" : function () {this.timerChange(900)},
-	    "click .timer-sub" : function () {this.timerChange(-900)},
-	    "click .onoff" : function () {this.model.stopTimer()},
+	    "click .timer-add" : function () { this.timerChange(900) },
+	    "click .timer-sub" : function () { this.timerChange(-900) },
+	    "click .onoff" : function () { this.model.stopTimer() },
 	    "click .show-children": function () { this.toggleChildren() },
 	},
 	
 	// Backbone calls this automatically when creating the view
 	initialize: function() {
+			this.model.bind("change:value", this.updateSliderFromModel, this);
 	    this.model.bind("change", this.updateUIFromModel, this);
 	    this.model.bind("remove", this.remove, this);
 	    this.render();
@@ -101,25 +96,27 @@
 		// Fetch children if not done so yet
 		if (this.model.get("childrenFetched") == false) {
 			this.model.set("childrenFetched", true);
+			this.model.set("showChildren", true);
 			this.model.get("collection").newSlider(this.model.get("children"), this);
 		}
 		
-		// Do the actual show/hide
-		var elIndex = this.$el.index()+1;
-		if (this.model.get("showChildren") == true) {
-			this.model.set("showChildren", false);
-			this.model.get("childElement").hide("fade", 300);
-		}
 		else {
-			this.model.set("showChildren", true);
-			this.model.get("childElement").show("fade", 300);
+			// Do the actual show/hide
+			var elIndex = this.$el.index()+1;
+			if (this.model.get("showChildren") == true) {
+				this.model.set("showChildren", false);
+				this.model.get("childElement").hide("fade", 300);
+			}
+			else {
+				this.model.set("showChildren", true);
+				this.model.get("childElement").show("fade", 300);
+			}
 		}
 	},
 
 	// self-explanatory;
 	// (todo: also move over name changes to the UI)
 	updateUIFromModel: function() {
-	
 			// Disable/enable UI elements and set timer value
 			if (this.model.get("enabled") == 0) {
 				disabled = true;
@@ -133,13 +130,18 @@
 			this.$(".timer").attr("disabled", disabled);
 			this.$(".timer-add").attr("disabled", disabled);
 			this.$(".timer-sub").attr("disabled", disabled);
+			this.$(".onoff").attr("disabled", disabled);
 			
-			//console.log(this.model.get("timer"));
+			// Format time for display
 			this.timerFormat(this.timerEndCheck(-1));
 	},
 	
 	updateSliderFromModel: function() {
+		// Disable events to prevent sliderChange calls in children
+		this.undelegateEvents()
+		//console.log(this.model.get("name"), this.model.get("value"));
 		this.$(".slider-widget").slider("value", this.model.get("value"));
+		this.delegateEvents()
 	},
 	
 	// Change timer from buttons
@@ -147,6 +149,9 @@
 			var newTime = this.timerEndCheck(timeAdd);
 			// TODO: Round the added time to the nearest 15min?
 		  this.model.set("timer", newTime);
+		  
+		  // Inform children
+		  this.childrenChange();
 	},
 	
 	// Check if given time can be subtracted from timer
@@ -196,13 +201,48 @@
 			// If timer not enabled yet do it now
 			if (this.model.get("enabled") == 0)
 					this.model.startTimer();
-			
+					
 	    this.model.set("value", this.$(".slider-widget").slider("option", "value"));
 	    // if originalEvent is undefined, the event was created programmatically
 	    // thus, this ensures that we don't loop
-	    if (ev.originalEvent !== undefined)
-				this.model.save();
-
+	    //if (ev.originalEvent !== undefined)
+			//	var response = this.model.save();
+			
+			this.childrenChange();
+	},
+	
+	childrenChange: function() {
+			var coll = this.model.get("collection");
+			var myid = this.model.get("id");
+			var thisValue = this.model.get("value");
+			
+			// => change sliders -> call php -> php sets db values and may return invalid slider ids back if needed
+			// TODO: See context to get rid of above values
+			// TODO: Timer value, enable children and other operations
+			// TODO: DB works
+			// TODO: When creating new slider, get possible light_activations for it
+			// TODO: Computer clocks may go at their own paces
+			// TODO: Send the query after user has done with setting time (prevent query spam)
+			// TODO: Stop children when parent is done
+			
+			var cid;
+			for (var j in this.model.get("allChildren")) {
+				cid = this.model.get("allChildren")[j];
+				for (var i in coll.sliderList[cid]) {
+					coll.sliderList[cid][i].set("enabled", 1);
+					coll.sliderList[cid][i].set("value", this.model.get("value"));
+					coll.sliderList[cid][i].set("timer", this.model.get("timer"));
+				}
+			}
+			
+			// Send the slider values to the DB
+			$.get("../server2/savesliders/"+this.model.get("allChildren")+"/"+thisValue+"/"+this.model.get("timer")
+			
+			//function(response) {
+			//	console.log(response);
+			//},
+			//"json");
+			);
 	    return false;
 	},
 	
@@ -213,7 +253,7 @@
 	render: function () {
 	    this.$el.html (this.template ({name: this.model.get('name')}));
 	    this.$(".slider-widget").slider({orientation: "vertical", value: this.model.get('value')});
-			this.$(".widget-header").html(this.model.get("header")); // TODO: This OK here?
+			this.$(".widget-header").html(this.model.get("name"));
 	    return this;
 	},
 	
