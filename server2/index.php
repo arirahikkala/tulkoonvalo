@@ -45,15 +45,17 @@ function saveSliders($ids, $value, $timer) {
 	// TODO: IP check here if wanted
 	// TODO: SQL statement seems heavy. Implode it!
 	// Insert the slider values into DB
-	//$sql = "update light_activations set current_level=?, activated_at=from_unixtime(?), ends_at=from_unixtime(?) where id=?";
-	$sql = "insert into light_activations where id in (select id from light_activations where id not in (1))"
-
+	
+	// Run this on DB to make id field UNIQUE
+  // alter table light_activations modify id char(32) null unique;
+  
+	$sql = "insert into light_activations values (?,?,?,?) on duplicate key update current_level=?, activated_at=from_unixtime(?), ends_at=from_unixtime(?)";
 	try {
 		$db = getConnection();
 		$stmt = $db->prepare($sql);
 		
 		foreach ($ids_array as $cid) {
-			$stmt->execute(array($value,$currentTime,$endTime,$cid));
+			$stmt->execute(array($value,$currentTime,$endTime,$cid,$value,$currentTime,$endTime));
 		}
 		$stmt->execute();
 	}
@@ -63,6 +65,7 @@ function saveSliders($ids, $value, $timer) {
 }
 
 // Get light/group data and children
+// TODO: Inexistent IDs
 function getObjectData ($ids) {
 	$ids_array = preg_split ("/,/", $ids);
 	
@@ -93,6 +96,7 @@ function newGetLights ($ids) {
 	// TODO: Delimit ids by something safer
 	$ids_array = preg_split ("/,/", $ids);
 
+	// Get joined data from "lights" and "light_activations" tables
 	$sql = "select * from lights left join light_activations on lights.permanent_id=light_activations.id where permanent_id=?";
 
 	$lights=array();
