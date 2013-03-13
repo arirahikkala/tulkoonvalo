@@ -3,12 +3,6 @@
 require 'slim/Slim.php';
 
 $app = new Slim();
-/*
-$app->get('/sliders/', function() { getSliders(); });
-$app->get('/sliders/:id/', function($id) { getSlider($id); });
-$app->put('/sliders/:id/', function($id) { updateSlider($id); });
-$app->post('/sliders/', function() { createNewSlider(); });
-*/
 
 $app->get('/data/:id/', function($id) { getObjectData($id); });
 $app->get('/lights/:ids/', function($ids) { getLights($ids); });
@@ -16,29 +10,47 @@ $app->get('/newlights/:ids/', function($ids) { newGetLights($ids); });
 $app->get('/children/:id/', function($id) { getChildren($id); });
 $app->get('/allchildren/:id/', function($id) { getAllChildren($id); });
 $app->get('/savesliders/:ids/:value/:timer', function($ids, $value, $timer) { saveSliders($ids, $value, $timer); });
-// TODO: Another url for saveSlider instead of "/sliders/"?
 $app->get('/poll/:ids/', function($ids) { poll($ids); });
-
-//$app->put('/sliders/:id/', function($id) { saveSlider($id); });
-//$app->get('/sliders/:id/', function($id) { saveSlider($id); }); // For testing
+$app->get('/togglesliders/:ids/', function($ids) { toggleSliders($ids); });
 $app->run();
 
+function togglesliders($ids) {
+	$ids_array = preg_split ("/,/", $ids);
+	$sql = "delete from light_activations where id=?";
+	
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);
+		
+		foreach ($ids_array as $cid) {
+			$stmt->execute(array($cid));
+		}
+	}
+	catch(PDOException $e) {
+		echo '{"error":{"text":'. $e->getMessage() .'}}';
+	}
+}
+
+// TODO: Feed the original values from javascript
 function poll($ids) {
 	$ids_array = preg_split ("/,/", $ids);
 	// TODO: IP check if necessary
-	
 	$origLevels = getLevels($ids_array);
 	$time = time();
 	
-	while((time() - $time) < 10) {
+	// Loop 60 seconds at a time with small pauses in between
+	while((time() - $time) < 60) {
 		$newLevels = getLevels($ids_array);
 		$retArray = array();
+
+		foreach($newLevels as $id => $carray) {
 		
-		foreach($newLevels as $id => $level) {
-			// TODO: If id has disappeared from activations
-			// Original level doesn't match the new one, return something
-			if ($origLevels[$id] != $level)
-				$retArray[$id] = $level;
+			// Original values doesn't match the new one, return new values
+			if (($origLevels[$id]["current_level"] != $carray["current_level"]) ||
+			($origLevels[$id]["timer"] != $carray["timer"]) ||
+			($origLevels[$id]["enabled"] != $carray["enabled"])
+			)
+				$retArray[$id] = $carray;
 		}
 		if ($retArray) {
 			print(json_encode($retArray));
@@ -49,8 +61,11 @@ function poll($ids) {
 }
 
 function getLevels($ids_array) {
+	// TODO: This belongs elsewhere
+	date_default_timezone_set('Europe/Helsinki');
+	
 	// TODO: Implode ids
-	$sql = "select id,current_level from light_activations where id=?";
+	$sql = "select * from light_activations where id=?";
 	$retArray = array();
 	try {
 		$db = getConnection();
@@ -59,7 +74,26 @@ function getLevels($ids_array) {
 		foreach ($ids_array as $cid) {
 			$stmt->execute(array($cid));
 			$level = $stmt->fetch (PDO::FETCH_OBJ);
-			$retArray[$level->id] = $level -> current_level;
+			
+			try {
+				$retArray[$level->id] = array();
+				$retArray[$level->id]["enabled"] = true;
+				$retArray[$level->id]["current_level"] = $level->current_level;
+			
+				// Get time left
+				$timer = strtotime($level->ends_at)-strtotime($level->activated_at);
+				if ($timer < 0)
+					$timer = 0;
+				$retArray[$level->id]["timer"] = $timer;
+			}
+			// TODO: Get real rule values for this and the ghost slider
+			// Slider was turned off (hopefully)
+			catch(Exception $e) {
+				$retArray[$cid] = array();
+				$retArray[$cid]["enabled"] = false;
+				$retArray[$cid]["current_level"] = 0;
+				$retArray[$cid]["timer"] = 0;
+			}
 		}
 	}
 	catch(PDOException $e) {
@@ -90,12 +124,9 @@ function saveSliders($ids, $value, $timer) {
 	$ids_array = preg_split ("/,/", $ids);
 	
 	// TODO: IP check here if wanted
-	// TODO: SQL statement seems heavy. Implode it!
-	// Insert the slider values into DB
-	
-	// Run this on DB to make id field UNIQUE
-  // alter table light_activations modify id char(32) null unique;
-  
+	// TODO: Repeated SQL statements seem heavy. Implode IDs!
+
+  // Insert the slider values into DB
 	$sql = "insert into light_activations values (?,?,?,?) on duplicate key update current_level=?, activated_at=from_unixtime(?), ends_at=from_unixtime(?)";
 	try {
 		$db = getConnection();
@@ -103,8 +134,9 @@ function saveSliders($ids, $value, $timer) {
 		
 		foreach ($ids_array as $cid) {
 			$stmt->execute(array($value,$currentTime,$endTime,$cid,$value,$currentTime,$endTime));
+			$stmt->execute();  // TODO: Another execute makes this work?
 		}
-		$stmt->execute();
+		
 	}
 	catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}';

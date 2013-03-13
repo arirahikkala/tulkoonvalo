@@ -74,64 +74,62 @@
 		  		if (! this.sliderList[cid]) {
 		  			this.sliderList[cid] = [];
 		  			this.sliderIDs.push(cid);
-		  			this.query = null; // Start polling over again
+		  			
+		  			// Reset long polling
+		  			this.pollEnabled = false;
+		  			this.query = null;
 		  		}
 		  		this.sliderList[cid].push(this.models[this.length-1])
 		  		
+		  		// Create an element for children and insert them in it
 					if (this.parentEl) {
-						// Create an element for children
 						if (! childWrap) {
 							childWrap = $("<div class='bar' />");
 							this.parentEl.$el.after(childWrap);
 							this.parentEl.model.set("childElement", childWrap);
 						}
-						// Insert the child into the element
 			  		var childEl = $(".slider:last");
 			  		childWrap.append(childEl);
 					}
 		  	}
 		  	if (childWrap) {
-		  		// Change child values to match parent's
-		  		this.parentEl.childrenChange();
-		  		
 				  childWrap.hide();
 				  childWrap.show("fade", 300);
 				}
 				return this.models;
 	 		},
-	 		
+
+			// Poll only if not already polling 
+			longPoll: function() {
+				_this = this;
+				this.poll = setInterval(function() {
+					if (! _this.pollEnabled) {
+						_this.pollEnabled = true;
+						_this.longPollGet()
+					}
+				}, 1000);
+			},
+			
 			// Get slider value (if changed from somewhere else) and rule value for ghost slider
 			longPollGet: function() {
-				// TODO: Who should be doing this? Collection or the first created sliders?
 				_this = this;
+				
 				this.query = $.get("../server2/poll/"+this.sliderIDs,
 					function(response) {
 						_this.pollEnabled = false;
 						if (response) {
 							for (var cid in response) {
-								console.log(cid, response[cid]);
 								for (var i in _this.sliderList[cid]) {
-									// TODO: Get these other values too
-									//this.model.get("collection").sliderList[child][i].set("value", response[child]);
-									_this.sliderList[cid][i].set("value", response[cid]);
+									_this.sliderList[cid][i].set("enabled", response[cid]["enabled"]);
+									_this.sliderList[cid][i].set("value", response[cid]["current_level"]);
+									_this.sliderList[cid][i].set("timer", response[cid]["timer"]);
 								}
 							}
 						}
-						//_this.longPoll(); // TODO: Does this eat memory?
 					},
-					"json");
+				"json");
 			},
 			
-			// Poll only if no already polling 
-			longPoll: function() {
-				_this = this;
-				this.poll = setInterval(function() {
-					if (! _this.pollEnabled || ! _this.query) {
-						_this.pollEnabled = true;
-						_this.longPollGet()
-					}
-				}, 2000);
-			}
 		});
 
     var SliderCollectionView = Backbone.View.extend ({

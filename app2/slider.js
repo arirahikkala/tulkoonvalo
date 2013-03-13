@@ -204,74 +204,45 @@
 	enabledChange: function() {
 		console.log("enabledChange", this.model.get("name"));
 		this.model.set("enabled", false);
-		//this.model.stopTimer();
+		
+		$.get("../server2/togglesliders/"+this.model.get("lightID")+','+this.model.get("allChildren"));
+
 		this.childrenChange();
 	},
 	
 	sliderChange: function(ev, ui) {
-			// If timer not enabled yet do it now
-			//if (this.model.get("enabled") == 0)
-			//		this.model.startTimer();
-			this.model.set("enabled", 1);
-	    this.model.set("value", this.$(".slider-widget").slider("option", "value"));
-	    // if originalEvent is undefined, the event was created programmatically
-	    // thus, this ensures that we don't loop
-	    //if (ev.originalEvent !== undefined)
-			//	var response = this.model.save();
-			
-			this.childrenChange();
+		// If timer not enabled yet do it now
+		//if (this.model.get("enabled") == 0)
+		//		this.model.startTimer();
+		this.model.set("enabled", 1);
+	  this.model.set("value", this.$(".slider-widget").slider("option", "value"));
+	  // if originalEvent is undefined, the event was created programmatically
+	  // thus, this ensures that we don't loop
+	  //if (ev.originalEvent !== undefined)
+		//	var response = this.model.save();
+		this.childrenChange();
 	},
 	
 	childrenChange: function() {
-			// TODO: After time-out return light values to rule levels (if none, zero)
-			// TODO: Is it good thing to adjust sliders on the same hierarchy "level"?
-			// TODO: Maybe timer should do timerEnd-timeNow than it's now?
-			//       -> Sometimes ask server for current time
-			// TODO: Long polling with remotely changed slider values?
-			var coll = this.model.get("collection");
-			for (var j in this.model.get("allChildren")) {
-				var cid = this.model.get("allChildren")[j];
-				for (var i in coll.sliderList[cid]) {
-					coll.sliderList[cid][i].set("enabled", this.model.get("enabled"));
-					coll.sliderList[cid][i].set("value", this.model.get("value"));
-					coll.sliderList[cid][i].set("timer", this.model.get("timer"));
-					console.log( coll.sliderList[cid][i].get("enabled"), "enabled" );
-				}
+		// TODO: After time-out return light values to rule levels (if none, zero)
+		// TODO: Is it good thing to adjust sliders on the same hierarchy "level"?
+		// TODO: Maybe timer should do timerEnd-timeNow than it's now?
+		//       -> Sometimes ask server for current time
+		// TODO: Long polling with remotely changed slider values?
+		var coll = this.model.get("collection");
+		for (var j in this.model.get("allChildren")) {
+			var cid = this.model.get("allChildren")[j];
+			for (var i in coll.sliderList[cid]) {
+				coll.sliderList[cid][i].set("enabled", this.model.get("enabled"));
+				coll.sliderList[cid][i].set("value", this.model.get("value"));
+				coll.sliderList[cid][i].set("timer", this.model.get("timer"));
+				console.log( coll.sliderList[cid][i].get("enabled"), "enabled" );
 			}
-			// Send the slider values to the DB
-			$.get("../server2/savesliders/"+this.model.get("lightID")+','+this.model.get("allChildren")+"/"+this.model.get("value")+"/"+this.model.get("timer")
-			
-			//function(response) {
-			//	console.log(response);
-			//},
-			//"json");
-			);
-	    return false;
-	},
-	
-	// Get slider value (if changed from somewhere else) and rule value for ghost slider
-	longPoll: function() {
-		// TODO: Who should be doing this? Collection or the first created sliders?
-		if (this.model.get("isMaster")) {
-		_this = this;
-
-		coll = this.model.get("collection");
-		$.get("../server2/poll/"+this.model.get("lightID")+','+this.model.get("children"),
-			function(response) {
-				if (response) {
-					for (var cid in response) {
-						console.log(cid, response[cid]);
-						for (var i in coll.sliderList[cid]) {
-							// TODO: Get these other values too
-							//this.model.get("collection").sliderList[child][i].set("value", response[child]);
-							coll.sliderList[cid][i].set("value", response[cid]);
-						}
-					}
-				}
-				_this.longPoll(_this); // TODO: Maybe bad idea
-			},
-			"json");
 		}
+		// Insert slider values into DB
+		console.log("creation", this.model.get("timer"));
+		$.get("../server2/savesliders/"+this.model.get("lightID")+','+this.model.get("allChildren")+"/"+this.model.get("value")+"/"+this.model.get("timer"));
+		return false;
 	},
 	
 	// re-render the widget
