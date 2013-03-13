@@ -1,0 +1,9 @@
+      .light-name { height: 1em; overflow-y: hidden; }
+      .light-widget { margin: 1em auto 0 auto; }
+      .light { float: left; width: 5em; overflow: hidden; margin: 0 5px 0 5px; text-align: center}
+      .slider-collection { float: left; }
+      .slider { float: left; margin: 0em; border: 2px solid red; padding: 25px; }
+      .slider-widget { margin:auto; }
+      .timer { width: 3em; font-size: 1em;}
+      .timer-add { margin-top: 1em; }
+      .onoff { margin-top: 1em;}
