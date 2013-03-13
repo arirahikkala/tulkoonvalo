@@ -65,12 +65,14 @@
 	tagName: "div",
 	className: "slider",
 	
-	template: _.template("<div class='widget-header' /><div class='slider-widget' />\
-	<input class='timer-add' type='button' value='+' /><br />\
-	<input class='timer' type='text' readonly='readonly' />\
-	<input class='show-children' type='button' value='=>' /><br />\
-	<input class='timer-sub' type='button' value='-' /><br />\
-	<input class='onoff' type='button' value='Off' disabled='disabled' />"),
+	template: _.template("<table><tr><td><div class='widget-header' />\
+	</td></tr><tr><td><div class='slider-widget' /></td>\
+	<td><input class='show-children' type='button' value='>' /><br /></td></tr>\
+	<tr><td><input class='timer-add' type='button' value='+' /></td></tr>\
+	<tr><td id='timer-td'><input class='timer' type='text' readonly='readonly' /></td></tr><br />\
+	<tr><td><input class='timer-sub' type='button' value='-' /><br /></td></tr>\
+	<tr><td><input class='onoff' type='button' value='Off' disabled='disabled' /></td></tr></table>"),
+
 
 	// Backbone assigns these events automatically when the view is created
 	events: {
@@ -125,18 +127,21 @@
 			//if (this.model.get("timerEnabled"))
 			this.model.stopTimer();
 			isDisabled = true;
+			sliderColor = "red";
 			this.model.set("timer", this.model.get("timerDefault"));
 		}
 		else {
 			//if (! this.model.get("timerEnabled"))
 			this.model.startTimer();
 			isDisabled = false;
+			sliderColor = "green";
 			var timerValue = this.model.get("timerDefault");
 		}
 		this.$(".timer").attr("disabled", isDisabled);
 		this.$(".timer-add").attr("disabled", isDisabled);
 		this.$(".timer-sub").attr("disabled", isDisabled);
 		this.$(".onoff").attr("disabled", isDisabled);
+		this.$(".timer").css({"border-color":sliderColor});
 		
 		// Format time for display
 		this.timerFormat(this.timerEndCheck(0));
