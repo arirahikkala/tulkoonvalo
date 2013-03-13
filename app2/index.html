@@ -17,7 +17,7 @@
   <body>
     <div class="bar" id="sliders"></div> <br/> <br/>
     <div class="sliderX" id="examplesliderX"></div> <br /> <br />
-    <input type="button" id="newslider" value="New slider" />
+    <inputx type="button" id="newslider" value="New slider" />
     <script type="text/javascript">
     var SliderCollection = Backbone.Collection.extend ({
 	  	model: Slider.Slider,
@@ -160,7 +160,7 @@
     //Sliders.on ("add", function() { console.log ("added")});
 			
     //$("#newslider").bind ("click", function () { Sliders.add ({ value: 0 })});
-		$("#newslider").bind ("click", function () { Sliders.newSlider([6]); });
+		//$("#newslider").bind ("click", function () { Sliders.newSlider([6]); });
 		
 		Sliders.newSlider([6,1], null);
     </script>

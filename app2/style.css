@@ -1,9 +1,28 @@
-      .light-name { height: 1em; overflow-y: hidden; }
-      .light-widget { margin: 1em auto 0 auto; }
-      .light { float: left; width: 5em; overflow: hidden; margin: 0 5px 0 5px; text-align: center}
-      .slider-collection { float: left; }
-      .slider { float: left; margin: 0em; border: 2px solid red; padding: 25px; }
-      .slider-widget { margin:auto; }
-      .timer { width: 3em; font-size: 1em;}
-      .timer-add { margin-top: 1em; }
-      .onoff { margin-top: 1em;}
+.light-nameX { height: 1em; overflow-y: hidden; }
+.light-widgetX { margin: 1em auto 0 auto; }
+.lightX { float: left; width: 5em; overflow: hidden; margin: 0 5px 0 5px; text-align: center}
+.slider-collectionX { float: left; }
+
+.slider-widget { margin: auto; }
+.slider
+{
+	width: 100px;
+	float: left;
+	margin: 0em;
+	border-top: 1px solid #cccccc;
+	border-right: 1px solid #eeeeee;
+	border-left: 1px solid #eeeeee;
+	border-bottom: 1px solid #cccccc;
+	/*padding: 25px;*/
+}
+.widget-header
+{
+	background: #cccccc;
+	overflow: hidden;
+	height: 2em;
+}
+
+.timer { width: 3em; font-size: 1em;}
+.timer-add { margin-top: 1em; width: 100%; }
+.timer-sub { width: 100%; }
+.onoff { margin-top: 1em;}

@@ -65,13 +65,32 @@
 	tagName: "div",
 	className: "slider",
 	
+	template: _.template("\
+	<div class='widget-header' />\
+	<table border=0px>\
+	<tr>\
+		<td><div class='slider-widget' /></td>\
+		<td><input class='show-children' type='image' src='../childrenarrow.png' /></td>\
+	</tr>\
+	<tr>\
+		<td>\<input class='timer-add' type='button' value='+' /></td>\
+	</tr>\
+	<tr>\
+		<td><input class='timer' type='text' readonly='readonly' /></td>\
+		<td><input class='onoff' type='image' disabled='disabled' src='../powericon.png' /></td>\
+	</tr>\
+	<tr>\
+		<td><input class='timer-sub' type='button' value='-' /></td>\
+	</tr>\
+	</table>"),
+	/*
 	template: _.template("<div class='widget-header' /><div class='slider-widget' />\
 	<input class='timer-add' type='button' value='+' /><br />\
 	<input class='timer' type='text' readonly='readonly' />\
 	<input class='show-children' type='button' value='=>' /><br />\
 	<input class='timer-sub' type='button' value='-' /><br />\
 	<input class='onoff' type='button' value='Off' disabled='disabled' />"),
-
+	*/
 	// Backbone assigns these events automatically when the view is created
 	events: {
 	    "slidechange .slider-widget" : "sliderChange",
@@ -252,7 +271,13 @@
 	render: function () {
 	    this.$el.html (this.template ({name: this.model.get('name')}));
 	    this.$(".slider-widget").slider({orientation: "vertical", value: this.model.get('value')});
-			this.$(".widget-header").html(this.model.get("name"));
+			
+			// TODO: Is this necessary?
+			// Cut too long names
+			var header = this.model.get("name");
+			if (header.length > 15)
+				header = header.substring(0, 12)+"...";
+			this.$(".widget-header").html(header);
 			
 			if (this.model.get("children").length == 0)
 				this.$(".show-children").hide();
