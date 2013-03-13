@@ -35,6 +35,7 @@
 	  	parentEl: null,
 	  	//sliderList: JSON.stringify(new Object()),
 	  	sliderList: {},
+	  	sliderIDs: [],
 	  
 	  	url: function() {
 	  		return "../server2/data/"+this.lightIds
@@ -42,6 +43,7 @@
 		
 	  	initialize: function() {
 	    	//this.on ("add", function (m, c) { c.sync()});
+	    	this.longPoll();
 	  	},
 	  
 	  	newSlider: function(lightList, parentEl) {
@@ -57,38 +59,33 @@
 	  	parse: function(response) {
 	  		var childWrap = null;
 	  		var now = new Date();
-	  		//now.format("dd/M/yy h:mm tt");
 	  		
 	  		for (var i in response) {
 	  			var curLight = response[i];
 	  			var isEnabled = false;
+	  			var isMaster = false;
 	  			
-	  			// A slider may have timer enabler
-	  			if (curLight["ends_at"]) {
-	  				var timeDiff = ( new Date(curLight["ends_at"].replace(/-/g,'/')) - new Date(curLight["activated_at"].replace(/-/g,'/')) ) / 1000
-						isEnabled = true;
-						//  Parent may also be turned off manually
-	  				/*if (this.parentEl) {
-	  					if (this.parentEl.model.get("enabled"))
-								isEnabled = true;
-						}
-						else
-							isEnabled = true;
-						*/
-					}
-					
+	  			// A slider may have timer enabled
+	  			if (curLight["timer"] > 0)
+	  				isEnabled = true;
+	  			
+	  			// Is the slider among first created?
+	  			if (! this.parentEl)
+	  				isMaster = true;
+	  				
 	  			// Create a new slider
 	    		this.add ({ name: curLight["name"], value: curLight["current_level"], 
 		  		children: curLight["children"], allChildren: curLight["all_children"], 
 		  		collection: this, lightID: curLight["permanent_id"], 
-		  		enabled: isEnabled, timer: timeDiff });
+		  		enabled: isEnabled, timer: curLight["timer"], isMaster: isMaster });
 		  		
 		  		// Keep record of sliders with a certain ID
 		  		var cid = curLight["permanent_id"];
-		  		if (! this.sliderList[cid])
+		  		if (! this.sliderList[cid]) {
 		  			this.sliderList[cid] = [];
+		  			this.sliderIDs.push(cid);
+		  		}
 		  		this.sliderList[cid].push(this.models[this.length-1])
-		  		//console.log("tree", this.sliderList);
 		  		
 					if (this.parentEl) {
 						// Create an element for children
@@ -109,9 +106,41 @@
 				  childWrap.hide();
 				  childWrap.show("fade", 300);
 				}
-				
 				return this.models;
 	 		},
+	 		
+	
+	// Get slider value (if changed from somewhere else) and rule value for ghost slider
+	longPollGet: function() {
+		// TODO: Who should be doing this? Collection or the first created sliders?
+		_this = this;
+		$.get("../server2/poll/"+this.sliderIDs,
+			function(response) {
+				_this.pollEnabled = false;
+				if (response) {
+					for (var cid in response) {
+						console.log(cid, response[cid]);
+						for (var i in _this.sliderList[cid]) {
+							// TODO: Get these other values too
+							//this.model.get("collection").sliderList[child][i].set("value", response[child]);
+							_this.sliderList[cid][i].set("value", response[cid]);
+						}
+					}
+				}
+				//_this.longPoll(); // TODO: Does this eat memory?
+			},
+			"json");
+	},
+	
+	longPoll: function() {
+		_this = this;
+		this.poll = setInterval(function() {
+			if (! _this.pollEnabled) {
+				_this.pollEnabled = true;
+				_this.longPollGet()
+			}
+		}, 2000);	
+	}
 		});
 
     var SliderCollectionView = Backbone.View.extend ({
@@ -143,7 +172,7 @@
 			
     //$("#newslider").bind ("click", function () { Sliders.add ({ value: 0 })});
 		$("#newslider").bind ("click", function () { Sliders.newSlider([6]); });
-
+		
 		Sliders.newSlider([6,1], null);
     </script>
   </body>

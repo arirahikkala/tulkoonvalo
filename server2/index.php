@@ -17,9 +17,56 @@ $app->get('/children/:id/', function($id) { getChildren($id); });
 $app->get('/allchildren/:id/', function($id) { getAllChildren($id); });
 $app->get('/savesliders/:ids/:value/:timer', function($ids, $value, $timer) { saveSliders($ids, $value, $timer); });
 // TODO: Another url for saveSlider instead of "/sliders/"?
+$app->get('/poll/:ids/', function($ids) { poll($ids); });
+
 //$app->put('/sliders/:id/', function($id) { saveSlider($id); });
 //$app->get('/sliders/:id/', function($id) { saveSlider($id); }); // For testing
 $app->run();
+
+function poll($ids) {
+	$ids_array = preg_split ("/,/", $ids);
+	// TODO: IP check if necessary
+	
+	$origLevels = getLevels($ids_array);
+	$time = time();
+	
+	while((time() - $time) < 10) {
+		$newLevels = getLevels($ids_array);
+		$retArray = array();
+		
+		foreach($newLevels as $id => $level) {
+			// TODO: If id has disappeared from activations
+			// Original level doesn't match the new one, return something
+			if ($origLevels[$id] != $level)
+				$retArray[$id] = $level;
+		}
+		if ($retArray) {
+			print(json_encode($retArray));
+			break;
+		}
+		usleep(2000000);
+	}
+}
+
+function getLevels($ids_array) {
+	// TODO: Implode ids
+	$sql = "select id,current_level from light_activations where id=?";
+	$retArray = array();
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);
+		
+		foreach ($ids_array as $cid) {
+			$stmt->execute(array($cid));
+			$level = $stmt->fetch (PDO::FETCH_OBJ);
+			$retArray[$level->id] = $level -> current_level;
+		}
+	}
+	catch(PDOException $e) {
+		echo '{"error":{"text":'. $e->getMessage() .'}}';
+	}
+	return($retArray);
+}
 
 // Save slider level
 function saveSliders($ids, $value, $timer) {
@@ -68,12 +115,21 @@ function saveSliders($ids, $value, $timer) {
 // TODO: Inexistent IDs
 function getObjectData ($ids) {
 	$ids_array = preg_split ("/,/", $ids);
-	
 	$retArray = array();
+	
+	// TODO: This belongs elsewhere (or just put timestamp in DB)
+	// Used in converting SQL datetime into timestamp
+	date_default_timezone_set('Europe/Helsinki');
 	
 	foreach ($ids_array as $id) {
 		$lights = newGetLights($id);
 		$lights = $lights[0]; // PHP version problem
+		
+		// Get the time remaining
+		$timer = strtotime($lights -> ends_at)-time();
+		if ($timer < 0)
+			$timer = 0;
+		$lights -> timer = $timer;
 		
 		$children = getChildren($id);
 		$childrenIds = array();

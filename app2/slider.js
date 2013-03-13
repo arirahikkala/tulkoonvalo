@@ -32,12 +32,13 @@
 			enabled: 0,
 			timerEnabled: 0,
 			name: "",
-			children: null,
-			allChildren: null,
+			children: null, // Children right under
+			allChildren: null, // Children on all levels
 			showChildren: false,
 			childrenFetched: false,
 			childElement: null,
 			collection: null,
+			isMaster: false,	
 	  };
 	
 	},
@@ -87,7 +88,8 @@
 	    this.render();
 	    var _this = this;
 	    this.updateUIFromModel();
-
+	    //this.longPoll();
+	    
 			this.model.bind("change:value", this.updateSliderFromModel, this);
 			this.model.bind("change:timer", function() { this.timerFormat(this.timerEndCheck(-1)); }, this );
 			this.model.bind("change:enabled", function() { this.updateUIFromModel(); }, this );
@@ -221,19 +223,14 @@
 	},
 	
 	childrenChange: function() {
-			// TODO: Parent/children time difference
-			// TODO: Is there a need for response from server?
-			// TODO: Timer value, enable children and other operations
-			// TODO: DB works
-			// TODO: Computer clocks may go at their own paces
-			// TODO: Send the query after user has done with setting time (prevent query spam)
-			// TODO: Disable children when parent is disabled
-			// TODO: Use UNIX time in database?
-			// TODO: Handle when same sliders are used from multiple places
+			// TODO: After time-out return light values to rule levels (if none, zero)
+			// TODO: Is it good thing to adjust sliders on the same hierarchy "level"?
+			// TODO: Maybe timer should do timerEnd-timeNow than it's now?
+			//       -> Sometimes ask server for current time
+			// TODO: Long polling with remotely changed slider values?
 			var coll = this.model.get("collection");
-			var cid;
 			for (var j in this.model.get("allChildren")) {
-				cid = this.model.get("allChildren")[j];
+				var cid = this.model.get("allChildren")[j];
 				for (var i in coll.sliderList[cid]) {
 					coll.sliderList[cid][i].set("enabled", this.model.get("enabled"));
 					coll.sliderList[cid][i].set("value", this.model.get("value"));
@@ -242,7 +239,7 @@
 				}
 			}
 			// Send the slider values to the DB
-			$.get("../server2/savesliders/"+this.model.get("allChildren")+','+this.model.get("lightID")+"/"+this.model.get("value")+"/"+this.model.get("timer")
+			$.get("../server2/savesliders/"+this.model.get("lightID")+','+this.model.get("allChildren")+"/"+this.model.get("value")+"/"+this.model.get("timer")
 			
 			//function(response) {
 			//	console.log(response);
@@ -250,6 +247,31 @@
 			//"json");
 			);
 	    return false;
+	},
+	
+	// Get slider value (if changed from somewhere else) and rule value for ghost slider
+	longPoll: function() {
+		// TODO: Who should be doing this? Collection or the first created sliders?
+		if (this.model.get("isMaster")) {
+		_this = this;
+
+		coll = this.model.get("collection");
+		$.get("../server2/poll/"+this.model.get("lightID")+','+this.model.get("children"),
+			function(response) {
+				if (response) {
+					for (var cid in response) {
+						console.log(cid, response[cid]);
+						for (var i in coll.sliderList[cid]) {
+							// TODO: Get these other values too
+							//this.model.get("collection").sliderList[child][i].set("value", response[child]);
+							coll.sliderList[cid][i].set("value", response[cid]);
+						}
+					}
+				}
+				_this.longPoll(_this); // TODO: Maybe bad idea
+			},
+			"json");
+		}
 	},
 	
 	// re-render the widget
