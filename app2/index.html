@@ -3,18 +3,8 @@
   <head>
     <title>WebDALI</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <style type="text/css">
-      .light-name { height: 1em; overflow-y: hidden; }
-      .light-widget { margin: 1em auto 0 auto; }
-      .light { float: left; width: 5em; overflow: hidden; margin: 0 5px 0 5px; text-align: center}
-      .slider-collection { float: left; }
-      .slider { float: left; margin: 0em; border: 2px solid red; padding: 25px; }
-      .slider-widget { margin:auto; }
-      .timer { width: 3em; font-size: 1em;}
-      .timer-add { margin-top: 1em; }
-      .onoff { margin-top: 1em;}
-
-    </style>
+		<link rel="stylesheet" href="style.css" type="text/css">
+    
     <script type="text/javascript" src="../lib/jqueryui/js/jquery-1.7.2.min.js"></script>
     <script type="text/javascript" src="../lib/underscore.js"></script>
     <script type="text/javascript" src="../lib/backbone.js"></script>
@@ -84,6 +74,7 @@
 		  		if (! this.sliderList[cid]) {
 		  			this.sliderList[cid] = [];
 		  			this.sliderIDs.push(cid);
+		  			this.query = null; // Start polling over again
 		  		}
 		  		this.sliderList[cid].push(this.models[this.length-1])
 		  		
@@ -109,38 +100,38 @@
 				return this.models;
 	 		},
 	 		
-	
-	// Get slider value (if changed from somewhere else) and rule value for ghost slider
-	longPollGet: function() {
-		// TODO: Who should be doing this? Collection or the first created sliders?
-		_this = this;
-		$.get("../server2/poll/"+this.sliderIDs,
-			function(response) {
-				_this.pollEnabled = false;
-				if (response) {
-					for (var cid in response) {
-						console.log(cid, response[cid]);
-						for (var i in _this.sliderList[cid]) {
-							// TODO: Get these other values too
-							//this.model.get("collection").sliderList[child][i].set("value", response[child]);
-							_this.sliderList[cid][i].set("value", response[cid]);
+			// Get slider value (if changed from somewhere else) and rule value for ghost slider
+			longPollGet: function() {
+				// TODO: Who should be doing this? Collection or the first created sliders?
+				_this = this;
+				this.query = $.get("../server2/poll/"+this.sliderIDs,
+					function(response) {
+						_this.pollEnabled = false;
+						if (response) {
+							for (var cid in response) {
+								console.log(cid, response[cid]);
+								for (var i in _this.sliderList[cid]) {
+									// TODO: Get these other values too
+									//this.model.get("collection").sliderList[child][i].set("value", response[child]);
+									_this.sliderList[cid][i].set("value", response[cid]);
+								}
+							}
 						}
-					}
-				}
-				//_this.longPoll(); // TODO: Does this eat memory?
+						//_this.longPoll(); // TODO: Does this eat memory?
+					},
+					"json");
 			},
-			"json");
-	},
-	
-	longPoll: function() {
-		_this = this;
-		this.poll = setInterval(function() {
-			if (! _this.pollEnabled) {
-				_this.pollEnabled = true;
-				_this.longPollGet()
+			
+			// Poll only if no already polling 
+			longPoll: function() {
+				_this = this;
+				this.poll = setInterval(function() {
+					if (! _this.pollEnabled || ! _this.query) {
+						_this.pollEnabled = true;
+						_this.longPollGet()
+					}
+				}, 2000);
 			}
-		}, 2000);	
-	}
 		});
 
     var SliderCollectionView = Backbone.View.extend ({
