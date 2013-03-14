@@ -91,6 +91,7 @@
 	<input class='timer-sub' type='button' value='-' /><br />\
 	<input class='onoff' type='button' value='Off' disabled='disabled' />"),
 	*/
+
 	// Backbone assigns these events automatically when the view is created
 	events: {
 	    "slidechange .slider-widget" : "sliderChange",
@@ -144,6 +145,7 @@
 			//if (this.model.get("timerEnabled"))
 			this.model.stopTimer();
 			isDisabled = true;
+			sliderColor = "red";
 			this.model.set("timer", this.model.get("timerDefault"));
 			sliderColor = "red";
 		}
@@ -151,6 +153,7 @@
 			//if (! this.model.get("timerEnabled"))
 			this.model.startTimer();
 			isDisabled = false;
+			sliderColor = "green";
 			var timerValue = this.model.get("timerDefault");
 			sliderColor = "green";
 		}
