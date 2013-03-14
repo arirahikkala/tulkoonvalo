@@ -47,6 +47,11 @@
 	  	},
 	  
 	  	parse: function(response) {
+		  	// Reset long polling
+		  	this.pollEnabled = false;
+	  		this.allowPolling = false;
+				if (this.query) this.query.abort();
+	  		
 	  		var childWrap = null;
 	  		var now = new Date();
 	  		
@@ -59,25 +64,17 @@
 	  			if (curLight["timer"] > 0)
 	  				isEnabled = true;
 	  			
-	  			// Is the slider among first created?
-	  			if (! this.parentEl)
-	  				isMaster = true;
-	  				
 	  			// Create a new slider
 	    		this.add ({ name: curLight["name"], value: curLight["current_level"], 
 		  		children: curLight["children"], allChildren: curLight["all_children"], 
 		  		collection: this, lightID: curLight["permanent_id"], 
-		  		enabled: isEnabled, timer: curLight["timer"], isMaster: isMaster });
-		  		
+		  		enabled: isEnabled, timer: curLight["timer"], timerLast: curLight["timer_full"] });
+
 		  		// Keep record of sliders with a certain ID
 		  		var cid = curLight["permanent_id"];
 		  		if (! this.sliderList[cid]) {
 		  			this.sliderList[cid] = [];
 		  			this.sliderIDs.push(cid);
-		  			
-		  			// Reset long polling
-		  			this.pollEnabled = false;
-		  			this.query = null;
 		  		}
 		  		this.sliderList[cid].push(this.models[this.length-1])
 		  		
@@ -94,8 +91,9 @@
 		  	}
 		  	if (childWrap) {
 				  childWrap.hide();
-				  childWrap.show("fade", 300);
+				  childWrap.show("fade", 150);
 				}
+				this.allowPolling = true;
 				return this.models;
 	 		},
 
@@ -103,18 +101,28 @@
 			longPoll: function() {
 				_this = this;
 				this.poll = setInterval(function() {
-					if (! _this.pollEnabled) {
+					if (! _this.pollEnabled && _this.allowPolling) {
 						_this.pollEnabled = true;
 						_this.longPollGet()
 					}
-				}, 1000);
+				}, 100);
 			},
 			
 			// Get slider value (if changed from somewhere else) and rule value for ghost slider
 			longPollGet: function() {
 				_this = this;
 				
-				this.query = $.get("../server2/poll/"+this.sliderIDs,
+				var sliderValues = [];
+				var timerValues = [];
+				var enabledValues = [];
+				// Create arrays to be sent
+				for (var cid in this.sliderList) {
+					sliderValues.push(this.sliderList[cid][0].get("value"));
+					timerValues.push(this.sliderList[cid][0].get("timerLast"));
+					enabledValues.push(this.sliderList[cid][0].get("enabled"));
+				}
+				
+				this.query = $.get("../server2/poll/"+this.sliderIDs+"/"+sliderValues+"/"+timerValues+"/"+enabledValues,
 					function(response) {
 						_this.pollEnabled = false;
 						if (response) {
@@ -123,11 +131,13 @@
 									_this.sliderList[cid][i].set("enabled", response[cid]["enabled"]);
 									_this.sliderList[cid][i].set("value", response[cid]["current_level"]);
 									_this.sliderList[cid][i].set("timer", response[cid]["timer"]);
+									_this.sliderList[cid][i].set("timerLast", response[cid]["timer"]);
 								}
 							}
 						}
 					},
 				"json");
+				
 			},
 			
 		});
@@ -162,7 +172,7 @@
     //$("#newslider").bind ("click", function () { Sliders.add ({ value: 0 })});
 		//$("#newslider").bind ("click", function () { Sliders.newSlider([6]); });
 		
-		Sliders.newSlider([6,1], null);
+		Sliders.newSlider([6,3], null);
     </script>
   </body>
 

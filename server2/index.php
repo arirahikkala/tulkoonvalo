@@ -10,7 +10,7 @@ $app->get('/newlights/:ids/', function($ids) { newGetLights($ids); });
 $app->get('/children/:id/', function($id) { getChildren($id); });
 $app->get('/allchildren/:id/', function($id) { getAllChildren($id); });
 $app->get('/savesliders/:ids/:value/:timer', function($ids, $value, $timer) { saveSliders($ids, $value, $timer); });
-$app->get('/poll/:ids/', function($ids) { poll($ids); });
+$app->get('/poll/:ids/:values/:timers/:enableds', function($ids, $values, $timers, $enableds) { poll($ids, $values, $timers, $enableds); });
 $app->get('/togglesliders/:ids/', function($ids) { toggleSliders($ids); });
 $app->run();
 
@@ -31,11 +31,49 @@ function togglesliders($ids) {
 	}
 }
 
-// TODO: Feed the original values from javascript
-function poll($ids) {
+// TODO: Should send parameters fancier way?
+function poll($ids, $values, $timers, $enableds) {
 	$ids_array = preg_split ("/,/", $ids);
+	$values_array = preg_split( "/,/", $values);
+	$timers_array = preg_split ( "/,/", $timers);
+	$enableds_array = preg_split ( "/,/", $enableds);
+	
+	// TODO: Proper check for values (in other places too...) no empty values "" etc. ?
+	if ((count($ids_array) != count($values_array)) ||
+	(count($values_array) != count($timers_array)) ||
+	(count($timers_array) != count($enableds_array)) )
+		return;
+		
 	// TODO: IP check if necessary
-	$origLevels = getLevels($ids_array);
+	// Create the array of original values
+	$origLevels = array();
+	$counter = 0;
+	foreach ($ids_array as $cid) {
+		$origLevels[$cid] = array();
+		
+		$value = (int)$values_array[$counter];
+		if ($value < 0)
+			$value = 0;
+		else if ($value > 100)
+			$value = 100;
+		$origLevels[$cid]["current_level"] = $value;
+		
+		$timer = (int)$timers_array[$counter];
+		if ($timer < 0)
+			$timer = 0;
+		else if ($timer > 86400)
+			$timer = 86400;
+		$origLevels[$cid]["timer"] = $timer;
+			
+		$isEnabled = (int)$enableds_array[$counter];
+		if ($isEnabled > 0)
+			$isEnabled = false;
+		else
+			$isEnabled = true;	
+		$origLevels[$cid]["enabled"] = $isEnabled;
+		
+		$counter++;
+	}
 	$time = time();
 	
 	// Loop 60 seconds at a time with small pauses in between
@@ -43,20 +81,18 @@ function poll($ids) {
 		$newLevels = getLevels($ids_array);
 		$retArray = array();
 
+		// Original values doesn't match the new one, return new values
 		foreach($newLevels as $id => $carray) {
-		
-			// Original values doesn't match the new one, return new values
-			if (($origLevels[$id]["current_level"] != $carray["current_level"]) ||
-			($origLevels[$id]["timer"] != $carray["timer"]) ||
-			($origLevels[$id]["enabled"] != $carray["enabled"])
-			)
+			if (($origLevels[$id]["current_level"] != (int)$carray["current_level"]) ||
+			($origLevels[$id]["timer"] != (int)$carray["timer"]) ||
+			($origLevels[$id]["enabled"] != (int)$carray["enabled"]) )
 				$retArray[$id] = $carray;
 		}
 		if ($retArray) {
 			print(json_encode($retArray));
 			break;
 		}
-		usleep(2000000);
+		usleep(1000000);
 	}
 }
 
@@ -77,14 +113,9 @@ function getLevels($ids_array) {
 			
 			try {
 				$retArray[$level->id] = array();
+				$retArray[$level->id]["current_level"] = (int)$level->current_level;
+				$retArray[$level->id]["timer"] = (int)strtotime($level->ends_at)-(int)strtotime($level->activated_at);
 				$retArray[$level->id]["enabled"] = true;
-				$retArray[$level->id]["current_level"] = $level->current_level;
-			
-				// Get time left
-				$timer = strtotime($level->ends_at)-strtotime($level->activated_at);
-				if ($timer < 0)
-					$timer = 0;
-				$retArray[$level->id]["timer"] = $timer;
 			}
 			// TODO: Get real rule values for this and the ghost slider
 			// Slider was turned off (hopefully)
@@ -175,6 +206,8 @@ function getObjectData ($ids) {
 		}
 		$lights -> children = $childrenIds;
 		$lights -> all_children = getAllChildren($id);
+		$lights -> ends_at = $lights->ends_at;
+		$lights -> timer_full = strtotime($lights->ends_at)-strtotime($lights->activated_at);
 		$retArray[] = $lights;
 	}
 	print(json_encode($retArray));

@@ -27,10 +27,11 @@
 	  	lightID: 0,
 			value: 0,
 			timer: 7200,
+			timerLast: null,
 			timerDefault: 7200,
 			timerMax: 86400, // 24h
+			timerEnabled: false,
 			enabled: 0,
-			timerEnabled: 0,
 			name: "",
 			children: null, // Children right under
 			allChildren: null, // Children on all levels
@@ -38,24 +39,25 @@
 			childrenFetched: false,
 			childElement: null,
 			collection: null,
-			isMaster: false,	
 	  };
 	
 	},
 	
 	startTimer: function() {
-			var _this = this;
-			_this.interval = setInterval(function() {_this.set("timer", _this.get("timer")-1)}, 1000);
-			//console.log("timer started",_this.get("timer"), this.get("name"));
-			this.set("enabled", 1);
-			this.set("timerEnabled", 1);
+			//console.log("START TIMER", this.get("name"),this.get("timerEnabled"));
+			if (! this.get("timerEnabled")) {
+				//console.log("STARTED", this.get("name"));
+				var _this = this;
+				_this.interval = setInterval(function() {_this.set("timer", _this.get("timer")-1)}, 1000);
+				//console.log("timer started",_this.get("timer"), this.get("name"));
+				this.set("timerEnabled", true);
+			}
 	},
 	
 	stopTimer: function() {
 			clearInterval(this.interval);
 			//console.log("timer stopped",this.get("name"));
-			this.set("enabled", 0);
-			this.set("timerEnabled", 0);
+			this.set("timerEnabled", false);
 	},
 
   });
@@ -83,14 +85,6 @@
 		<td><input class='timer-sub' type='button' value='-' /></td>\
 	</tr>\
 	</table>"),
-	/*
-	template: _.template("<div class='widget-header' /><div class='slider-widget' />\
-	<input class='timer-add' type='button' value='+' /><br />\
-	<input class='timer' type='text' readonly='readonly' />\
-	<input class='show-children' type='button' value='=>' /><br />\
-	<input class='timer-sub' type='button' value='-' /><br />\
-	<input class='onoff' type='button' value='Off' disabled='disabled' />"),
-	*/
 
 	// Backbone assigns these events automatically when the view is created
 	events: {
@@ -110,13 +104,13 @@
 	    this.updateUIFromModel();
 	    //this.longPoll();
 	    
-			this.model.bind("change:value", this.updateSliderFromModel, this);
+			this.model.bind("change:value", function() { this.updateSliderFromModel(); }, this);
 			this.model.bind("change:timer", function() { this.timerFormat(this.timerEndCheck(-1)); }, this );
 			this.model.bind("change:enabled", function() { this.updateUIFromModel(); }, this );
-		},
+	},
 	
 	toggleChildren: function() {
-
+	
 		// Fetch children if not done so yet
 		if (this.model.get("childrenFetched") == false) {
 			this.model.set("childrenFetched", true);
@@ -129,11 +123,11 @@
 			var elIndex = this.$el.index()+1;
 			if (this.model.get("showChildren") == true) {
 				this.model.set("showChildren", false);
-				this.model.get("childElement").hide("fade", 300);
+				this.model.get("childElement").hide("fade", 150);
 			}
 			else {
 				this.model.set("showChildren", true);
-				this.model.get("childElement").show("fade", 300);
+				this.model.get("childElement").show("fade", 150);
 			}
 		}
 	},
@@ -142,19 +136,15 @@
 	// Disable/enable UI elements and timer
 	updateUIFromModel: function() {
 		if (! this.model.get("enabled")) {
-			//if (this.model.get("timerEnabled"))
+			this.model.set("timer", this.model.get("timerDefault"));
+			this.model.set("timerLast", this.model.get("timer"));
 			this.model.stopTimer();
 			isDisabled = true;
 			sliderColor = "red";
-			this.model.set("timer", this.model.get("timerDefault"));
-			sliderColor = "red";
 		}
 		else {
-			//if (! this.model.get("timerEnabled"))
 			this.model.startTimer();
 			isDisabled = false;
-			sliderColor = "green";
-			var timerValue = this.model.get("timerDefault");
 			sliderColor = "green";
 		}
 		this.$(".timer").attr("disabled", isDisabled);
@@ -169,10 +159,15 @@
 	
 	updateSliderFromModel: function() {
 		// Disable events to prevent sliderChange calls in children
-		this.undelegateEvents()
-		//console.log(this.model.get("name"), this.model.get("value"));
+		this.undelegateEvents();
 		this.$(".slider-widget").slider("value", this.model.get("value"));
-		this.delegateEvents()
+		this.delegateEvents();
+	},
+	
+	sliderChange: function(ev, ui) {
+		this.model.set("enabled", 1);
+	  this.model.set("value", this.$(".slider-widget").slider("option", "value"));
+		this.childrenChange();
 	},
 	
 	// Change timer from buttons
@@ -180,6 +175,7 @@
 		var newTime = this.timerEndCheck(timeAdd);
 		// TODO: Round the added time to the nearest 15min?
 		this.model.set("timer", newTime);
+		this.model.set("timerLast", newTime);
 		  
 		// Inform children
 		this.childrenChange();
@@ -188,7 +184,7 @@
 	// Check if given time can be subtracted from timer
 	timerEndCheck: function(timeValue) {
 			var newTime = this.model.get("timer") + timeValue;
-			//console.log("timer...", this.model.get("name"));	
+			//console.log("timer...", this.model.get("name"), this.model.get("timer"));	
 			// Lower time limit
 	    if (newTime <= 0) {
 		    	this.model.stopTimer();
@@ -206,7 +202,6 @@
 		var hours = Math.floor(timerValue/3600);
 		var minutes = Math.floor((timerValue % 3600) / 60);
 
-		// TODO: Always show seconds?
 		// TODO: Additional proposal for UI (add red color, center font, message when time's up etc.)
 		// Show second countdown when <1 min time
 		if (timerValue < 60) {
@@ -235,25 +230,9 @@
 		this.childrenChange();
 	},
 	
-	sliderChange: function(ev, ui) {
-		// If timer not enabled yet do it now
-		//if (this.model.get("enabled") == 0)
-		//		this.model.startTimer();
-		this.model.set("enabled", 1);
-	  this.model.set("value", this.$(".slider-widget").slider("option", "value"));
-	  // if originalEvent is undefined, the event was created programmatically
-	  // thus, this ensures that we don't loop
-	  //if (ev.originalEvent !== undefined)
-		//	var response = this.model.save();
-		this.childrenChange();
-	},
-	
 	childrenChange: function() {
 		// TODO: After time-out return light values to rule levels (if none, zero)
-		// TODO: Is it good thing to adjust sliders on the same hierarchy "level"?
-		// TODO: Maybe timer should do timerEnd-timeNow than it's now?
-		//       -> Sometimes ask server for current time
-		// TODO: Long polling with remotely changed slider values?
+		
 		var coll = this.model.get("collection");
 		for (var j in this.model.get("allChildren")) {
 			var cid = this.model.get("allChildren")[j];
@@ -261,11 +240,11 @@
 				coll.sliderList[cid][i].set("enabled", this.model.get("enabled"));
 				coll.sliderList[cid][i].set("value", this.model.get("value"));
 				coll.sliderList[cid][i].set("timer", this.model.get("timer"));
+				coll.sliderList[cid][i].set("timerLast", this.model.get("timer"));
 				console.log( coll.sliderList[cid][i].get("enabled"), "enabled" );
 			}
 		}
 		// Insert slider values into DB
-		console.log("creation", this.model.get("timer"));
 		$.get("../server2/savesliders/"+this.model.get("lightID")+','+this.model.get("allChildren")+"/"+this.model.get("value")+"/"+this.model.get("timer"));
 		return false;
 	},
