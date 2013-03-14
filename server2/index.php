@@ -1,4 +1,4 @@
-<?php
+<?php // -*- PHP -*-
 
 require 'slim/Slim.php';
 
