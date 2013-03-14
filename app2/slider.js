@@ -145,17 +145,20 @@
 			this.model.stopTimer();
 			isDisabled = true;
 			this.model.set("timer", this.model.get("timerDefault"));
+			sliderColor = "red";
 		}
 		else {
 			//if (! this.model.get("timerEnabled"))
 			this.model.startTimer();
 			isDisabled = false;
 			var timerValue = this.model.get("timerDefault");
+			sliderColor = "green";
 		}
 		this.$(".timer").attr("disabled", isDisabled);
 		this.$(".timer-add").attr("disabled", isDisabled);
 		this.$(".timer-sub").attr("disabled", isDisabled);
 		this.$(".onoff").attr("disabled", isDisabled);
+		this.$(".timer").css({"border-color": sliderColor});
 		
 		// Format time for display
 		this.timerFormat(this.timerEndCheck(0));
