@@ -116,6 +116,7 @@
 			this.model.set("childrenFetched", true);
 			this.model.set("showChildren", true);
 			this.model.get("collection").newSlider(this.model.get("children"), this);
+			this.$(".show-children").attr("src", "../childrenarrow_back.png");
 		}
 		
 		else {
@@ -123,11 +124,13 @@
 			var elIndex = this.$el.index()+1;
 			if (this.model.get("showChildren") == true) {
 				this.model.set("showChildren", false);
-				this.model.get("childElement").hide("fade", 150);
+				this.model.get("childElement").hide("fade", 300);
+				this.$(".show-children").attr("src", "../childrenarrow.png");
 			}
 			else {
 				this.model.set("showChildren", true);
-				this.model.get("childElement").show("fade", 150);
+				this.model.get("childElement").show("fade", 300);
+				this.$(".show-children").attr("src", "../childrenarrow_back.png");
 			}
 		}
 	},
@@ -147,6 +150,7 @@
 			isDisabled = false;
 			sliderColor = "green";
 		}
+
 		this.$(".timer").attr("disabled", isDisabled);
 		this.$(".timer-add").attr("disabled", isDisabled);
 		this.$(".timer-sub").attr("disabled", isDisabled);
