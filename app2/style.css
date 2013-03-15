@@ -21,6 +21,10 @@
 	overflow: hidden;
 	height: 2em;
 }
+.show-children
+{
+	float: right;
+}
 
 .timer { width: 3em; font-size: 1em; border: solid 4px; border-color: red;}
 .timer-add { margin-top: 1em; width: 100%; }

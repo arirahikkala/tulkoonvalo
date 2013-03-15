@@ -12,7 +12,32 @@ $app->get('/allchildren/:id/', function($id) { getAllChildren($id); });
 $app->get('/savesliders/:ids/:value/:timer', function($ids, $value, $timer) { saveSliders($ids, $value, $timer); });
 $app->get('/poll/:ids/:values/:timers/:enableds', function($ids, $values, $timers, $enableds) { poll($ids, $values, $timers, $enableds); });
 $app->get('/togglesliders/:ids/', function($ids) { toggleSliders($ids); });
+$app->get('/lightstree/', 'getLightsTree');
+$app->post('/lights', 'addGroup');
 $app->run();
+
+function addGroup ()
+{
+	$sql = "insert into lights (name, brightness, parent, isGroup) values (?, ?, ?, ?)";
+	$requestBody = json_decode (Slim::getInstance()->request()->getBody());
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);
+		$stmt->execute(array ($requestBody->name, null, 1, true));
+		
+		print ("{id: '" + $db->lastInsertId('id') + "'}");
+	}
+	
+	catch(PDOException $e) {
+		echo '{"error":{"text":'. $e->getMessage() .'}}';
+	}
+	
+
+}
+
+function getLightsTree() {
+	print("getlightstree");
+}
 
 function togglesliders($ids) {
 	$ids_array = preg_split ("/,/", $ids);

@@ -30,7 +30,7 @@ arguments: $listwhat: Either "programs", "lines" or "lights"
  */
 function getPrograms($listwhat = "programs", $program = null, $line = null, $light = null) {
 	$sql = "select p.id as programid, p.name as programname, l.id as lineid, l.time_trigger, l.sensor_trigger, ll.light_id as lightid, ll.brightness, li.name as lightname from programs p left join programs_lines l on p.id = l.program_id left join programs_lines_lights ll on l.id = ll.line_id join lights li on ll.light_id = li.id";
-	$args = [];
+	$args = array();
 
 	if (!is_null ($light)) {
 		$sql .= " where p.id = :programid and l.id = :lineid and ll.light_id = :lightid";
@@ -61,7 +61,7 @@ function getPrograms($listwhat = "programs", $program = null, $line = null, $lig
 
 		// reindex everything back into a tree-ish structure (yes, it's a tree, don't be fooled by the 
 		// array syntax)
-		$data = [];
+		$data = array();
 		foreach ($programs as $p) {
 			$pid = intval ($p->programid);
 			$lineid = intval ($p->lineid);
@@ -155,7 +155,7 @@ function getPrograms($listwhat = "programs", $program = null, $line = null, $lig
 // returns: a representation of that object that jstree will understand once json_encode'd
 function stuffLightAttributes ($element)
 {
-	$rv = [];
+	$rv = array();
 	foreach ($element as $k => $v) {
 		if ($k == "parent") {}
 		else if ($k == "isGroup") { $rv['attr']['rel'] = $v ? "group" : "light"; }
@@ -177,7 +177,7 @@ function stuffLightAttributes ($element)
 // returns: A tree of elements, with each element's children in ['children']
 function reconstructLightTree ($root, $list)
 {
-	$root['children'] = [];
+	$root['children'] = array();
 	foreach ($list as $v) {
 		if ($v['parent'] == $root['id']) {
 			$root['children'][] = reconstructLightTree ($v, $list);
@@ -197,7 +197,7 @@ function getLightsTree() {
 		$stmt = $db->prepare($sql);
 		$stmt->execute();
 		$lights = $stmt->fetchAll (PDO::FETCH_ASSOC);
-		$tree = [];
+		$tree = array();
 
 		foreach ($lights as $key => $s) {
 			if (is_null ($s['parent'])) {

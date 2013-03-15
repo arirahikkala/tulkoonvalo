@@ -68,11 +68,11 @@
 	className: "slider",
 	
 	template: _.template("\
-	<div class='widget-header' />\
+	<div class='widget-header'>\
+	</div>\
 	<table border=0px>\
 	<tr>\
 		<td><div class='slider-widget' /></td>\
-		<td><input class='show-children' type='image' src='../childrenarrow.png' /></td>\
 	</tr>\
 	<tr>\
 		<td>\<input class='timer-add' type='button' value='+' /></td>\
@@ -116,7 +116,7 @@
 			this.model.set("childrenFetched", true);
 			this.model.set("showChildren", true);
 			this.model.get("collection").newSlider(this.model.get("children"), this);
-			this.$(".show-children").attr("src", "../childrenarrow_back.png");
+			this.$(".show-children").attr("src", "../childrenarrow_back2.png");
 		}
 		
 		else {
@@ -125,12 +125,12 @@
 			if (this.model.get("showChildren") == true) {
 				this.model.set("showChildren", false);
 				this.model.get("childElement").hide("fade", 300);
-				this.$(".show-children").attr("src", "../childrenarrow.png");
+				this.$(".show-children").attr("src", "../childrenarrow2.png");
 			}
 			else {
 				this.model.set("showChildren", true);
 				this.model.get("childElement").show("fade", 300);
-				this.$(".show-children").attr("src", "../childrenarrow_back.png");
+				this.$(".show-children").attr("src", "../childrenarrow_back2.png");
 			}
 		}
 	},
@@ -261,13 +261,16 @@
 	    this.$el.html (this.template ({name: this.model.get('name')}));
 	    this.$(".slider-widget").slider({orientation: "vertical", value: this.model.get('value')});
 			
+			// TODO: See license on jquery.ui.touch-punch.min.js library
+			this.$(".slider-widget").draggable();
+			
 			// TODO: Is this necessary?
 			// Cut too long names
 			var header = this.model.get("name");
 			if (header.length > 15)
 				header = header.substring(0, 12)+"...";
 			this.$(".widget-header").html(header);
-			
+			this.$(".widget-header").html(header+"<input class='show-children' type='image' src='../childrenarrow2.png' />");
 			if (this.model.get("children").length == 0)
 				this.$(".show-children").hide();
 				
