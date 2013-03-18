@@ -18,6 +18,7 @@ $app->get('/programs/', 'getPrograms');
 $app->run();
 
 function getPrograms() {
+	// Get the programs first
 	$sql = "select * from programs";
 	try {
 		$db = getConnection();
@@ -27,6 +28,48 @@ function getPrograms() {
 	}
 	catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}';
+	}
+	
+	// TODO: Refactor this SQL mess?
+	// Get times for each program
+	$sql = "select * from program_times where program_id=?";
+	foreach ($programs as $cProg) {
+		$cid = $cProg->id;
+		try {
+			$db = getConnection();
+			$stmt = $db->prepare($sql);
+			$stmt->execute(array($cid));
+			$times = $stmt->fetchAll (PDO::FETCH_OBJ);
+			
+			// Strip useless data
+			foreach ($times as $cTime)
+				unset($cTime->program_id);
+				
+			$cProg->times = $times;
+		}
+		catch(PDOException $e) {
+			echo '{"error":{"text":'. $e->getMessage() .'}}';
+		}
+	}
+	
+	$sql = "select * from program_levels where program_id=?";
+	foreach ($programs as $cProg) {
+		$cid = $cProg->id;
+		try {
+			$db = getConnection();
+			$stmt = $db->prepare($sql);
+			$stmt->execute(array($cid));
+			$levels = $stmt->fetchAll (PDO::FETCH_OBJ);
+			
+			// Strip useless data
+			foreach ($levels as $cLevel)
+				unset($cLevel->program_id);
+				
+			$cProg->levels = $levels;
+		}
+		catch(PDOException $e) {
+			echo '{"error":{"text":'. $e->getMessage() .'}}';
+		}
 	}
 	print(json_encode($programs));
 }

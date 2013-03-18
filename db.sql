@@ -66,7 +66,7 @@ CREATE TABLE `light_activations` (
 
 LOCK TABLES `light_activations` WRITE;
 /*!40000 ALTER TABLE `light_activations` DISABLE KEYS */;
-INSERT INTO `light_activations` VALUES (75,'2013-03-14 11:51:02','2013-03-14 13:47:11','7'),(49,'2013-03-15 14:39:45','2013-03-15 17:14:03','3'),(49,'2013-03-15 14:39:43','2013-03-15 16:44:02','4'),(49,'2013-03-15 14:39:43','2013-03-15 16:44:02','5'),(49,'2013-03-15 14:39:45','2013-03-15 17:14:03','1'),(49,'2013-03-15 14:39:45','2013-03-15 17:14:03','2'),(49,'2013-03-15 14:39:43','2013-03-15 16:44:02','6');
+INSERT INTO `light_activations` VALUES (75,'2013-03-14 11:51:02','2013-03-14 13:47:11','7'),(27,'2013-03-18 13:21:19','2013-03-18 14:19:54','6'),(68,'2013-03-18 13:21:23','2013-03-18 14:19:55','3'),(27,'2013-03-18 13:21:19','2013-03-18 14:19:54','4'),(27,'2013-03-18 13:21:19','2013-03-18 14:19:54','5'),(68,'2013-03-18 13:21:23','2013-03-18 14:19:55','1'),(68,'2013-03-18 13:21:23','2013-03-18 14:19:55','2');
 /*!40000 ALTER TABLE `light_activations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -93,6 +93,34 @@ LOCK TABLES `lights` WRITE;
 /*!40000 ALTER TABLE `lights` DISABLE KEYS */;
 INSERT INTO `lights` VALUES ('Aula Etu','1',0),('Aula Taka','2',0),('Aula','3',1),('Eteinen','4',1),('Ulkovalo','5',0),('Yritys','6',1),('Kokoushuone','7',1);
 /*!40000 ALTER TABLE `lights` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `program_levels`
+--
+
+DROP TABLE IF EXISTS `program_levels`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `program_levels` (
+  `program_id` int(32) NOT NULL,
+  `target_id` char(32) NOT NULL,
+  `light_detector` tinyint(1) NOT NULL,
+  `motion_detector` tinyint(1) NOT NULL,
+  `light_level` int(3) NOT NULL,
+  `motion_level` int(3) NOT NULL,
+  KEY `program_id` (`program_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `program_levels`
+--
+
+LOCK TABLES `program_levels` WRITE;
+/*!40000 ALTER TABLE `program_levels` DISABLE KEYS */;
+INSERT INTO `program_levels` VALUES (1,'2',1,0,75,0),(1,'6',1,1,75,100),(2,'6',0,0,0,0);
+/*!40000 ALTER TABLE `program_levels` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -132,12 +160,7 @@ DROP TABLE IF EXISTS `programs`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `programs` (
   `id` int(32) NOT NULL AUTO_INCREMENT,
-  `target_id` char(32) NOT NULL,
   `name` char(32) NOT NULL,
-  `light_detector` tinyint(1) NOT NULL,
-  `motion_detector` tinyint(1) NOT NULL,
-  `light_level` int(3) NOT NULL,
-  `motion_level` int(3) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -148,7 +171,7 @@ CREATE TABLE `programs` (
 
 LOCK TABLES `programs` WRITE;
 /*!40000 ALTER TABLE `programs` DISABLE KEYS */;
-INSERT INTO `programs` VALUES (1,'6','Arki',1,1,50,100),(2,'6','Wappu',1,0,25,0);
+INSERT INTO `programs` VALUES (1,'Arki'),(2,'Wappu');
 /*!40000 ALTER TABLE `programs` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -161,4 +184,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2013-03-18 10:16:49
+-- Dump completed on 2013-03-18 15:27:01

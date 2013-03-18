@@ -34,3 +34,8 @@
 .light-name { height: 1em; overflow-y: hidden; }
 .light-widget { margin: 1em auto 0 auto; }
 .light { float: left; width: 5em; overflow: hidden; margin: 0 5px 0 5px; text-align: center; }
+
+#motion-slider
+{
+	margin-left: 200px;
+}

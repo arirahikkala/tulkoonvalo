@@ -25,13 +25,15 @@
 	defaults: function() {
 	  return {
 	  	id: null,
+	  	name: null,
 	  	target_id: null,
 	  	light_detector: null,
 	  	motion_detector: null,
 	  	light_level: null,
 	  	motion_level: null,
 	  	times: null,
-	  	name: null,
+	  	levels: null,
+	  	saved: true,
 	  }
 	},
 

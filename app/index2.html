@@ -15,6 +15,8 @@
     <script type="text/javascript" src="../lib/jquery.idTabs.min.js"></script>
     <script //type="text/javascript" src="light.js"></script>
     <script type="text/javascript" src="program.js"></script>
+    <script type="text/javascript" src="time.js"></script>
+    <script type="text/javascript" src="programslider.js"></script>
     <script //type="text/javascript" src="programline.js"></script>
     <script //type="text/javascript" src="programlist.js"></script>
     <link rel="stylesheet" href="../lib/jqueryui/css/ui-lightness/jquery-ui-1.8.21.custom.css" />
@@ -54,15 +56,19 @@
     		</div>
     
     		<div id="programs" class="divit"><h2>Uusi sääntö</h2>
-					<div id="current_program">
-				
-      		<div id="programsLightGroups" class="lights"></div>
-      		<div id="programsContainer" class="programs">
-						<div id="programsProgramList"></div>
-						<div id="createProgram" class="eiVierekkain"><input type='text' value='Name...' name='programName'/><input type='button' value='Add' name='cProgram'/></div>
-      		</div>
-      		<div id="deleteProgram" class="eiVierekkain"><input type="button" value="Delete program"></div>
-      		<div id="programSetup" class="eiVierekkain"></div>
+    			<div>
+    				Säännön nimi:
+    				<input id='programName' />
+    			</div>
+    			<div id="programTimesContainer">
+    				<div id="programTimes" />
+    				<input id="addTime" type="submit" value="+Lisää aika" />
+    			</div>
+					<div id='programSlidersContainer'>
+	    			<input id="addProgramSlider" type="submit" value="+Lisää ryhmä" />
+	    			<div id='programSliders' />
+					</div>
+					<input id="saveTime" type=button value="Tallenna" />
     		</div>
 
     		<div id="sliders" class="divit"><h2>Uusi virtuaalikytkin</h2>
@@ -180,6 +186,54 @@
     
     $.jstree._reference($("#lightGroups")).hide_checkboxes();
 
+
+		//
+		// Programs used in the admin panel
+		//
+		var ProgramCollection = Backbone.Collection.extend ({
+			model: Program.Program,
+			url: "../server2/programs/",
+			
+			initialize: function() {
+			},
+			
+			renderForm: function(id) {
+			},
+		
+		});
+		
+		var ProgramCollectionView = Backbone.View.extend ({
+			tagName: "div",
+			className: 'program-collection',
+
+			initialize: function() {
+				var _this = this;
+				console.log(_this);
+				this.model.on ("add", function (m, c) { _this.$el.append (new Program.ProgramView ({model: m}).$el)});
+				this.render();
+			},
+
+			render: function() {
+				this.$el.empty();
+				var _this = this;
+				this.model.each (function (x) { _this.$el.append (new Program.ProgramView ({model: x}).$el)});
+			}
+		});
+		var Programs = new ProgramCollection();
+		var ProgramsView = new ProgramCollectionView ({ model: Programs, el: $("#current_program") });
+
+		Programs.fetch({success: function() {
+				$("#programsList").css({"width":"100%"});
+				
+				// Create main page programs table
+				$("#programsList").html("");
+				for (var i in Programs.models) {
+					cProg = Programs.models[i];
+					$("#programsList").append("<tr><td>"+cProg.get("id")+"</td>\
+					<td>"+cProg.get("name")+"</td></tr>");
+				}
+		} });
+
     // Backbone.Router handles noticing where we're navigating to for us
     // (though see T36)
     var AppRouter = Backbone.Router.extend ({
@@ -201,55 +255,7 @@
 	// - don't load data if you could already have loaded it in the background earlier or bootstrapped it into the page
 
 	mainpageView: function() {		
-			var ProgramCollection = Backbone.Collection.extend ({
-				model: Program.Program,
-				url: "../server2/programs/",
-				
-				initialize: function() {
-				},
-				
-				renderForm: function(id) {
-				},
-			
-			});
-			
-			var ProgramCollectionView = Backbone.View.extend ({
-				tagName: "div",
-				className: 'program-collection',
-	
-				initialize: function() {
-					var _this = this;
-					console.log(_this);
-					this.model.on ("add", function (m, c) { _this.$el.append (new Program.ProgramView ({model: m}).$el)});
-					this.render();
-				},
-	
-				render: function() {
-					this.$el.empty();
-					var _this = this;
-					this.model.each (function (x) { _this.$el.append (new Program.ProgramView ({model: x}).$el)});
-				}
-			});
-    	var Programs = new ProgramCollection();
-    	var ProgramsView = new ProgramCollectionView ({ model: Programs, el: $("#current_program") });
 
-			Programs.fetch({success: function() {
-				//console.log("Fetch success!", Programs.models);
-					console.log("parse", Programs.models);
-					$("#programsList").css({"width":"100%"});
-					
-					// Create the main page programs table
-					$("#programsList").html("");
-					for (var i in Programs.models) {
-						cProg = Programs.models[i];
-						$("#programsList").append("<tr><td>"+cProg.get("id")+"</td>\
-						<td>"+cProg.get("name")+"</td></tr>");
-					}
-					// TODO NEXT: Put program_times into program too
-					//						Get target_id real name
-					//						Style table
-					//						New/edit program pages
-			} });
 	},
 
 	controlsView: function() {
@@ -280,6 +286,82 @@
 	    $("#programsLightGroups").append($("#lightGroups"));
 	    //var menu = new ProgramList.SingleChoiceMenu ({ el: $("#programsProgramList"), model: Programs});
 			*/
+			
+      $("#programName").bind ("change", function() {
+      	newProg.set("name", $("#programName").val());
+      	console.log("new name: ", newProg.get("name"));
+      });
+			
+      // Time settings for programs
+			var TimeCollection = Backbone.Collection.extend ({
+				model: Time.Time,
+				url: "../server2/times/",
+			});
+			
+			var TimeCollectionView = Backbone.View.extend ({
+				tagName: "div",
+				className: 'time-collection',
+	
+				initialize: function() {
+					var _this = this;
+					this.model.on ("add", function (m, c) { _this.$el.append (new Time.TimeView ({model: m}).$el) });
+					//this.render();
+				},
+	
+				render: function() {
+					this.$el.empty();
+					var _this = this;
+					this.model.each (function (x) { _this.$el.append (new Time.TimeView ({model: x}).$el)});
+				}
+			});
+			
+    	var Times = new TimeCollection();
+    	var TimesView = new TimeCollectionView ({ model: Times, el: $("#programTimes") });
+			
+      $("#addTime").bind ("click", function() {
+      	Times.add({date_start: 123});
+      });
+      
+      $("#saveTime").bind ("click", function() {
+      	console.log(newProg.get("times"));
+      });
+      
+      // Light & motion detector settings for programs
+			var ProgramSliderCollection = Backbone.Collection.extend ({
+				model: ProgramSlider.ProgramSlider,
+				url: "../server2/programs/",
+			});
+			
+			var ProgramSliderCollectionView = Backbone.View.extend ({
+				tagName: "div",
+				className: 'programslider-collection',
+	
+				initialize: function() {
+					var _this = this;
+					this.model.on ("add", function (m, c) { _this.$el.append (new ProgramSlider.ProgramSliderView ({model: m}).$el)});
+					//this.render();
+				},
+	
+				render: function() {
+					this.$el.empty();
+					var _this = this;
+					this.model.each (function (x) { _this.$el.append (new ProgramSlider.ProgramSliderView ({model: x}).$el)});
+				}
+			});
+    	var ProgramSliders = new ProgramSliderCollection();
+    	var ProgramSlidersView = new ProgramSliderCollectionView ({ model: ProgramSliders, el: $("#programSliders") });
+
+      $("#addProgramSlider").bind ("click", function() {
+      	ProgramSliders.add({});
+      });
+      
+			// Create a new program
+			Programs.add({saved: false});
+			
+			// TODO: Better/safer way to return created model?
+			newProg = Programs.models[Programs.length-1];
+			newProg.set("times", Times);
+			newProg.set("levels", ProgramSliders);
 	},
 
 	helpView: function () {
