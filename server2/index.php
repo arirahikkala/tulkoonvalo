@@ -14,10 +14,24 @@ $app->get('/poll/:ids/:values/:timers/:enableds', function($ids, $values, $timer
 $app->get('/togglesliders/:ids/', function($ids) { toggleSliders($ids); });
 $app->get('/lightstree/', 'getLightsTree');
 $app->post('/lights', 'addGroup');
+$app->get('/programs/', 'getPrograms');
 $app->run();
 
-function addGroup ()
-{
+function getPrograms() {
+	$sql = "select * from programs";
+	try {
+		$db = getConnection();
+		$stmt = $db->prepare($sql);
+		$stmt->execute();
+		$programs = $stmt->fetchAll (PDO::FETCH_OBJ);
+	}
+	catch(PDOException $e) {
+		echo '{"error":{"text":'. $e->getMessage() .'}}';
+	}
+	print(json_encode($programs));
+}
+
+function addGroup () {
 	$sql = "insert into lights (name, brightness, parent, isGroup) values (?, ?, ?, ?)";
 	$requestBody = json_decode (Slim::getInstance()->request()->getBody());
 	try {
@@ -31,8 +45,6 @@ function addGroup ()
 	catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}';
 	}
-	
-
 }
 
 function getLightsTree() {

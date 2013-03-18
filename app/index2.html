@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>WebDALI</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <link rel="stylesheet" href="style.css" type="text/css" />
+    
+    <script type="text/javascript" src="../lib/jqueryui/js/jquery-1.7.2.min.js"></script>
+    <script type="text/javascript" src="../lib/underscore.js"></script>
+    <script type="text/javascript" src="../lib/backbone.js"></script>
+    <script type="text/javascript" src="../lib/backbone-relational.js"></script>
+    <script type="text/javascript" src="../lib/jqueryui/js/jquery-ui-1.8.21.custom.min.js"></script>
+    <script type="text/javascript" src="../lib/jstree/jquery.jstree.js"></script>
+    <script type="text/javascript" src="../lib/jquery.idTabs.min.js"></script>
+    <script //type="text/javascript" src="light.js"></script>
+    <script type="text/javascript" src="program.js"></script>
+    <script //type="text/javascript" src="programline.js"></script>
+    <script //type="text/javascript" src="programlist.js"></script>
+    <link rel="stylesheet" href="../lib/jqueryui/css/ui-lightness/jquery-ui-1.8.21.custom.css" />
+    <link rel="stylesheet" href="../lib/idTabStyle.css" />
+
+  </head>
+  <body>
+    <!-- lightGroups contains the tree of light groups. It's currently a jstree that's generated once and then only ever moved to different
+	 places in the document as necessary. -->
+    <div id="lightGroups"></div>
+
+    <!-- The page structure proper and the various container elements -->
+    <div id="container">
+    	<div id="usual" class="usual">
+    		<ul class="tabs testi">
+      		<li><a href="#mainpage">Etusivu</a></li>
+      		<li><a href="#groups">Valoryhmät</a></li>
+      		<li><a href="#programs">Uusi sääntö</a></li>
+      		<li><a href="#sliders">Uusi virtuaalikytkin</a></li>
+    		</ul>
+    
+    		<div id="mainpage" class="divit"><h2>Etusivu</h2>
+      		<table class="programs" id="programsList">
+      		</table>
+    		</div>
+    
+    		<div id="groups" class="divit"><h2>Valoryhmät</h2>
+      		<div id="groupContainer" class="programs">
+						<div id="groupsLightGroups"></div>
+						<div id="groupAdd" class="eiVierekkain">
+	  					<input id="addGroup" type="submit" value="Add" />
+						</div>
+    			</div>
+    			<div id="groupRemove" class="eiVierekkain">
+						<input id="deleteGroup" type="submit" value="Remove group" />
+    			</div>
+    		</div>
+    
+    		<div id="programs" class="divit"><h2>Uusi sääntö</h2>
+					<div id="current_program">
+				
+      		<div id="programsLightGroups" class="lights"></div>
+      		<div id="programsContainer" class="programs">
+						<div id="programsProgramList"></div>
+						<div id="createProgram" class="eiVierekkain"><input type='text' value='Name...' name='programName'/><input type='button' value='Add' name='cProgram'/></div>
+      		</div>
+      		<div id="deleteProgram" class="eiVierekkain"><input type="button" value="Delete program"></div>
+      		<div id="programSetup" class="eiVierekkain"></div>
+    		</div>
+
+    		<div id="sliders" class="divit"><h2>Uusi virtuaalikytkin</h2>
+      		<div id="programsLightGroups" class="lights"></div>
+      		<div id="programsContainer" class="programs">
+						<div id="programsProgramList"></div>
+						<div id="createProgram" class="eiVierekkain"><input type='text' value='Name...' name='programName'/><input type='button' value='Add' name='cProgram'/></div>
+      		</div>
+      		<div id="deleteProgram" class="eiVierekkain"><input type="button" value="Delete program"></div>
+      		<div id="programSetup" class="eiVierekkain"></div>
+    		</div>
+    		
+    	</div>
+    	
+    </div>
+    
+    <script type="text/javascript">
+      // jstree needs this to load its CSS
+      $.jstree._themes="../lib/jstree/themes/";
+
+      // turned out not to be needed on the development machines with the .htaccess in server/
+      // see T38
+//      Backbone.emulateHTTP = true;
+      $("#usual ul").idTabs(true);
+      //var Programs = new ProgramList.ProgramList;
+
+      // Grab the list of programs from the server; see T60
+//      Programs.fetch({async: false}); 
+
+      // Set up the light groups page
+      $("#deleteGroup").bind ("click", function() { $.jstree._reference("#lightGroups").remove() });
+      $("#addGroup").bind ("click", function() { $.jstree._reference ("#lightGroups").create() });
+      $("#lightGroups").hide();
+      
+      $("#lightGroups").jstree ({
+	  		"json_data": {
+	      	// the url from which jstree loads its information
+	      	// (note that updating to the server is done "out of view" from jstree, in callbacks below)
+	      	"ajax": { "url": "../server/lightsTree" }
+	  		},
+	  		// allow selecting groups and their members independently
+	  		"checkbox": {
+  	    	"two_state": "false",
+  	    },
+	  		// note T4, T5, T6; this is currently a no-op
+	  		"types": {
+	      	"light": { max_children: 0 }
+	  		},
+	  		"plugins": ["themes", "json_data", "checkbox", "ui", "dnd", "crrm", "types"]
+	  	})
+
+    .bind("rename.jstree", function (e, data) {
+			console.log (data.rslt.obj.attr("id"));
+			$.post(
+	    	"../server/lights/" + data.rslt.obj.attr("id") + "/name", 
+				JSON.stringify ({ "name" : data.rslt.new_name }), 
+				
+				function (r) {
+			    if(r !== "{}")
+						$.jstree.rollback(data.rlbk);
+				}
+			);
+		})
+		
+    .bind("dblclick.jstree", function () { 
+			$("#lightGroups").jstree("rename", null)
+    })
+
+    .bind("move_node.jstree", function (e, data) {
+			console.log (data);
+				$.post ("../server/lights/" + data.rslt.o.attr("id") + "/parent",
+			
+				JSON.stringify ({
+		 	   "parent" : data.rslt.cr === -1 ? 1 : data.rslt.np.attr("id")
+				}),
+		
+				function (r) {
+		    	if(r !== "{}")
+						$.jstree.rollback(data.rlbk);
+				}
+			);
+    })
+
+    .bind("remove.jstree", function (e, data) {
+			data.rslt.obj.each(function () {
+	    	$.ajax({
+					async : false,
+					type: 'DELETE',
+					url: "../server/lights/" + this.id,
+					success : function (r) {
+		    		if(r !== "{}")
+							data.inst.refresh();
+					}
+	    	});
+			});
+    })
+    
+    // create a new node
+    // note T65
+    .bind("create.jstree", function (e, data) {
+    console.log(data.rslt);
+			$.post (
+	    	"../server2/lights",
+	    	JSON.stringify ({ name: data.rslt.name}),
+			function (r) {
+		    var res = JSON.parse (r);
+		    if (r['error'] !== undefined)
+					$.jstree.rollback(data.rlbk);
+		    else {
+					$(data.rslt.obj).attr("id", r);
+					data.inst.refresh();
+		    }
+			})
+    });
+    
+    $.jstree._reference($("#lightGroups")).hide_checkboxes();
+
+    // Backbone.Router handles noticing where we're navigating to for us
+    // (though see T36)
+    var AppRouter = Backbone.Router.extend ({
+			routes: {
+				"mainpage": "mainpageView",
+	    	"programs": "programsView",
+	    	"controls": "controlsView",
+	    	"test": "testView",
+	    	"help": "helpView",
+	    	"groups": "groupsView",
+	    	"": "controlsView"
+			},
+
+	// note that the various *view functions are of course run each time you navigate to a view
+	// this means:
+	// - don't bind events to already existing elements (because they'll get bound multiple times)
+	//   (making new elements and binding events to those is okay, probably, although the optimal thing to do
+	//   would probably be to ever rerender stuff if you can help it)
+	// - don't load data if you could already have loaded it in the background earlier or bootstrapped it into the page
+
+	mainpageView: function() {		
+			var ProgramCollection = Backbone.Collection.extend ({
+				model: Program.Program,
+				url: "../server2/programs/",
+				
+				initialize: function() {
+				},
+				
+				renderForm: function(id) {
+				},
+			
+			});
+			
+			var ProgramCollectionView = Backbone.View.extend ({
+				tagName: "div",
+				className: 'program-collection',
+	
+				initialize: function() {
+					var _this = this;
+					console.log(_this);
+					this.model.on ("add", function (m, c) { _this.$el.append (new Program.ProgramView ({model: m}).$el)});
+					this.render();
+				},
+	
+				render: function() {
+					this.$el.empty();
+					var _this = this;
+					this.model.each (function (x) { _this.$el.append (new Program.ProgramView ({model: x}).$el)});
+				}
+			});
+    	var Programs = new ProgramCollection();
+    	var ProgramsView = new ProgramCollectionView ({ model: Programs, el: $("#current_program") });
+
+			Programs.fetch({success: function() {
+				//console.log("Fetch success!", Programs.models);
+					console.log("parse", Programs.models);
+					$("#programsList").css({"width":"100%"});
+					
+					// Create the main page programs table
+					$("#programsList").html("");
+					for (var i in Programs.models) {
+						cProg = Programs.models[i];
+						$("#programsList").append("<tr><td>"+cProg.get("id")+"</td>\
+						<td>"+cProg.get("name")+"</td></tr>");
+					}
+					// TODO NEXT: Put program_times into program too
+					//						Get target_id real name
+					//						Style table
+					//						New/edit program pages
+			} });
+	},
+
+	controlsView: function() {
+	    /*
+	    $("#controlsLightGroups").empty();
+	    $.jstree._reference($("#lightGroups")).show_checkboxes();
+	    $("#lightGroups").show();
+	    $("#controlsLightGroups").append($("#lightGroups"));
+	    //var menu = new ProgramList.MultipleChoiceMenu ({ el: $("#controlsProgramsList"), model: Programs});
+		*/
+	},
+	
+	groupsView: function () {
+			/*
+			$.get("../server2/lightstree/");
+	    //$("#groupsLightGroups").empty();
+	    //$.jstree._reference($("#lightGroups")).hide_checkboxes();
+	    $("#lightGroups").show();
+	    $("#groupsLightGroups").append($("#lightGroups"));
+			*/
+	},
+	
+	programsView: function () {
+	    /*
+	    $("#programsLightGroups").empty();
+	    $.jstree._reference($("#lightGroups")).show_checkboxes();
+	    $("#lightGroups").show();
+	    $("#programsLightGroups").append($("#lightGroups"));
+	    //var menu = new ProgramList.SingleChoiceMenu ({ el: $("#programsProgramList"), model: Programs});
+			*/
+	},
+
+	helpView: function () {
+	},
+
+	testView: function () {
+	/*
+	    $("#test").html ("<div id='testLight'></div>");
+
+	    var line = new ProgramLine.ProgramLine({ lineid: 1, urlRoot: "../server/programs/1/lines"});
+	    ProgramView = new ProgramLine.ProgramLineView ({el: $("#testLight"), model: line});
+	    line.fetch({success: function() { console.log (line); line.trigger ("reset")}});
+	    setTimeout (function () { line.trigger ("change");  }, 5000);
+
+	    	      var LightCollectionTest = Backbone.Collection.extend ({
+		      model: Light.Light,
+		      url: "../server/lights"
+		      });
+		      
+		      Lights = new LightCollectionTest;
+
+		      var ProgramObj = new ProgramLine.ProgramLine({name: "ohjelma"});
+		      ProgramView = new ProgramLine.ProgramLineView ({el: $("#testLight"), model: ProgramObj});
+		      
+		      Lights.fetch( { success: function (lights, response) { lights.each (function (light) {ProgramView.addLight (light)})}});
+	         
+	*/
+	}
+	
+    });
+    // I assume Backbone internally sets some global variable to make this work, because yes, this is needed to make the router run
+    new AppRouter;
+    // we're done with everything, roll it
+    Backbone.history.start();
+
+    </script>
+  </body>
+</html>
