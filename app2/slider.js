@@ -39,6 +39,7 @@
 			childrenFetched: false,
 			childElement: null,
 			collection: null,
+			level: 0,
 	  };
 	
 	},
