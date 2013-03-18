@@ -17,10 +17,20 @@
 }
 .widget-header
 {
-	background: #cccccc;
 	overflow: hidden;
 	height: 2em;
 }
+
+#a.widget-header
+{
+	background: red;
+}
+
+#b.widget-header
+{
+	background: yellow;
+}
+
 .show-children
 {
 	float: right;

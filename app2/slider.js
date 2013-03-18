@@ -39,7 +39,7 @@
 			childrenFetched: false,
 			childElement: null,
 			collection: null,
-			level: 0,
+			level: 1,
 	  };
 	
 	},
@@ -69,7 +69,7 @@
 	className: "slider",
 	
 	template: _.template("\
-	<div class='widget-header'>\
+	<div class='widget-header' id='0'>\
 	</div>\
 	<table border=0px>\
 	<tr>\

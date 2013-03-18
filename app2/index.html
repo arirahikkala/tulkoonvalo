@@ -70,7 +70,8 @@
 	    		this.add ({ name: curLight["name"], value: curLight["current_level"], 
 		  		children: curLight["children"], allChildren: curLight["all_children"], 
 		  		collection: this, lightID: curLight["permanent_id"], 
-		  		enabled: isEnabled, timer: curLight["timer"], timerLast: curLight["timer_full"] });
+		  		enabled: isEnabled, timer: curLight["timer"], timerLast: curLight["timer_full"],
+		  		level: null });
 
 		  		// Keep record of sliders with a certain ID
 		  		var cid = curLight["permanent_id"];
@@ -90,8 +91,17 @@
 
 			  		var childEl = $(".slider:last");
 			  		childWrap.append(childEl);
-					this.models[this.length-1].set("level", this.parentEl.model.get("level")+1);
-					childEl.css({"margin-top":this.models[this.length-1].get("level")+"em"});
+
+				  	//var newLevel = this.parentEl.model.get("level")+1;
+				  	newLevel = "a";
+				  	if (this.parentEl.model.get("level") == "a")
+				  		newLevel = "b";
+						this.models[this.length-1].set("level", newLevel);
+
+						headEl = $(childEl.children()[0]);
+						headEl.attr("id", newLevel);
+						
+						childEl.css({"margin-top":this.models[this.length-1].get("level")+"em"});
 					}
 		  	}
 		  	if (childWrap) {
