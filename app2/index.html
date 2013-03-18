@@ -56,7 +56,7 @@
 	  		
 	  		var childWrap = null;
 	  		var now = new Date();
-	  		
+
 	  		for (var i in response) {
 	  			var curLight = response[i];
 	  			var isEnabled = false;
@@ -87,8 +87,11 @@
 							this.parentEl.$el.after(childWrap);
 							this.parentEl.model.set("childElement", childWrap);
 						}
+
 			  		var childEl = $(".slider:last");
 			  		childWrap.append(childEl);
+					this.models[this.length-1].set("level", this.parentEl.model.get("level")+1);
+					childEl.css({"margin-top":this.models[this.length-1].get("level")+"em"});
 					}
 		  	}
 		  	if (childWrap) {
