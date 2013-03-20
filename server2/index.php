@@ -16,6 +16,7 @@ $app->get('/lightstree/', 'getLightsTree');
 $app->post('/lights', 'addGroup');
 $app->get('/programs/', 'getPrograms');
 $app->post('/programs/', 'savePrograms');
+$app->get('/programsoverlap/', 'checkProgramsOverlap');
 $app->run();
 
 // Convenience DB function for INSERT statements
@@ -66,7 +67,7 @@ function savePrograms() {
  	print(json_encode($params));
 }
 
-function getPrograms() {
+function getPrograms($retJson = true) {
 	// Get the programs first
 	$sql = "select * from programs";
 	try {
@@ -118,8 +119,82 @@ function getPrograms() {
 			echo '{"error":{"text":'. $e->getMessage() .'}}';
 		}
 	}
-	print(json_encode($programs));
+	if ($retJson){
+		print(json_encode($programs));
+	}else{
+		return($programs);
+	}
 }
+
+function checkProgramsOverlap () {
+	$prog=getPrograms(false);
+	$target=$prog[0];
+	$tTimes = $target->times;
+
+	for ($i=1; $i<count($prog); $i++) {
+		$times = $prog[$i]->times;
+		foreach ($times as $time){
+			foreach ($tTimes as $tTime) {
+				$weekday = stripos(($tTime->weekdays+$time->weekdays), "2");
+				print($weekday);
+				if($weekday) {
+					if ((strtotime($time->time_start) < strtotime($tTime->time_start)) && 
+					(strtotime($tTime->time_start) < strtotime($time->time_end))) {
+						if((strtotime($time->time_start) < strtotime($tTime->time_end)) && 
+						(strtotime($tTime->time_end) < strtotime($time->time_end))) {
+							if (checkLights ($target, $prog[$i])) {
+								print("target: smaller than compared one!");
+							}
+						}else{
+							if (checkLights ($target, $prog[$i])) {
+								print("target: start time overlaps!");
+							}
+						}
+					}else if((strtotime($time->time_start) < strtotime($tTime->time_end)) && 
+					(strtotime($tTime->time_end) < strtotime($time->time_end))) {
+						if (checkLights ($target, $prog[$i])){
+							print("target: end time overlaps!");
+						}
+					}else if((strtotime($tTime->time_start) < strtotime($time->time_start)) && 
+					(strtotime($time->time_end) < strtotime($tTime->time_end))) {
+						if (checkLights ($target, $prog[$i])){
+							print("target: bigger than compared one!");
+						}
+					}else {
+						print("no overlap!");
+					}
+				}else {
+					print("weekdays don't match!");
+				}
+			}
+		}
+	}
+}
+
+function checkLights ($prog1, $prog2) {
+	$levels1=$prog1->levels;
+	$levels2=$prog2->levels;
+
+	foreach ($levels1 as $level1) {
+		$id1=$level1->target_id;
+		foreach ($levels2 as $level2){
+			$id2=$level2->target_id;
+			if ($id1==$id2) {
+				return(true);
+			}	
+		}
+	} 
+	return (false);
+}
+
+/*if($level1->light_level <= $level2->light_level){
+					echo "$level1->light_level ja $level2->light_level isompi on: $level2->light_level";
+				}else{
+					echo "$level1->light_level ja $level2->light_level isompi on: $level1->light_level";
+				}
+			}else{
+				echo "false: $id1: $level1->light_level ja $id2:$level2->light_level. ";
+			}*/
 
 function addGroup () {
 	$sql = "insert into lights (name, brightness, parent, isGroup) values (?, ?, ?, ?)";

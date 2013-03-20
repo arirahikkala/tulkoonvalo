@@ -103,7 +103,7 @@
 					headEl = $(childEl.children()[0]);
 					headEl.attr("id", levelColor);
 					console.log(this.models[this.length-1].get("level"));
-					childEl.css({"margin-top":this.models[this.length-1].get("level")+"em"});
+					childEl.css({"margin-top":this.models[this.length-1].get("level")*0.5+"em"});
 					}
 		  	}
 		  	if (childWrap) {
