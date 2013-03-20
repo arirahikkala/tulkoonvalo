@@ -127,13 +127,13 @@
       $("#programName").bind ("change", function() { newProg.set("name", $("#programName").val()); });
       $("#addTime").bind ("click", function() { tempTimes.add({}); });
       $("#addProgramSlider").bind ("click", function() { tempProgramLevels.add({}); });
-      $("#saveTime").bind ("click", function() { newProg.save(); });
+      $("#saveTime").bind ("click", function() { (tempPrograms.models[0]).save(); });
 
-			// Edkt program page
+			// Edit program page
       $("#programEditName").bind ("change", function() { newProg.set("name", $("#programName").val()); });
       $("#addEditTime").bind ("click", function() { tempTimes.add({}); });
       $("#addEditProgramSlider").bind ("click", function() { tempProgramLevels.add({}); });
-      $("#saveEditTime").bind ("click", function() { newProg.save(); });
+      $("#saveEditTime").bind ("click", function() { tempPrograms.models[0].save(); });
 
       $("#lightGroups").jstree ({
 	  		"json_data": {
@@ -405,38 +405,36 @@
 			
 			// Create a new temporary program
 			tempPrograms.add({});
-			newProg = tempPrograms.models[tempPrograms.length-1];
+			var newProg = tempPrograms.models[0];
 			newProg.set("times", tempTimes.models);
 			newProg.set("levels", tempProgramLevels.models);
 	},
 	
 	programsEditView: function (progID) {
-		var cProg = Programs.get(progID);
-		var times = cProg.get("times");
-		var levels = cProg.get("levels");
-		
 		this.resetProgramsView();
-		$("#programEditName").val(cProg.get("name"));
+		
+		cProg = Programs.get(progID);
+		tempPrograms.add(cProg);
+		newProg = tempPrograms.models[0];
+		
+		var times = newProg.get("times");
+		var levels = newProg.get("levels");
+		
+		$("#programEditName").val(newProg.get("name"));
 		tempTimesView.$el = $("#programEditTimes");
 		tempProgramLevelsView.$el = $("#programEditSliders");
 
-		//tempPrograms.add(cProg);
-		//newProg = tempPrograms.models[tempPrograms.length-1];
-		//newProg.set("times", tempTimes.models);
-		//newProg.set("levels", tempProgramLevels.models);
-			
-		//console.log(times,levels);
+		newProg.set("times", tempTimes.models);
+		newProg.set("levels", tempProgramLevels.models);
 
 		// Fill in the editing page
 		for (var i in times) {
 			tempTimes.add(times[i]);
 		}
-		
 		for (var i in levels) {
 			console.log(levels[i]);
 			tempProgramLevels.add(levels[i]);
 		}
-		console.log(tempProgramLevels);
 	},
 	
 	resetProgramsView: function () {
