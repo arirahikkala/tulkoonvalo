@@ -31,11 +31,13 @@
     <!-- The page structure proper and the various container elements -->
     <div id="container">
     	<div id="usual" class="usual">
+
     		<ul class="tabs testi">
       		<li><a href="#mainpage">Etusivu</a></li>
       		<li><a href="#groups">Valoryhmät</a></li>
       		<li><a href="#programs">Uusi sääntö</a></li>
       		<li><a href="#sliders">Uusi virtuaalikytkin</a></li>
+      		<li style='display: none'><a href="#programsEdit"></a></li>
     		</ul>
     
     		<div id="mainpage" class="divit"><h2>Etusivu</h2>
@@ -54,35 +56,53 @@
 						<input id="deleteGroup" type="submit" value="Remove group" />
     			</div>
     		</div>
-    
+
     		<div id="programs" class="divit"><h2>Uusi sääntö</h2>
     			<div>
     				Säännön nimi:
     				<input id='programName' />
     			</div>
     			<div id="programTimesContainer">
-    				<div id="programTimes" />
+    				<div id="programTimes"></div>
     				<input id="addTime" type="submit" value="+Lisää aika" />
     			</div>
-					<div id='programSlidersContainer'>
+    			
+					<div id='ProgramLevelsContainer'>
+	    			<div id="ProgramLevels"></div>
 	    			<input id="addProgramSlider" type="submit" value="+Lisää ryhmä" />
-	    			<div id='programSliders' />
 					</div>
 					<input id="saveTime" type=button value="Tallenna" />
     		</div>
-
+    		
     		<div id="sliders" class="divit"><h2>Uusi virtuaalikytkin</h2>
       		<div id="programsLightGroups" class="lights"></div>
       		<div id="programsContainer" class="programs">
 						<div id="programsProgramList"></div>
-						<div id="createProgram" class="eiVierekkain"><input type='text' value='Name...' name='programName'/><input type='button' value='Add' name='cProgram'/></div>
+						<div id="createProgram" class="eiVierekkain">
+							<input type='text' value='Name...' name='programName'/>
+							<input type='button' value='Add' name='cProgram'/>
+						</div>
       		</div>
-      		<div id="deleteProgram" class="eiVierekkain"><input type="button" value="Delete program"></div>
-      		<div id="programSetup" class="eiVierekkain"></div>
+    		</div>
+    		
+    		<div id="programsEdit" class="divit"><h2>Muokkaa sääntöä</h2>
+    			<div>
+    				Säännön nimi:
+    				<input id='programEditName' />
+    			</div>
+    			<div id="programTimesContainer">
+    				<div id="programEditTimes"></div>
+    				<input id="addEditTime" type="submit" value="+Lisää aika" />
+    			</div>
+    			
+					<div id='ProgramEditLevelsContainer'>
+	    			<div id="programEditSliders"></div>
+	    			<input id="addEditProgramSlider" type="submit" value="+Lisää ryhmä" />
+					</div>
+					<input id="saveEditTime" type=button value="Tallenna" />
     		</div>
     		
     	</div>
-    	
     </div>
     
     <script type="text/javascript">
@@ -102,7 +122,19 @@
       $("#deleteGroup").bind ("click", function() { $.jstree._reference("#lightGroups").remove() });
       $("#addGroup").bind ("click", function() { $.jstree._reference ("#lightGroups").create() });
       $("#lightGroups").hide();
-      
+
+			// New program page
+      $("#programName").bind ("change", function() { newProg.set("name", $("#programName").val()); });
+      $("#addTime").bind ("click", function() { tempTimes.add({}); });
+      $("#addProgramSlider").bind ("click", function() { tempProgramLevels.add({}); });
+      $("#saveTime").bind ("click", function() { newProg.save(); });
+
+			// Edkt program page
+      $("#programEditName").bind ("change", function() { newProg.set("name", $("#programName").val()); });
+      $("#addEditTime").bind ("click", function() { tempTimes.add({}); });
+      $("#addEditProgramSlider").bind ("click", function() { tempProgramLevels.add({}); });
+      $("#saveEditTime").bind ("click", function() { newProg.save(); });
+
       $("#lightGroups").jstree ({
 	  		"json_data": {
 	      	// the url from which jstree loads its information
@@ -187,30 +219,25 @@
     $.jstree._reference($("#lightGroups")).hide_checkboxes();
 
 
-		//
-		// Programs used in the admin panel
-		//
+		/*
+		// Light programs collection
+		*/
 		var ProgramCollection = Backbone.Collection.extend ({
 			model: Program.Program,
 			url: "../server2/programs/",
 			
 			initialize: function() {
 			},
-			
-			renderForm: function(id) {
-			},
-		
 		});
 		
 		var ProgramCollectionView = Backbone.View.extend ({
 			tagName: "div",
 			className: 'program-collection',
-
+			
 			initialize: function() {
 				var _this = this;
-				console.log(_this);
 				this.model.on ("add", function (m, c) { _this.$el.append (new Program.ProgramView ({model: m}).$el)});
-				this.render();
+				//this.render();
 			},
 
 			render: function() {
@@ -219,32 +246,116 @@
 				this.model.each (function (x) { _this.$el.append (new Program.ProgramView ({model: x}).$el)});
 			}
 		});
+		
+		var ProgramCollectionMainView = Backbone.View.extend ({
+			tagName: "div",
+			className: 'program-collection',
+			
+			initialize: function() {
+				var _this = this;
+				this.model.on ("add", function (m, c) { _this.$el.append (new Program.ProgramMainView ({model: m, router: appRouter}).$el)});
+				this.model.on("reset", function() { _this.render(); });
+			},
+
+			render: function() {
+				this.$el.empty();
+				var _this = this;
+				this.model.each (function (x) { _this.$el.append (new Program.ProgramMainView ({model: x}).$el); x.set("router", AppRouter)});
+			}
+		});
+		
+		/*
+		// Programs time collection
+		*/
+		var TimeCollection = Backbone.Collection.extend ({
+			model: Time.Time,
+			url: "../server2/times/",
+		});
+		
+		var TimeCollectionView = Backbone.View.extend ({
+			tagName: "div",
+			className: 'time-collection',
+			
+			initialize: function() {
+				var _this = this;
+				this.model.on ("add", function (m, c) { _this.$el.append (new Time.TimeView ({model: m}).$el) });
+				//this.render();
+			},
+
+			render: function() {
+				this.$el.empty();
+				var _this = this;
+				this.model.each (function (x) { _this.$el.append (new Time.TimeView ({model: x}).$el)});
+			}
+		});
+		
+		/*
+		// Light & motion detector settings for programs
+		*/
+		var ProgramSliderCollection = Backbone.Collection.extend ({
+			model: ProgramSlider.ProgramSlider,
+			url: "../server2/programs/",
+		});
+		
+		var ProgramSliderCollectionView = Backbone.View.extend ({
+			tagName: "div",
+			className: 'programslider-collection',
+
+			initialize: function() {
+				var _this = this;
+				this.model.on ("add", function (m, c) { _this.$el.append (new ProgramSlider.ProgramSliderView ({model: m}).$el)});
+				//this.render();
+			},
+
+			render: function() {
+				this.$el.empty();
+				var _this = this;
+				this.model.each (function (x) { _this.$el.append (new ProgramSlider.ProgramSliderView ({model: x}).$el)});
+			}
+		});
+		
+		// Collection instances for permanent programs
 		var Programs = new ProgramCollection();
 		var ProgramsView = new ProgramCollectionView ({ model: Programs, el: $("#current_program") });
+		var ProgramsMainView = new ProgramCollectionMainView ({ model: Programs, el: $("#programsList") });
 
+		var Times = new TimeCollection();  
+    var TimesView = new TimeCollectionView ({ model: Times, el: $("#programTimes") });
+    
+    var ProgramLevels = new ProgramSliderCollection();
+    var ProgramLevelsView = new ProgramSliderCollectionView ({ model: ProgramLevels, el: $("#ProgramLevels") });
+    
+		// Collection instances for temporary programs
+		var tempPrograms = new ProgramCollection();
+		var tempProgramsView = new ProgramCollectionView ({ model: tempPrograms, el: $("#current_program") });
+
+    var tempTimes = new TimeCollection();
+    var tempTimesView = new TimeCollectionView ({ model: tempTimes, el: $("#programTimes") });
+
+    var tempProgramLevels = new ProgramSliderCollection();
+    var tempProgramLevelsView = new ProgramSliderCollectionView ({ model: tempProgramLevels, el: $("#ProgramLevels") });
+    
+    // Get programs from DB
 		Programs.fetch({success: function() {
-				$("#programsList").css({"width":"100%"});
+			console.log(Programs);
+			/*
+			for (var i in Programs.models) {
+				console.log(i, Programs.models[i]);
+				cProg = Programs.models[i];
+				cTimes = new TimeCollection()
+				for va
+			}
+			*/
+		}});
 				
-				// Create main page programs table
-				$("#programsList").html("");
-				for (var i in Programs.models) {
-					cProg = Programs.models[i];
-					$("#programsList").append("<tr><td>"+cProg.get("id")+"</td>\
-					<td>"+cProg.get("name")+"</td></tr>");
-				}
-		} });
-
     // Backbone.Router handles noticing where we're navigating to for us
     // (though see T36)
     var AppRouter = Backbone.Router.extend ({
 			routes: {
 				"mainpage": "mainpageView",
 	    	"programs": "programsView",
-	    	"controls": "controlsView",
-	    	"test": "testView",
-	    	"help": "helpView",
+	    	"programsEdit/:cid": "programsEditView",
 	    	"groups": "groupsView",
-	    	"": "controlsView"
 			},
 
 	// note that the various *view functions are of course run each time you navigate to a view
@@ -253,11 +364,10 @@
 	//   (making new elements and binding events to those is okay, probably, although the optimal thing to do
 	//   would probably be to ever rerender stuff if you can help it)
 	// - don't load data if you could already have loaded it in the background earlier or bootstrapped it into the page
-
-	mainpageView: function() {		
-
+	
+	mainpageView: function() {
 	},
-
+	
 	controlsView: function() {
 	    /*
 	    $("#controlsLightGroups").empty();
@@ -287,116 +397,67 @@
 	    //var menu = new ProgramList.SingleChoiceMenu ({ el: $("#programsProgramList"), model: Programs});
 			*/
 			
-      $("#programName").bind ("change", function() {
-      	newProg.set("name", $("#programName").val());
-      	console.log("new name: ", newProg.get("name"));
-      });
+			// Reset the view
+			this.resetProgramsView();
+			$("#programName").val('');
+			tempTimesView.$el = $("#programTimes");
+			tempProgramLevelsView.$el = $("#ProgramLevels");
 			
-      // Time settings for programs
-			var TimeCollection = Backbone.Collection.extend ({
-				model: Time.Time,
-				url: "../server2/times/",
-			});
-			
-			var TimeCollectionView = Backbone.View.extend ({
-				tagName: "div",
-				className: 'time-collection',
-	
-				initialize: function() {
-					var _this = this;
-					this.model.on ("add", function (m, c) { _this.$el.append (new Time.TimeView ({model: m}).$el) });
-					//this.render();
-				},
-	
-				render: function() {
-					this.$el.empty();
-					var _this = this;
-					this.model.each (function (x) { _this.$el.append (new Time.TimeView ({model: x}).$el)});
-				}
-			});
-			
-    	var Times = new TimeCollection();
-    	var TimesView = new TimeCollectionView ({ model: Times, el: $("#programTimes") });
-			
-      $("#addTime").bind ("click", function() {
-      	Times.add({date_start: 123});
-      });
-      
-      $("#saveTime").bind ("click", function() {
-      	console.log(newProg.get("times"));
-      });
-      
-      // Light & motion detector settings for programs
-			var ProgramSliderCollection = Backbone.Collection.extend ({
-				model: ProgramSlider.ProgramSlider,
-				url: "../server2/programs/",
-			});
-			
-			var ProgramSliderCollectionView = Backbone.View.extend ({
-				tagName: "div",
-				className: 'programslider-collection',
-	
-				initialize: function() {
-					var _this = this;
-					this.model.on ("add", function (m, c) { _this.$el.append (new ProgramSlider.ProgramSliderView ({model: m}).$el)});
-					//this.render();
-				},
-	
-				render: function() {
-					this.$el.empty();
-					var _this = this;
-					this.model.each (function (x) { _this.$el.append (new ProgramSlider.ProgramSliderView ({model: x}).$el)});
-				}
-			});
-    	var ProgramSliders = new ProgramSliderCollection();
-    	var ProgramSlidersView = new ProgramSliderCollectionView ({ model: ProgramSliders, el: $("#programSliders") });
-
-      $("#addProgramSlider").bind ("click", function() {
-      	ProgramSliders.add({});
-      });
-      
-			// Create a new program
-			Programs.add({saved: false});
-			
-			// TODO: Better/safer way to return created model?
-			newProg = Programs.models[Programs.length-1];
-			newProg.set("times", Times);
-			newProg.set("levels", ProgramSliders);
+			// Create a new temporary program
+			tempPrograms.add({});
+			newProg = tempPrograms.models[tempPrograms.length-1];
+			newProg.set("times", tempTimes.models);
+			newProg.set("levels", tempProgramLevels.models);
 	},
+	
+	programsEditView: function (progID) {
+		var cProg = Programs.get(progID);
+		var times = cProg.get("times");
+		var levels = cProg.get("levels");
+		
+		this.resetProgramsView();
+		$("#programEditName").val(cProg.get("name"));
+		tempTimesView.$el = $("#programEditTimes");
+		tempProgramLevelsView.$el = $("#programEditSliders");
 
-	helpView: function () {
+		//tempPrograms.add(cProg);
+		//newProg = tempPrograms.models[tempPrograms.length-1];
+		//newProg.set("times", tempTimes.models);
+		//newProg.set("levels", tempProgramLevels.models);
+			
+		//console.log(times,levels);
+
+		// Fill in the editing page
+		for (var i in times) {
+			tempTimes.add(times[i]);
+		}
+		
+		for (var i in levels) {
+			console.log(levels[i]);
+			tempProgramLevels.add(levels[i]);
+		}
+		console.log(tempProgramLevels);
 	},
-
-	testView: function () {
-	/*
-	    $("#test").html ("<div id='testLight'></div>");
-
-	    var line = new ProgramLine.ProgramLine({ lineid: 1, urlRoot: "../server/programs/1/lines"});
-	    ProgramView = new ProgramLine.ProgramLineView ({el: $("#testLight"), model: line});
-	    line.fetch({success: function() { console.log (line); line.trigger ("reset")}});
-	    setTimeout (function () { line.trigger ("change");  }, 5000);
-
-	    	      var LightCollectionTest = Backbone.Collection.extend ({
-		      model: Light.Light,
-		      url: "../server/lights"
-		      });
-		      
-		      Lights = new LightCollectionTest;
-
-		      var ProgramObj = new ProgramLine.ProgramLine({name: "ohjelma"});
-		      ProgramView = new ProgramLine.ProgramLineView ({el: $("#testLight"), model: ProgramObj});
-		      
-		      Lights.fetch( { success: function (lights, response) { lights.each (function (light) {ProgramView.addLight (light)})}});
-	         
-	*/
-	}
+	
+	resetProgramsView: function () {
+		
+		// Empty models from temporary collections
+		for (var i=tempTimes.length-1; i>-1; i--) {
+			cModel = tempTimes.models[i];
+			tempTimes.remove(cModel);
+		}
+		for (var i=tempProgramLevels.length-1; i>-1; i--) {
+			cModel = tempProgramLevels.models[i];
+			tempProgramLevels.remove(cModel);
+		}
+		tempPrograms.pop();
+	},
 	
     });
     // I assume Backbone internally sets some global variable to make this work, because yes, this is needed to make the router run
-    new AppRouter;
+    appRouter = new AppRouter;
     // we're done with everything, roll it
     Backbone.history.start();
-
     </script>
   </body>
 </html>

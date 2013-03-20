@@ -15,7 +15,56 @@ $app->get('/togglesliders/:ids/', function($ids) { toggleSliders($ids); });
 $app->get('/lightstree/', 'getLightsTree');
 $app->post('/lights', 'addGroup');
 $app->get('/programs/', 'getPrograms');
+$app->post('/programs/', 'savePrograms');
 $app->run();
+
+// Convenience DB function for INSERT statements
+function dbInsert($db, $sql, $dbArray) {
+	try {
+		$stmt = $db->prepare($sql);
+		$stmt->execute($dbArray);
+	}
+	catch(PDOException $e) {
+		echo '{"error":{"text":'. $e->getMessage() .'}}';
+		return($e->getMessage());
+	}
+}
+
+// TODO: Use this for editing. If ID is not null update value
+function savePrograms() {
+	$params = json_decode(Slim::getInstance()->request()->getBody());
+	
+	// TODO: Parameter validity (addess error receivers by their CID)
+	// Memo: not same target_id allowed in levels in one program
+	$times = $params->times; // Must not be empty
+	$levels = $params->levels; // Must not be empty
+	
+	$sql = "insert into programs values (null,?)";
+	$db = getConnection();
+	dbInsert($db, $sql, array($params->name));
+
+	$programID = $db->lastInsertId();
+	
+	$sql = "insert into program_times values (?,?,?,?,?,?)";	
+	foreach ($params->times as $time) {
+		dbInsert($db, $sql, array(
+				$programID, $time->date_start, 
+				$time->date_end, $time->weekdays,
+				$time->time_start, $time->time_end)
+		);
+	}
+	
+	$sql = "insert into program_levels values (?,?,?,?,?,?)";	
+	foreach ($params->levels as $level) {
+		dbInsert($db, $sql, array(
+				$programID, $level->target_id, 
+				$level->light_detector, $level->motion_detector,
+				$level->light_level, $level->motion_level)
+		);
+	}
+	// TODO: Return newly created ID $db->lastInsertId()
+ 	print(json_encode($params));
+}
 
 function getPrograms() {
 	// Get the programs first
@@ -36,7 +85,6 @@ function getPrograms() {
 	foreach ($programs as $cProg) {
 		$cid = $cProg->id;
 		try {
-			$db = getConnection();
 			$stmt = $db->prepare($sql);
 			$stmt->execute(array($cid));
 			$times = $stmt->fetchAll (PDO::FETCH_OBJ);
@@ -56,7 +104,6 @@ function getPrograms() {
 	foreach ($programs as $cProg) {
 		$cid = $cProg->id;
 		try {
-			$db = getConnection();
 			$stmt = $db->prepare($sql);
 			$stmt->execute(array($cid));
 			$levels = $stmt->fetchAll (PDO::FETCH_OBJ);
