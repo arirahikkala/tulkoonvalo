@@ -22,6 +22,7 @@
 	  	weekdays: '0000000',
 	  	time_start: '',
 	  	time_end: '',
+	  	new_time: true,
 	  }
 	},
 	
@@ -39,9 +40,9 @@
 			var index = parseInt(event.target.id);
 			
 			if (event.target.checked)
-				weekdays.substr(0, index) + "1" + weekdays.substr(index+1);
+				weekdays = weekdays.substr(0, index) + "1" + weekdays.substr(index+1);
 			else
-				weekdays.substr(0, index) + "0" + weekdays.substr(index+1);
+				weekdays = weekdays.substr(0, index) + "0" + weekdays.substr(index+1);
 
 			this.model.set("weekdays", weekdays);
 		},

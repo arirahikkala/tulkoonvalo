@@ -16,10 +16,13 @@ $app->get('/lightstree/', 'getLightsTree');
 $app->post('/lights', 'addGroup');
 $app->get('/programs/', 'getPrograms');
 $app->post('/programs/', 'savePrograms');
+$app->put('/programs/:id', function($id) { updateProgram($id); });
+$app->delete('/programs/:id', function($id) { deleteProgram($id); });
+
 $app->run();
 
-// Convenience DB function for INSERT statements
-function dbInsert($db, $sql, $dbArray) {
+// Convenience DB function for INSERT, UPDATE and DELETE statements
+function dbUpdate($db, $sql, $dbArray) {
 	try {
 		$stmt = $db->prepare($sql);
 		$stmt->execute($dbArray);
@@ -30,48 +33,119 @@ function dbInsert($db, $sql, $dbArray) {
 	}
 }
 
+function deleteProgram($id) {
+	$db = getConnection();
+	
+	$sql = "delete from programs where id=?";	
+	dbUpdate($db, $sql, array($id));
+	
+	$sql = "delete from program_times where program_id=?";	
+	dbUpdate($db, $sql, array($id));
+	
+	$sql = "delete from program_levels where program_id=?";	
+	dbUpdate($db, $sql, array($id));
+}
+
+function updateProgram($id) {
+	$params = json_decode(Slim::getInstance()->request()->getBody());
+	
+	// TODO: Parameter validity/safety conv. function
+	$db = getConnection();
+	
+	$sql = "update programs set name=? where id=?";	
+	dbUpdate($db, $sql, array($params->name, $params->id));
+
+	foreach ($params->times as $time) {
+		// TODO: Need time removing
+		// TODO: Make inserted new_* value into false when OK response
+		// TODO: new_* name sucks, replace with new_item, try creating it in js too instead here (event type in adding)
+		
+		if ($time->new_time) {
+			$sql = "insert into program_times values (null,?,?,?,?,?,?)";	
+			dbUpdate($db, $sql, array(
+					$id, $time->date_start, 
+					$time->date_end, $time->weekdays,
+					$time->time_start, $time->time_end)
+			);
+		}
+		else {
+			$sql = "update program_times set date_start=?, date_end=?, weekdays=?, time_start=?, time_end=? where id=?";	
+			dbUpdate($db, $sql, array(
+					$time->date_start, 
+					$time->date_end, $time->weekdays,
+					$time->time_start, $time->time_end,
+					$time->id)
+			);
+		}
+	}
+
+	foreach ($params->levels as $level) {
+		// TODO: Need level removing
+
+		if ($level->new_level) {
+			$sql = "insert into program_levels values (null,?,?,?,?,?,?)";	
+			dbUpdate($db, $sql, array(
+					$id, $level->target_id, 
+					$level->light_detector, $level->motion_detector,
+					$level->light_level, $level->motion_level)
+			);
+		}
+		//| id | program_id | target_id | light_detector | motion_detector | light_level | motion_level 
+		else {
+			$sql = "update program_levels set program_id=?, light_detector=?, motion_detector=?, light_level=?, motion_level=? where id=?";	
+			dbUpdate($db, $sql, array(
+					$level->target_id, 
+					$level->light_detector, $level->motion_detector,
+					$level->light_level, $level->motion_level,
+					$level->id)
+			);
+		}
+	}
+}
+
 // TODO: Use this for editing. If ID is not null update value
 function savePrograms() {
 	$params = json_decode(Slim::getInstance()->request()->getBody());
-
-	if(checkProgramsOverlap($params)===true)
-		print(" upeeta! ");
-	else
-		print(" paskaa! ");
 	
-	// TODO: Parameter validity (addess error receivers by their CID)
 	// Memo: not same target_id allowed in levels in one program
 	$times = $params->times; // Must not be empty
 	$levels = $params->levels; // Must not be empty
 	
-	$sql = "insert into programs values (null,?)";
 	$db = getConnection();
-	dbInsert($db, $sql, array($params->name));
-
+	
+	$sql = "insert into programs values (null,?)";
+	dbUpdate($db, $sql, array($params->name));
 	$programID = $db->lastInsertId();
 	
-	$sql = "insert into program_times values (?,?,?,?,?,?)";	
+	$sql = "insert into program_times values (null,?,?,?,?,?,?)";	
 	foreach ($params->times as $time) {
-		dbInsert($db, $sql, array(
+		dbUpdate($db, $sql, array(
 				$programID, $time->date_start, 
 				$time->date_end, $time->weekdays,
 				$time->time_start, $time->time_end)
 		);
 	}
 	
-	$sql = "insert into program_levels values (?,?,?,?,?,?)";	
+	$sql = "insert into program_levels values (null,?,?,?,?,?,?)";	
 	foreach ($params->levels as $level) {
-		dbInsert($db, $sql, array(
+		dbUpdate($db, $sql, array(
 				$programID, $level->target_id, 
 				$level->light_detector, $level->motion_detector,
 				$level->light_level, $level->motion_level)
 		);
 	}
+	// Main things to do with new/edit programs:
+	// TODO: Item (time, level) removal
+	// TODO: Parameter validity/safety conv. function (addess error receivers by their CID)
 	// TODO: Return newly created ID $db->lastInsertId()
+	// TODO: Return to main page with a success message
+	// TODO: Show possible errors (identify by cid,id)
+	// TODO: Fix being unable to edit from other than mainpage tab (e.g. when reload page)
  	print(json_encode($params));
 }
 
 function getPrograms($retJson = true) {
+
 	// Get the programs first
 	$sql = "select * from programs";
 	try {
@@ -94,10 +168,11 @@ function getPrograms($retJson = true) {
 			$stmt->execute(array($cid));
 			$times = $stmt->fetchAll (PDO::FETCH_OBJ);
 			
-			// Strip useless data
-			foreach ($times as $cTime)
+			foreach ($times as $cTime) {
+				$cTime->new_time = false;
 				unset($cTime->program_id);
-				
+			}
+			
 			$cProg->times = $times;
 		}
 		catch(PDOException $e) {
@@ -114,8 +189,10 @@ function getPrograms($retJson = true) {
 			$levels = $stmt->fetchAll (PDO::FETCH_OBJ);
 			
 			// Strip useless data
-			foreach ($levels as $cLevel)
+			foreach ($levels as $cLevel) {
+				$cLevel->new_level = false;
 				unset($cLevel->program_id);
+			}
 				
 			$cProg->levels = $levels;
 		}

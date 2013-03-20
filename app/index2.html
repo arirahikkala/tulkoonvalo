@@ -3,8 +3,6 @@
   <head>
     <title>WebDALI</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-
-    <link rel="stylesheet" href="style.css" type="text/css" />
     
     <script type="text/javascript" src="../lib/jqueryui/js/jquery-1.7.2.min.js"></script>
     <script type="text/javascript" src="../lib/underscore.js"></script>
@@ -16,12 +14,13 @@
     <script //type="text/javascript" src="light.js"></script>
     <script type="text/javascript" src="program.js"></script>
     <script type="text/javascript" src="time.js"></script>
-    <script type="text/javascript" src="programslider.js"></script>
+    <script type="text/javascript" src="programlevel.js"></script>
+    <script type="text/javascript" src="slider.js"></script>
     <script //type="text/javascript" src="programline.js"></script>
     <script //type="text/javascript" src="programlist.js"></script>
     <link rel="stylesheet" href="../lib/jqueryui/css/ui-lightness/jquery-ui-1.8.21.custom.css" />
     <link rel="stylesheet" href="../lib/idTabStyle.css" />
-
+		<link rel="stylesheet" href="../app2/style.css" type="text/css" />
   </head>
   <body>
     <!-- lightGroups contains the tree of light groups. It's currently a jstree that's generated once and then only ever moved to different
@@ -60,6 +59,7 @@
     		<div id="programs" class="divit"><h2>Uusi sääntö</h2>
     			<div>
     				Säännön nimi:
+    				<br />
     				<input id='programName' />
     			</div>
     			<div id="programTimesContainer">
@@ -75,14 +75,15 @@
     		</div>
     		
     		<div id="sliders" class="divit"><h2>Uusi virtuaalikytkin</h2>
-      		<div id="programsLightGroups" class="lights"></div>
-      		<div id="programsContainer" class="programs">
-						<div id="programsProgramList"></div>
-						<div id="createProgram" class="eiVierekkain">
-							<input type='text' value='Name...' name='programName'/>
-							<input type='button' value='Add' name='cProgram'/>
-						</div>
-      		</div>
+    			<div>
+	      		<input id='slidersIDs' value="jstree tähän"/>
+	      	</div>
+	      	<div>
+	      		Kopioitava HTML-koodi:
+	      		<br />
+	      		<textarea id="sliderCode" type="textarea" rows="15" cols="40">
+	      		</textarea>
+					</div>
     		</div>
     		
     		<div id="programsEdit" class="divit"><h2>Muokkaa sääntöä</h2>
@@ -124,13 +125,13 @@
       $("#lightGroups").hide();
 
 			// New program page
-      $("#programName").bind ("change", function() { newProg.set("name", $("#programName").val()); });
+      $("#programName").bind ("change", function() { tempPrograms.models[0].set("name", $("#programName").val()); });
       $("#addTime").bind ("click", function() { tempTimes.add({}); });
       $("#addProgramSlider").bind ("click", function() { tempProgramLevels.add({}); });
-      $("#saveTime").bind ("click", function() { (tempPrograms.models[0]).save(); });
+      $("#saveTime").bind ("click", function() { tempPrograms.models[0].save(); });
 
 			// Edit program page
-      $("#programEditName").bind ("change", function() { newProg.set("name", $("#programName").val()); });
+      $("#programEditName").bind ("change", function() { tempPrograms.models[0].set("name", $("#programEditName").val()); });
       $("#addEditTime").bind ("click", function() { tempTimes.add({}); });
       $("#addEditProgramSlider").bind ("click", function() { tempProgramLevels.add({}); });
       $("#saveEditTime").bind ("click", function() { tempPrograms.models[0].save(); });
@@ -260,7 +261,7 @@
 			render: function() {
 				this.$el.empty();
 				var _this = this;
-				this.model.each (function (x) { _this.$el.append (new Program.ProgramMainView ({model: x}).$el); x.set("router", AppRouter)});
+				this.model.each (function (x) { _this.$el.append (new Program.ProgramMainView ({model: x}).$el); x.set("router", AppRouter); });
 			}
 		});
 		
@@ -278,14 +279,16 @@
 			
 			initialize: function() {
 				var _this = this;
-				this.model.on ("add", function (m, c) { _this.$el.append (new Time.TimeView ({model: m}).$el) });
+				this.model.on ("add", function (m, c) { _this.$el.append (new Time.TimeView ({model: m}).$el); });
+				this.model.on("reset", function() { _this.render(); });
+
 				//this.render();
 			},
 
 			render: function() {
 				this.$el.empty();
 				var _this = this;
-				this.model.each (function (x) { _this.$el.append (new Time.TimeView ({model: x}).$el)});
+				this.model.each (function (x) { _this.$el.append (new Time.TimeView ({model: x}).$el); });
 			}
 		});
 		
@@ -356,6 +359,7 @@
 	    	"programs": "programsView",
 	    	"programsEdit/:cid": "programsEditView",
 	    	"groups": "groupsView",
+	    	"sliders": "slidersView",
 			},
 
 	// note that the various *view functions are of course run each time you navigate to a view
@@ -388,6 +392,20 @@
 			*/
 	},
 	
+	slidersView: function() {
+		var sliderHTML = "lol";
+		_this = this;
+		
+		var req = $(document).ready(function() {
+				$.get('../app2/index-text.html', 
+				function(data) {
+						console.log(sliderHTML);
+						_this.sliderHTML = data;
+				});
+		});
+		console.log(sliderHTML);
+	},
+	
 	programsView: function () {
 	    /*
 	    $("#programsLightGroups").empty();
@@ -412,6 +430,7 @@
 	
 	programsEditView: function (progID) {
 		this.resetProgramsView();
+		$(".selected").attr("class", "");
 		
 		cProg = Programs.get(progID);
 		tempPrograms.add(cProg);
@@ -428,13 +447,11 @@
 		newProg.set("levels", tempProgramLevels.models);
 
 		// Fill in the editing page
-		for (var i in times) {
+		for (var i in times)
 			tempTimes.add(times[i]);
-		}
-		for (var i in levels) {
+		for (var i in levels)
 			console.log(levels[i]);
 			tempProgramLevels.add(levels[i]);
-		}
 	},
 	
 	resetProgramsView: function () {

@@ -25,7 +25,7 @@
 	urlRoot: "../server2/programs/",	
 	url: function() {
 	    var origUrl = Backbone.Model.prototype.url.call(this);
-	    return origUrl + (origUrl.charAt(origUrl.length - 1) == '/' ? '' : '/');
+	    return origUrl;
 	},
 
 	defaults: function() {
@@ -79,6 +79,16 @@
 					$("#mainpage").css({"display":"none"});
 					$("#programsEdit").css({"display":"block"});
 					appRouter.navigate('programsEdit/'+this.model.id, {trigger: true, replace: true});
+				},
+				
+			"click #program-delete": function(e) {
+					console.log("Deleltel");
+					var choice = confirm("Haluatko varmasti poistaa säännön '"+this.model.get("name")+"'?");
+					console.log(choice);
+					if (choice) {
+						this.model.destroy();
+						console.log(this.model.get("times"));
+					}
 				}
 			},
 			
@@ -91,6 +101,7 @@
 		template: _.template("<tr>\
 		<td id='program-name'></td>\
 		<td><input id='program-edit' type=button value='Muokkaa'></td>\
+		<td><input id='program-delete' type=button value='Poista'></td>\
 		<tr>"),
 	
 		render: function() {

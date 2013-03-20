@@ -22,6 +22,7 @@
 	  	motion_detector: false,
 	  	light_level: 0,
 	  	motion_level: 0,
+	  	new_level: true,
 	  }
 	},
 
