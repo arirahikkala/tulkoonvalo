@@ -16,7 +16,6 @@ $app->get('/lightstree/', 'getLightsTree');
 $app->post('/lights', 'addGroup');
 $app->get('/programs/', 'getPrograms');
 $app->post('/programs/', 'savePrograms');
-$app->get('/programsoverlap/', 'checkProgramsOverlap');
 $app->run();
 
 // Convenience DB function for INSERT statements
@@ -34,6 +33,11 @@ function dbInsert($db, $sql, $dbArray) {
 // TODO: Use this for editing. If ID is not null update value
 function savePrograms() {
 	$params = json_decode(Slim::getInstance()->request()->getBody());
+
+	if(checkProgramsOverlap($params)===true)
+		print(" upeeta! ");
+	else
+		print(" paskaa! ");
 	
 	// TODO: Parameter validity (addess error receivers by their CID)
 	// Memo: not same target_id allowed in levels in one program
@@ -126,9 +130,8 @@ function getPrograms($retJson = true) {
 	}
 }
 
-function checkProgramsOverlap () {
+function checkProgramsOverlap ($target) {
 	$prog=getPrograms(false);
-	$target=$prog[0];
 	$tTimes = $target->times;
 
 	for ($i=1; $i<count($prog); $i++) {
@@ -144,27 +147,33 @@ function checkProgramsOverlap () {
 						(strtotime($tTime->time_end) < strtotime($time->time_end))) {
 							if (checkLights ($target, $prog[$i])) {
 								print("target: smaller than compared one!");
+								return(false);
 							}
 						}else{
 							if (checkLights ($target, $prog[$i])) {
 								print("target: start time overlaps!");
+								return(false);
 							}
 						}
 					}else if((strtotime($time->time_start) < strtotime($tTime->time_end)) && 
 					(strtotime($tTime->time_end) < strtotime($time->time_end))) {
 						if (checkLights ($target, $prog[$i])){
 							print("target: end time overlaps!");
+							return(false);
 						}
 					}else if((strtotime($tTime->time_start) < strtotime($time->time_start)) && 
 					(strtotime($time->time_end) < strtotime($tTime->time_end))) {
 						if (checkLights ($target, $prog[$i])){
 							print("target: bigger than compared one!");
+							return(false);
 						}
 					}else {
 						print("no overlap!");
+						return(true);
 					}
 				}else {
 					print("weekdays don't match!");
+					return(true);
 				}
 			}
 		}
