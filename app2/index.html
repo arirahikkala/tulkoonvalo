@@ -93,15 +93,17 @@
 			  		childWrap.append(childEl);
 
 				  	//var newLevel = this.parentEl.model.get("level")+1;
-				  	newLevel = "a";
-				  	if (this.parentEl.model.get("level") == "a")
-				  		newLevel = "b";
-						this.models[this.length-1].set("level", newLevel);
+				  	//newLevel = "a";
+				  	if (this.parentEl.model.get("level")%2 == 0)
+				  		levelColor = "red";
+					else
+						levelColor = "yellow";
 
-						headEl = $(childEl.children()[0]);
-						headEl.attr("id", newLevel);
-						
-						childEl.css({"margin-top":this.models[this.length-1].get("level")+"em"});
+					this.models[this.length-1].set("level", this.parentEl.model.get("level")+1);
+					headEl = $(childEl.children()[0]);
+					headEl.attr("id", levelColor);
+					console.log(this.models[this.length-1].get("level"));
+					childEl.css({"margin-top":this.models[this.length-1].get("level")+"em"});
 					}
 		  	}
 		  	if (childWrap) {

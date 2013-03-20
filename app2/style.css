@@ -17,16 +17,17 @@
 }
 .widget-header
 {
+	background: yellow;
 	overflow: hidden;
 	height: 2em;
 }
 
-#a.widget-header
+#red.widget-header
 {
 	background: red;
 }
 
-#b.widget-header
+#yellow.widget-header
 {
 	background: yellow;
 }
