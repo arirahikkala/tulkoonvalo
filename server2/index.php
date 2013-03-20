@@ -211,76 +211,88 @@ function checkProgramsOverlap ($target) {
 	$prog=getPrograms(false);
 	$tTimes = $target->times;
 
-	for ($i=1; $i<count($prog); $i++) {
+	for ($i=0; $i<count($prog); $i++) {
 		$times = $prog[$i]->times;
 		foreach ($times as $time){
 			foreach ($tTimes as $tTime) {
 				$weekday = stripos(($tTime->weekdays+$time->weekdays), "2");
-				print($weekday);
-				if($weekday) {
+				if($weekday!==false) {
 					if ((strtotime($time->time_start) < strtotime($tTime->time_start)) && 
 					(strtotime($tTime->time_start) < strtotime($time->time_end))) {
 						if((strtotime($time->time_start) < strtotime($tTime->time_end)) && 
 						(strtotime($tTime->time_end) < strtotime($time->time_end))) {
-							if (checkLights ($target, $prog[$i])) {
+							$levels_array=checkLights ($target->levels, $prog[$i]->levels);
+							if (!empty($levels_array)) {
 								print("target: smaller than compared one!");
-								return(false);
+								modifyProgramTimes($tTime, $time, $levels_array);
 							}
 						}else{
-							if (checkLights ($target, $prog[$i])) {
+							$levels_array=checkLights ($target->levels, $prog[$i]->levels);
+							if (!empty($levels_array)) {
 								print("target: start time overlaps!");
-								return(false);
+								modifyProgramTimes($tTime, $time, $levels_array);
 							}
 						}
 					}else if((strtotime($time->time_start) < strtotime($tTime->time_end)) && 
 					(strtotime($tTime->time_end) < strtotime($time->time_end))) {
-						if (checkLights ($target, $prog[$i])){
+						$levels_array=checkLights ($target->levels, $prog[$i]->levels);
+						if (!empty($levels_array)) {
 							print("target: end time overlaps!");
-							return(false);
+							modifyProgramTimes($tTime, $time, $levels_array);
 						}
 					}else if((strtotime($tTime->time_start) < strtotime($time->time_start)) && 
 					(strtotime($time->time_end) < strtotime($tTime->time_end))) {
-						if (checkLights ($target, $prog[$i])){
+						$levels_array=checkLights ($target->levels, $prog[$i]->levels);
+						if (!empty($levels_array)) {
 							print("target: bigger than compared one!");
-							return(false);
+							modifyProgramTimes($tTime, $time, $levels_array);
 						}
 					}else {
 						print("no overlap!");
-						return(true);
 					}
 				}else {
 					print("weekdays don't match!");
-					return(true);
 				}
 			}
 		}
 	}
+	return(true);
 }
 
-function checkLights ($prog1, $prog2) {
-	$levels1=$prog1->levels;
-	$levels2=$prog2->levels;
+function checkLights ($levels1, $levels2) {
+	$levels_array=array();
 
 	foreach ($levels1 as $level1) {
 		$id1=$level1->target_id;
 		foreach ($levels2 as $level2){
 			$id2=$level2->target_id;
 			if ($id1==$id2) {
-				return(true);
+				$matching_levels=array($level1, $level2);
+				array_push($levels_array, $matching_levels);
 			}	
 		}
 	} 
-	return (false);
+	return ($levels_array);
 }
 
-/*if($level1->light_level <= $level2->light_level){
-					echo "$level1->light_level ja $level2->light_level isompi on: $level2->light_level";
-				}else{
-					echo "$level1->light_level ja $level2->light_level isompi on: $level1->light_level";
-				}
-			}else{
-				echo "false: $id1: $level1->light_level ja $id2:$level2->light_level. ";
-			}*/
+function modifyProgramTimes ($time1, $time2, $levels_array) {
+	foreach ($levels_array as $level_pair){
+		if (($level_pair[0]->motion_detector === true) || 
+		($level_pair[1]->motion_detector === true)) {
+			if ($level_pair[0]->motion_level > $level_pair[1]->motion_level){
+				print("target is brighter!");
+			} else {
+				print("compared one is brighter!");
+			}
+		}else{
+			if ($level_pair[0]->light_level > $level_pair[1]->motion_level){
+				print("target is brighter!");
+			} else {
+				print("compared one is brighter!");
+			}
+		}
+	}
+}
 
 function addGroup () {
 	$sql = "insert into lights (name, brightness, parent, isGroup) values (?, ?, ?, ?)";
