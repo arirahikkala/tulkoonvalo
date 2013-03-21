@@ -46,6 +46,27 @@
 .light-widget { margin: 1em auto 0 auto; }
 .light { float: left; width: 5em; overflow: hidden; margin: 0 5px 0 5px; text-align: center; }
 
+.time-item
+{
+	border: solid 4px grey;
+	padding: 0.5em;
+	margin-bottom: 0.5em;
+	background: #eeeeee;	
+}
+
+.program-time
+{
+	width: 10%;
+}
+
+.programslider-item
+{
+	border: solid 4px grey;
+	padding: 0.5em;
+	margin-bottom: 0.5em;
+	background: #eeeeee;	
+}
+
 #motion-slider
 {
 	margin-left: 200px;

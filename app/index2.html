@@ -128,13 +128,37 @@
       $("#programName").bind ("change", function() { tempPrograms.models[0].set("name", $("#programName").val()); });
       $("#addTime").bind ("click", function() { tempTimes.add({}); });
       $("#addProgramSlider").bind ("click", function() { tempProgramLevels.add({}); });
-      $("#saveTime").bind ("click", function() { tempPrograms.models[0].save(); });
+      $("#saveTime").bind ("click", function() { tempPrograms.models[0].save(null, {
+      	success: function(m,r) {
+      		Programs.add(tempPrograms.pop());
+      	},
+      	error: function() {
+      		console.log("ERRORO");
+      	}
+      }); });
 
 			// Edit program page
       $("#programEditName").bind ("change", function() { tempPrograms.models[0].set("name", $("#programEditName").val()); });
       $("#addEditTime").bind ("click", function() { tempTimes.add({}); });
       $("#addEditProgramSlider").bind ("click", function() { tempProgramLevels.add({}); });
-      $("#saveEditTime").bind ("click", function() { tempPrograms.models[0].save(); });
+      $("#saveEditTime").bind ("click", function() { tempPrograms.models[0].save(null, {
+      	success: function(m,r) {
+      		//var cProg = tempPrograms.pop();
+      		//Programs.add(cProg);
+      		
+					//cProg = Programs.get(progID);
+					//tempPrograms.add(cProg);
+					//newProg = tempPrograms.models[0];
+					
+      		//$(".tabs testi").tabs("option", "active", 1);
+      		//appRouter.navigate('mainPage/', {trigger: true, replace: true});
+      		$(".tabs.testi").attr("class", "selected");
+      		console.log($('.tabs.testi'));
+      	},
+      	error: function() {
+      		console.log("ERRORO");
+      	}
+      }); });
 
       $("#lightGroups").jstree ({
 	  		"json_data": {
@@ -350,7 +374,7 @@
 			}
 			*/
 		}});
-				
+		
     // Backbone.Router handles noticing where we're navigating to for us
     // (though see T36)
     var AppRouter = Backbone.Router.extend ({
@@ -433,8 +457,11 @@
 		$(".selected").attr("class", "");
 		
 		cProg = Programs.get(progID);
+		//console.log("b",tempPrograms, cProg);
 		tempPrograms.add(cProg);
+		//console.log("b",tempPrograms, tempPrograms.models[0]);
 		newProg = tempPrograms.models[0];
+		//console.log("asd", newProg);
 		
 		var times = newProg.get("times");
 		var levels = newProg.get("levels");
@@ -449,8 +476,7 @@
 		// Fill in the editing page
 		for (var i in times)
 			tempTimes.add(times[i]);
-		for (var i in levels)
-			console.log(levels[i]);
+		for (var i in levels) 
 			tempProgramLevels.add(levels[i]);
 	},
 	

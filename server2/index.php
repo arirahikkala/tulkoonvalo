@@ -48,6 +48,7 @@ function deleteProgram($id) {
 
 function updateProgram($id) {
 	$params = json_decode(Slim::getInstance()->request()->getBody());
+	$retArray = array();
 	
 	// TODO: Parameter validity/safety conv. function
 	$db = getConnection();
@@ -101,6 +102,7 @@ function updateProgram($id) {
 			);
 		}
 	}
+	if ($retArray) print($retArray);
 }
 
 // TODO: Use this for editing. If ID is not null update value
