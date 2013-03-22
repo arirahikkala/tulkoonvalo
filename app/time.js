@@ -24,7 +24,6 @@
 	  	time_end: '',
 	  	new_time: true,
 	  	allow_delete: false,
-	  	errors: null,
 	  }
 	},
 	
@@ -63,14 +62,10 @@
 		// Time is changed
 		"change #time-start" : function (event) { this.model.set("time_start", event.target.value); },
 		"change #time-end" : function (event) { this.model.set("time_end", event.target.value); },
-		
 	},
 
 	initialize: function() {
-			// Convert weekday binary into 10-base
-			//this.model.set("weekdays", parseInt(this.model.get("weekdays"), 2));
-			
-			this.model.bind("change:errors", function() {console.log("wtf");} );
+			this.model.bind("change:errors", function() { this.drawErrors() }, this );
 	    this.model.bind ("remove", this.remove, this);
 	    this.model.bind ("change:name", this.render, this);
 	    this.render();
@@ -79,6 +74,17 @@
 	    this.model.set("cid", this.model.cid);
 	},
 	
+	drawErrors: function() {
+		var errors = this.model.get("errors");
+		if (errors) {
+			for (var i in errors)
+				this.$("#programsErrorTime").append(this.model.collection.getErrorMessage(errors[i])+"<br />");
+		}
+		else
+			this.$("#programsErrorTime").html("");
+	},
+	
+	// TODO: Time picker license
 	template: _.template("<div class='programError' id='programsErrorTime'></div>\
 	<input id='time-item-remove' type='button' value='Poista aika'>\
 	<div id='program-days'>\

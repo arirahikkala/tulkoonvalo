@@ -121,39 +121,64 @@
       // Grab the list of programs from the server; see T60
 //      Programs.fetch({async: false}); 
 
+			errorMessages = { 
+				0:"Ohjelman nimen on oltava 1-32 merkkiä pitkä.",
+				1:"Valitse vähintään yksi viikonpäivä.",
+				2:"Kellonajan täytyy olla muotoa TT:MM.",
+				3:"Ohjelmalla on oltava vähintään yksi aika-asetus.",
+				4:"Ohjelmalla on oltava vähintään yksi ryhmäasetus.",
+				5:"Aloitusajan on oltava lopetusaikaa pienempi.",
+				6:"Tämä ryhmä on jo käytössä toisessa valotasossa.",
+			};
+		
       // Set up the light groups page
       $("#deleteGroup").bind ("click", function() { $.jstree._reference("#lightGroups").remove() });
       $("#addGroup").bind ("click", function() { $.jstree._reference ("#lightGroups").create() });
       $("#lightGroups").hide();
 
 			// New program page
-      $("#programName").bind ("change", function() { tempPrograms.models[0].set("name", $("#programName").val()); });
+      $("#programName").bind ("change", function() { Programs.where({id:null})[0].set("name", $("#programName").val()); });
       $("#addTime").bind ("click", function() { tempTimes.add({}); });
       $("#addProgramSlider").bind ("click", function() { tempProgramLevels.add({}); });
-      $("#saveProgram").bind ("click", function() { tempPrograms.models[0].save(null, {
+      $("#saveProgram").bind ("click", function() { Programs.where({id:null})[0].save(null, {
       	success: function(m,r) {
-      		errorMessages = { 1:"Foo", 2:"Bar", 3:"Bazzz", 4:"Hello", 5:"World" };
-      		// TODO: Error return should go to error function...
-      		// Show possible errors
-      		console.log("response",r);
-      		for (var i in r["main"])
-      			$("#programsErrorMain").html(errorMessages[r["main"][i]]);
-      		
-      		for (var i in r["times"]) {
-      			// TODO: get() didn't work
-      			var cTime = tempTimes.where({cid:i});
-      		}
-      		Programs.add(tempPrograms.pop());
+      		// TODO: ID insert here
+      		m.set("id", r);
       	},
+      	
       	error: function(m,r) {
+      		r = JSON.parse(r.responseText);
+      		
+      		// Clear old errors
+      		$("#programsErrorMain").empty();
+      		
+      		for (i in tempTimes.models)
+      			tempTimes.models[i].set("errors", null);
+      		
+      		for (i in tempProgramLevels.models)
+      			tempProgramLevels.models[i].set("errors", null);
+      			
+      		// Display errors
+      		for (var i in r["main_errors"])
+      			$("#programsErrorMain").append(errorMessages[r["main_errors"][i]]+"<br />");
+      			
+      		for (var i in r["time_errors"]) {
+      			var cTime = tempTimes.where({cid:i})[0];
+						cTime.set("errors", r["time_errors"][i]);
+      		}
+      		
+      		for (var i in r["level_errors"]) {
+      			var cLevel = tempProgramLevels.where({cid:i})[0];
+						cLevel.set("errors", r["level_errors"][i]);
+      		}
       	}
       }); });
 
 			// Edit program page
-      $("#programEditName").bind ("change", function() { tempPrograms.models[0].set("name", $("#programEditName").val()); });
+      $("#programEditName").bind ("change", function() { Programs.models[0].set("name", $("#programEditName").val()); });
       $("#addEditTime").bind ("click", function() { tempTimes.add({}); });
       $("#addEditProgramSlider").bind ("click", function() { tempProgramLevels.add({}); });
-      $("#saveEditProgram").bind ("click", function() { tempPrograms.models[0].save(null, {
+      $("#saveEditProgram").bind ("click", function() { Programs.models[0].save(null, {
       	success: function(m,r) {
       		// TODO: Need to change tab here
       	},
@@ -252,9 +277,6 @@
 		var ProgramCollection = Backbone.Collection.extend ({
 			model: Program.Program,
 			url: "../server2/programs/",
-			
-			initialize: function() {
-			},
 		});
 		
 		var ProgramCollectionView = Backbone.View.extend ({
@@ -297,6 +319,10 @@
 		var TimeCollection = Backbone.Collection.extend ({
 			model: Time.Time,
 			url: "../server2/times/",
+			
+			getErrorMessage: function($id) {
+				return(errorMessages[$id]);
+			},
 		});
 		
 		var TimeCollectionView = Backbone.View.extend ({
@@ -315,7 +341,7 @@
 				this.$el.empty();
 				var _this = this;
 				this.model.each (function (x) { _this.$el.append (new Time.TimeView ({model: x}).$el); });
-			}
+			},
 		});
 		
 		/*
@@ -323,7 +349,11 @@
 		*/
 		var ProgramSliderCollection = Backbone.Collection.extend ({
 			model: ProgramSlider.ProgramSlider,
-			url: "../server2/programs/",
+			url: "../server2/levels/",
+			
+			getErrorMessage: function($id) {
+				return(errorMessages[$id]);
+			},
 		});
 		
 		var ProgramSliderCollectionView = Backbone.View.extend ({
@@ -355,8 +385,8 @@
     var ProgramLevelsView = new ProgramSliderCollectionView ({ model: ProgramLevels, el: $("#ProgramLevels") });
     
 		// Collection instances for temporary programs
-		var tempPrograms = new ProgramCollection();
-		var tempProgramsView = new ProgramCollectionView ({ model: tempPrograms, el: $("#current_program") });
+		//var tempPrograms = new ProgramCollection();
+		//var tempProgramsView = new ProgramCollectionView ({ model: tempPrograms, el: $("#current_program") });
 
     var tempTimes = new TimeCollection();
     var tempTimesView = new TimeCollectionView ({ model: tempTimes, el: $("#programTimes") });
@@ -380,9 +410,15 @@
 			},
 
 			initialize : function () {
-				// Remove null ID programs (those not saved)
-				this.bind("all", function(page) {
-					x=tempPrograms.get(null);console.log(x);
+				this.lastPage = null;
+				
+				// Remove unsaved program when leaving new program page
+				this.bind("all", function() {
+					if (this.lastPage == "programs") {
+						var cProg = Programs.where({id:null});
+						Programs.remove(cProg);
+					}
+					this.lastPage = Backbone.history.fragment;
 				});
 			},
 	// note that the various *view functions are of course run each time you navigate to a view
@@ -416,7 +452,6 @@
 	},
 	
 	slidersView: function() {
-		var sliderHTML = "lol";
 		_this = this;
 		
 		var req = $(document).ready(function() {
@@ -437,16 +472,18 @@
 	    $("#programsLightGroups").append($("#lightGroups"));
 	    //var menu = new ProgramList.SingleChoiceMenu ({ el: $("#programsProgramList"), model: Programs});
 			*/
-			
+
 			// Reset the view
 			this.resetProgramsView();
 			$("#programName").val('');
 			tempTimesView.$el = $("#programTimes");
 			tempProgramLevelsView.$el = $("#ProgramLevels");
+
+			// Create a null ID program
+			Programs.add({id:null});
+			var newProg = _.last(Programs.models);
 			
-			// Create a new temporary program
-			tempPrograms.add({});
-			var newProg = tempPrograms.models[0];
+			console.log(Programs);
 			newProg.set("times", tempTimes.models);
 			newProg.set("levels", tempProgramLevels.models);
 	},
@@ -455,10 +492,11 @@
 		this.resetProgramsView();
 		$(".selected").attr("class", "");
 		
-		cProg = Programs.get(progID);
-		tempPrograms.add(cProg);
-		newProg = tempPrograms.models[0];
-
+		//tempPrograms.add(cProg);
+		//newProg = tempPrograms.models[0];
+		//newProg = Programs.where({id:progID})[0];
+		
+		newProg = Programs.get(progID);
 		var times = newProg.get("times");
 		var levels = newProg.get("levels");
 		
@@ -488,7 +526,6 @@
 			cModel = tempProgramLevels.models[i];
 			tempProgramLevels.remove(cModel);
 		}
-		tempPrograms.pop();
 	},
 	
     });
@@ -496,6 +533,9 @@
     appRouter = new AppRouter;
     // we're done with everything, roll it
     Backbone.history.start();
+    
+    // Force starting from main page
+    appRouter.navigate('mainpage', {trigger: true, replace: true});
     </script>
   </body>
 </html>

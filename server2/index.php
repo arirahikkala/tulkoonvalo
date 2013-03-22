@@ -135,35 +135,48 @@ function programValidation($params) {
 	$levels = $params->levels; // Must not be empty
 	
 	$nameLen = strlen($params->name);
+	
 	// TODO: Form needs testing with lengths etc.
 	if ($nameLen == 0 || $nameLen > 32)
-		$errorMain["error_name"] = 0; // TODO: CID here too
+		$errorMain["name"] = 0;
 		
 	if (count($times) == 0)
-		$errorMain["error_times"] = 3;
+		$errorMain["times"] = 3;
 		
 	if (count($levels) == 0)
-		$errorMain["error_levels"] = 4;
+		$errorMain["levels"] = 4;
 		
 	// TODO: Additional sanitation here for all values
 	// TODO: not same target_id allowed in levels in one program
 	
 		
 	foreach ($params->times as $time) {
-		// TODO: Error codes
-		// 0: Name is wrongly formatted
-		// 1: At least day must be chosen from weekdays
-		// 2: Time has formatting errors (shouldn't happen normally)
-		// 3: No time items added
-		// 4: No level items added
-		
+	
 		if ($time->weekdays == "0000000")
 			$errorTimes[$time->cid][] = 1;
 			
 		$timeFormatError = false;
-		$startTime = $time->time_start;
 		
 		// Check time format
+		foreach(array($time->time_start, $time->time_end) as $t) {
+			// Check that the time format is correct
+			if (strlen($t) != 5 || (int)substr($t,2,1) != ':') {
+				$errorTimes[$time->cid][] = 2;
+				break;
+			}
+			// Check each halves of the time
+			foreach (array((int)substr($t,0,2), (int)substr($t,3,4)) as $tHalf) {
+				if ($tHalf > 60 || $tHalf < 0) {
+					$errorTimes[$time->cid][] = 2;
+					break;
+				}
+			}
+		}
+	
+		
+		/*
+		// Check time format
+		$startTime = $time->time_start;
 		if (strlen($startTime) == 0 or strlen($startTime) > 2) {
 			$timeFormatError = true;
 			$errorTimes[$time->cid][] = 2;
@@ -174,7 +187,6 @@ function programValidation($params) {
 		}
 		
 		$endTime = $time->time_end;
-		// TODO: Maybe just convert into int and not check strings
 		if (!$timeFormatError && (strlen($endTime) == 0 or strlen($endTime) > 2)) {
 			$timeFormatError = true;
 			$errorTimes[$time->cid][] = 2;
@@ -184,15 +196,28 @@ function programValidation($params) {
 			$timeFormatError = true;
 			$errorTimes[$time->cid][] = 2;
 		}
+		*/
 			
-		if (!$timeFormatError && (int)$startTime > (int)$endTime)
-			$errorTimes[$time->cid][] = 2;
+		if (!$timeFormatError && (int)$time->time_start > (int)$time->time_end)
+			$errorTimes[$time->cid][] = 5;
+	}
+	
+	// Don't allow same group to be set in sliders multiple times
+	$usedLevels = array();
+	foreach ($params->levels as $level) {
+		$usedLevels[$level->target_id][] = $level->cid;
+	}
+	foreach ($usedLevels as $group) {
+		if (count($group) > 1) {
+			foreach ($group as $cid)
+				$errorLevels[$cid][] = 6;
+		}
 	}
 	
  	if (count($errorMain) || count($errorTimes) || count($errorLevels)) {
- 		$retArray["main"] = $errorMain;
-  	$retArray["times"] = $errorTimes;
- 		$retArray["levels"] = $errorLevels;
+ 		$retArray["main_errors"] = $errorMain;
+  	$retArray["time_errors"] = $errorTimes;
+ 		$retArray["level_errors"] = $errorLevels;
  		return($retArray);
  	}
 }
@@ -204,6 +229,7 @@ function savePrograms() {
 	// If errors found in form return
 	$retArray = programValidation($params);	
 	if ($retArray) {
+		Slim::getInstance()->response()->status(400);
 		print(json_encode($retArray));
 		return;
 	}

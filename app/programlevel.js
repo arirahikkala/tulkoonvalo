@@ -55,12 +55,23 @@
 	},
 
 	initialize: function() {
+			this.model.bind("change:errors", function() { console.log( "asd",this.model.get("errors") );this.drawErrors() }, this );
 	    this.model.bind ("remove", this.remove, this);
 	    this.model.bind ("change:name", this.render, this);
 	    this.render();
 	    
 	    // Used for showing error messages in the right place
 	    this.model.set("cid", this.model.cid);
+	},
+	
+	drawErrors: function() {
+		var errors = this.model.get("errors");
+		if (errors) {
+			for (var i in errors)
+				this.$("#programsErrorLevel").append(this.model.collection.getErrorMessage(errors[i])+"<br />");
+		}
+		else
+			this.$("#programsErrorLevel").html("");
 	},
 	
 	template: _.template("<div class='programError' id='programsErrorLevel'></div>\
