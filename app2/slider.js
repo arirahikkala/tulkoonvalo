@@ -39,6 +39,7 @@
 			childrenFetched: false,
 			childElement: null,
 			collection: null, // TODO: Ok, you don't need to declare this here
+			
 			level: 1,
 	  };
 	

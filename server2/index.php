@@ -213,7 +213,6 @@ function savePrograms() {
 		print(json_encode($retArray));
 		return;
 	}
-	print("checking…");
 	checkProgramsOverlap($params);
 	$times = $params->times;
 	$levels = $params->levels;
