@@ -57,6 +57,7 @@
     		</div>
 
     		<div id="programs" class="divit"><h2>Uusi sääntö</h2>
+    			<div class='programError' id="programsErrorMain"></div>
     			<div>
     				Säännön nimi:
     				<br />
@@ -71,7 +72,7 @@
 	    			<div id="ProgramLevels"></div>
 	    			<input id="addProgramSlider" type="submit" value="+Lisää ryhmä" />
 					</div>
-					<input id="saveTime" type=button value="Tallenna" />
+					<input id="saveProgram" type=button value="Tallenna" />
     		</div>
     		
     		<div id="sliders" class="divit"><h2>Uusi virtuaalikytkin</h2>
@@ -87,6 +88,7 @@
     		</div>
     		
     		<div id="programsEdit" class="divit"><h2>Muokkaa sääntöä</h2>
+    			<div class='programError' id="programsErrorMain"></div>
     			<div>
     				Säännön nimi:
     				<input id='programEditName' />
@@ -100,7 +102,7 @@
 	    			<div id="programEditSliders"></div>
 	    			<input id="addEditProgramSlider" type="submit" value="+Lisää ryhmä" />
 					</div>
-					<input id="saveEditTime" type=button value="Tallenna" />
+					<input id="saveEditProgram" type=button value="Tallenna" />
     		</div>
     		
     	</div>
@@ -128,12 +130,22 @@
       $("#programName").bind ("change", function() { tempPrograms.models[0].set("name", $("#programName").val()); });
       $("#addTime").bind ("click", function() { tempTimes.add({}); });
       $("#addProgramSlider").bind ("click", function() { tempProgramLevels.add({}); });
-      $("#saveTime").bind ("click", function() { tempPrograms.models[0].save(null, {
+      $("#saveProgram").bind ("click", function() { tempPrograms.models[0].save(null, {
       	success: function(m,r) {
+      		errorMessages = { 1:"Foo", 2:"Bar", 3:"Bazzz", 4:"Hello", 5:"World" };
+      		// TODO: Error return should go to error function...
+      		// Show possible errors
+      		console.log("response",r);
+      		for (var i in r["main"])
+      			$("#programsErrorMain").html(errorMessages[r["main"][i]]);
+      		
+      		for (var i in r["times"]) {
+      			// TODO: get() didn't work
+      			var cTime = tempTimes.where({cid:i});
+      		}
       		Programs.add(tempPrograms.pop());
       	},
-      	error: function() {
-      		console.log("ERRORO");
+      	error: function(m,r) {
       	}
       }); });
 
@@ -141,19 +153,9 @@
       $("#programEditName").bind ("change", function() { tempPrograms.models[0].set("name", $("#programEditName").val()); });
       $("#addEditTime").bind ("click", function() { tempTimes.add({}); });
       $("#addEditProgramSlider").bind ("click", function() { tempProgramLevels.add({}); });
-      $("#saveEditTime").bind ("click", function() { tempPrograms.models[0].save(null, {
+      $("#saveEditProgram").bind ("click", function() { tempPrograms.models[0].save(null, {
       	success: function(m,r) {
-      		//var cProg = tempPrograms.pop();
-      		//Programs.add(cProg);
-      		
-					//cProg = Programs.get(progID);
-					//tempPrograms.add(cProg);
-					//newProg = tempPrograms.models[0];
-					
-      		//$(".tabs testi").tabs("option", "active", 1);
-      		//appRouter.navigate('mainPage/', {trigger: true, replace: true});
-      		$(".tabs.testi").attr("class", "selected");
-      		console.log($('.tabs.testi'));
+      		// TODO: Need to change tab here
       	},
       	error: function() {
       		console.log("ERRORO");
@@ -363,16 +365,7 @@
     var tempProgramLevelsView = new ProgramSliderCollectionView ({ model: tempProgramLevels, el: $("#ProgramLevels") });
     
     // Get programs from DB
-		Programs.fetch({success: function() {
-			console.log(Programs);
-			/*
-			for (var i in Programs.models) {
-				console.log(i, Programs.models[i]);
-				cProg = Programs.models[i];
-				cTimes = new TimeCollection()
-				for va
-			}
-			*/
+		Programs.fetch({success: function() {console.log("Fetched",Programs);
 		}});
 		
     // Backbone.Router handles noticing where we're navigating to for us
@@ -457,12 +450,9 @@
 		$(".selected").attr("class", "");
 		
 		cProg = Programs.get(progID);
-		//console.log("b",tempPrograms, cProg);
 		tempPrograms.add(cProg);
-		//console.log("b",tempPrograms, tempPrograms.models[0]);
 		newProg = tempPrograms.models[0];
-		//console.log("asd", newProg);
-		
+
 		var times = newProg.get("times");
 		var levels = newProg.get("levels");
 		
@@ -483,6 +473,7 @@
 	resetProgramsView: function () {
 		
 		// Empty models from temporary collections
+		// TODO: Empty() function here
 		for (var i=tempTimes.length-1; i>-1; i--) {
 			cModel = tempTimes.models[i];
 			tempTimes.remove(cModel);

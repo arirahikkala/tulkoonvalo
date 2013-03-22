@@ -23,6 +23,8 @@
 	  	time_start: '',
 	  	time_end: '',
 	  	new_time: true,
+	  	allow_delete: false,
+	  	errors: null,
 	  }
 	},
 	
@@ -34,7 +36,7 @@
 
 	events: {
 		// A weekday is clicked
-		"click .program-day" : function (event) {
+		"click .program-day" : function(event) {
 			
 			var weekdays = this.model.get("weekdays");
 			var index = parseInt(event.target.id);
@@ -46,15 +48,29 @@
 
 			this.model.set("weekdays", weekdays);
 		},
+		
+		"click #time-item-remove" : function() {
+			if (! this.model.get("new_time"))  {
+				var choice = confirm("Haluatko varmasti poistaa ajan?");
+				if (choice) {
+					this.model.set("allow_delete", true)			
+					this.remove();
+				}
+			}
+			else this.model.destroy();
+		},
+		
 		// Time is changed
 		"change #time-start" : function (event) { this.model.set("time_start", event.target.value); },
 		"change #time-end" : function (event) { this.model.set("time_end", event.target.value); },
+		
 	},
 
 	initialize: function() {
 			// Convert weekday binary into 10-base
 			//this.model.set("weekdays", parseInt(this.model.get("weekdays"), 2));
 			
+			this.model.bind("change:errors", function() {console.log("wtf");} );
 	    this.model.bind ("remove", this.remove, this);
 	    this.model.bind ("change:name", this.render, this);
 	    this.render();
@@ -62,7 +78,9 @@
 	    // Used for showing error messages in the right place
 	    this.model.set("cid", this.model.cid);
 	},
-	template: _.template("\
+	
+	template: _.template("<div class='programError' id='programsErrorTime'></div>\
+	<input id='time-item-remove' type='button' value='Poista aika'>\
 	<div id='program-days'>\
 		Ma<input class='program-day' id='0' type='checkbox'>\
 		Ti<input class='program-day' id='1' type='checkbox'>\
@@ -73,7 +91,7 @@
 		Su<input class='program-day' id='6' type='checkbox'>\
 	</div>\
 	<div class='programs-time'>Voimassa klo.\
-		<input class='program-time' id='time-start'>-\
+		<input class='program-time' id='time-start'> -\
 		<input class='program-time' id='time-end'>\
 	</div>"),
 	

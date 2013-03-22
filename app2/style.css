@@ -58,6 +58,10 @@
 {
 	width: 10%;
 }
+.program-date
+{
+	width: 20%;
+}
 
 .programslider-item
 {
@@ -70,4 +74,9 @@
 #motion-slider
 {
 	margin-left: 200px;
+}
+
+.programError
+{
+	color: red;
 }

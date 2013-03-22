@@ -50,8 +50,7 @@
 				this.render();
 		},
 		
-		template: _.template("<span class='programItem' />\
-		<div>Ma<input class='program_day' id='mon' type='checkbox'>\
+		template: _.template("<div>Ma<input class='program_day' id='mon' type='checkbox'>\
 		Ti<input class='program-day' id='tue' type='checkbox'>\
 		Ke<input class='program-day' id='wed' type='checkbox'>\
 		To<input class='program-day' id='thu' type='checkbox'>\

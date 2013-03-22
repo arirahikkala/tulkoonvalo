@@ -33,6 +33,20 @@ function dbUpdate($db, $sql, $dbArray) {
 	}
 }
 
+function deleteTime($id) {
+	$db = getConnection();
+	
+	$sql = "delete from program_times where id=?";	
+	dbUpdate($db, $sql, array($id));
+}
+
+function deleteLevel($id) {
+	$db = getConnection();
+	
+	$sql = "delete from program_levels where id=?";	
+	dbUpdate($db, $sql, array($id));
+}
+
 function deleteProgram($id) {
 	$db = getConnection();
 	
@@ -55,13 +69,16 @@ function updateProgram($id) {
 	
 	$sql = "update programs set name=? where id=?";	
 	dbUpdate($db, $sql, array($params->name, $params->id));
-
+	print(json_encode($params));
 	foreach ($params->times as $time) {
 		// TODO: Need time removing
 		// TODO: Make inserted new_* value into false when OK response
 		// TODO: new_* name sucks, replace with new_item, try creating it in js too instead here (event type in adding)
 		
-		if ($time->new_time) {
+		if ($time->allow_delete)
+			deleteTime($id);
+		
+		else if ($time->new_time) {
 			$sql = "insert into program_times values (null,?,?,?,?,?,?)";	
 			dbUpdate($db, $sql, array(
 					$id, $time->date_start, 
@@ -83,7 +100,10 @@ function updateProgram($id) {
 	foreach ($params->levels as $level) {
 		// TODO: Need level removing
 
-		if ($level->new_level) {
+		if ($time->allow_delete)
+			deleteLevel($id);
+			
+		else if ($level->new_level) {
 			$sql = "insert into program_levels values (null,?,?,?,?,?,?)";	
 			dbUpdate($db, $sql, array(
 					$id, $level->target_id, 
@@ -105,13 +125,91 @@ function updateProgram($id) {
 	if ($retArray) print($retArray);
 }
 
+function programValidation($params) {
+	$errorMain = array();
+	$errorTimes = array();
+	$errorLevels = array();
+	$retArray = array();
+	
+	$times = $params->times; // Must not be empty
+	$levels = $params->levels; // Must not be empty
+	
+	$nameLen = strlen($params->name);
+	// TODO: Form needs testing with lengths etc.
+	if ($nameLen == 0 || $nameLen > 32)
+		$errorMain["error_name"] = 0; // TODO: CID here too
+		
+	if (count($times) == 0)
+		$errorMain["error_times"] = 3;
+		
+	if (count($levels) == 0)
+		$errorMain["error_levels"] = 4;
+		
+	// TODO: Additional sanitation here for all values
+	// TODO: not same target_id allowed in levels in one program
+	
+		
+	foreach ($params->times as $time) {
+		// TODO: Error codes
+		// 0: Name is wrongly formatted
+		// 1: At least day must be chosen from weekdays
+		// 2: Time has formatting errors (shouldn't happen normally)
+		// 3: No time items added
+		// 4: No level items added
+		
+		if ($time->weekdays == "0000000")
+			$errorTimes[$time->cid][] = 1;
+			
+		$timeFormatError = false;
+		$startTime = $time->time_start;
+		
+		// Check time format
+		if (strlen($startTime) == 0 or strlen($startTime) > 2) {
+			$timeFormatError = true;
+			$errorTimes[$time->cid][] = 2;
+		}
+		else if ($startTime > 24 || $startTime < 0) {
+			$timeFormatError = true;
+			$errorTimes[$time->cid][] = 2;
+		}
+		
+		$endTime = $time->time_end;
+		// TODO: Maybe just convert into int and not check strings
+		if (!$timeFormatError && (strlen($endTime) == 0 or strlen($endTime) > 2)) {
+			$timeFormatError = true;
+			$errorTimes[$time->cid][] = 2;
+		}
+		
+		else if (!$timeFormatError && ($endTime > 60 || $endTime < 0)) {
+			$timeFormatError = true;
+			$errorTimes[$time->cid][] = 2;
+		}
+			
+		if (!$timeFormatError && (int)$startTime > (int)$endTime)
+			$errorTimes[$time->cid][] = 2;
+	}
+	
+ 	if (count($errorMain) || count($errorTimes) || count($errorLevels)) {
+ 		$retArray["main"] = $errorMain;
+  	$retArray["times"] = $errorTimes;
+ 		$retArray["levels"] = $errorLevels;
+ 		return($retArray);
+ 	}
+}
+
 // TODO: Use this for editing. If ID is not null update value
 function savePrograms() {
 	$params = json_decode(Slim::getInstance()->request()->getBody());
 	
-	// Memo: not same target_id allowed in levels in one program
-	$times = $params->times; // Must not be empty
-	$levels = $params->levels; // Must not be empty
+	// If errors found in form return
+	$retArray = programValidation($params);	
+	if ($retArray) {
+		print(json_encode($retArray));
+		return;
+	}
+	
+	$times = $params->times;
+	$levels = $params->levels;
 	
 	$db = getConnection();
 	
@@ -119,8 +217,10 @@ function savePrograms() {
 	dbUpdate($db, $sql, array($params->name));
 	$programID = $db->lastInsertId();
 	
-	$sql = "insert into program_times values (null,?,?,?,?,?,?)";	
+	// TODO: These common statements could be put into their own functions
+	$sql = "insert into program_times values (null,?,?,?,?,?,?)";
 	foreach ($params->times as $time) {
+			
 		dbUpdate($db, $sql, array(
 				$programID, $time->date_start, 
 				$time->date_end, $time->weekdays,
@@ -136,14 +236,9 @@ function savePrograms() {
 				$level->light_level, $level->motion_level)
 		);
 	}
-	// Main things to do with new/edit programs:
-	// TODO: Item (time, level) removal
-	// TODO: Parameter validity/safety conv. function (addess error receivers by their CID)
-	// TODO: Return newly created ID $db->lastInsertId()
+	print($programID);
 	// TODO: Return to main page with a success message
-	// TODO: Show possible errors (identify by cid,id)
 	// TODO: Fix being unable to edit from other than mainpage tab (e.g. when reload page)
- 	print(json_encode($params));
 }
 
 function getPrograms($retJson = true) {
@@ -638,78 +733,6 @@ function getLights ($ids) {
 	print (json_encode ($rv));
 }
 
-
-/*
-function getSliders() {
-	$sql = "select id, value from sliders_test";
-	try {
-		$db = getConnection();
-		$stmt = $db->prepare($sql);
-		$stmt->execute();
-		$lights = $stmt->fetchAll (PDO::FETCH_OBJ);
-		
-		echo json_encode ($lights, JSON_PRETTY_PRINT);
-	}
-	
-	catch(PDOException $e) {
-		echo '{"error":{"text":'. $e->getMessage() .'}}';
-	}
-}
-
-function getSlider($id) {
-	$sql = "select value from sliders_test where id=?";
-	try {
-		$db = getConnection();
-		$stmt = $db->prepare($sql);
-		$stmt->execute(array ($id));
-		$lights = $stmt->fetch (PDO::FETCH_OBJ);
-
-		echo json_encode ($lights, JSON_PRETTY_PRINT);
-	}
-	
-	catch(PDOException $e) {
-		echo '{"error":{"text":'. $e->getMessage() .'}}';
-	}
-}
-
-function updateSlider ($id) {
-	$sql = "update sliders_test set value=? where id=?";
-	$requestBody = json_decode (Slim::getInstance()->request()->getBody());
-	try {
-		$db = getConnection();
-		$stmt = $db->prepare($sql);
-		$stmt->execute(array ($requestBody->value, $id));
-
-		echo "{}";
-
-	}
-	
-	catch(PDOException $e) {
-		echo '{"error":{"text":'. $e->getMessage() .'}}';
-	}
-
-}
-
-function createNewSlider () {
-	$sql = "insert into sliders_test (value) values (?)";
-	$requestBody = json_decode (Slim::getInstance()->request()->getBody());
-	$value = $requestBody->value;
-
-	try {
-		$db = getConnection();
-		$stmt = $db->prepare($sql);
-		$stmt->execute(array ($value));
-
-		$id = $db->lastInsertId();
-		echo "{id: $id, value: $value}";
-
-	}
-	
-	catch(PDOException $e) {
-		echo '{"error":{"text":'. $e->getMessage() .'}}';
-	}
-}
-*/
 function getConnection() {
 	require ("config.php");
 	$dbh = new PDO("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass);	

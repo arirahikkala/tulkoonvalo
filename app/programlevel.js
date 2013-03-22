@@ -23,6 +23,7 @@
 	  	light_level: 0,
 	  	motion_level: 0,
 	  	new_level: true,
+	  	allow_delete: false,
 	  }
 	},
 
@@ -33,6 +34,17 @@
 	className: "programslider-item",
 
 	events: {
+		"click #level-item-remove" : function() {
+			if (! this.model.get("new_level"))  {
+				var choice = confirm("Haluatko varmasti poistaa ajan?");
+				if (choice) {
+					this.model.set("allow_delete", true)			
+					this.remove();
+				}
+			}
+			else this.model.destroy();
+		},
+		
 		// Slider values changed
 		"slidechange #light-slider" : function () { this.model.set("light_level", this.$("#light-slider").slider("value")); },
 		"slidechange #motion-slider" : function () { this.model.set("motion_level", this.$("#motion-slider").slider("value")); },
@@ -51,7 +63,9 @@
 	    this.model.set("cid", this.model.cid);
 	},
 	
-	template: _.template("Käytä valosensoria<input id='light-enabled' type='checkbox'>\
+	template: _.template("<div class='programError' id='programsErrorLevel'></div>\
+	<input id='level-item-remove' type='button' value='Poista ryhmä'>\
+	Käytä valosensoria<input id='light-enabled' type='checkbox'>\
 		Käytä liiketunnistinta<input id='motion-enabled' type='checkbox'>\
 		<div class='program-slider' id='light-slider' />\
 		<div class='program-slider' id='motion-slider' />"),
