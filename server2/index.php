@@ -313,8 +313,8 @@ function getPrograms($retJson = true) {
 
 function checkProgramsOverlap ($target) {
 	$prog=getPrograms(false);
-	//$tTimes = $target->times;
-	$tTimes = $prog[count($prog)-1]->times;
+	$tTimes = $target->times;
+	//$tTimes = $prog[count($prog)-1]->times;
 
 	for ($i=1; $i<count($prog); $i++) {
 		$times = $prog[$i]->times;
@@ -327,36 +327,24 @@ function checkProgramsOverlap ($target) {
 						if((strtotime($time->time_start) < strtotime($tTime->time_end)) && 
 						(strtotime($tTime->time_end) <= strtotime($time->time_end))) {
 							$levels_array=checkLights ($target->levels, $prog[$i]->levels);
-							if (!empty($levels_array)) {
-								print("target: smaller than compared one!");
+							if (!empty($levels_array)) 
 								modifyProgram($tTime, $time, $weekdays, $levels_array, 1);
-							}
 						}else{
 							$levels_array=checkLights ($target->levels, $prog[$i]->levels);
-							if (!empty($levels_array)) {
-								print("target: start time overlaps!");
+							if (!empty($levels_array))
 								modifyProgram($tTime, $time, $weekdays, $levels_array, 2);
-							}
 						}
 					}else if((strtotime($time->time_start) < strtotime($tTime->time_end)) && 
 					(strtotime($tTime->time_end) <= strtotime($time->time_end))) {
 						$levels_array=checkLights ($target->levels, $prog[$i]->levels);
-						if (!empty($levels_array)) {
-							print("target: end time overlaps!");
+						if (!empty($levels_array))
 							modifyProgram($tTime, $time, $weekdays, $levels_array, 3);
-						}
 					}else if((strtotime($tTime->time_start) < strtotime($time->time_start)) && 
 					(strtotime($time->time_end) < strtotime($tTime->time_end))) {
 						$levels_array=checkLights ($target->levels, $prog[$i]->levels);
-						if (!empty($levels_array)) {
-							print("target: bigger than compared one!");
+						if (!empty($levels_array))
 							modifyProgram($tTime, $time, $weekdays, $levels_array, 4);
-						}
-					}else {
-						print("no overlap!");
 					}
-				}else {
-					print("weekdays don't match!");
 				}
 			}
 		}
@@ -435,37 +423,43 @@ function modifyProgram ($time1, $time2, $weekdays, $levels_array, $type) {
 			$levelToCompare="motion_level";
 
 		switch($type){
-			case 1: case 4:
+			case 1:
 				if ($level_pair[0]->$levelToCompare >= $level_pair[1]->$levelToCompare){
 					array_push($brighters1, $level_pair[0]);
-					array_push($dimmers1_overlap_days, $level_pair[1]);
+					array_push($dimmers1_overlap_days, $level_pair[1]);	//Not really dimmers of pair number 1, just using it
 					array_push($dimmers2_overlap_days, $level_pair[1]);
+					array_push($dimmers2_other_days, $level_pair[1]);
 				}else{
 					array_push($brighters2, $level_pair[1]);
+					array_push($dimmers1_other_days, $level_pair[0]);
 				}
 				break;
 			case 2: case 3:	
 				if ($level_pair[0]->$levelToCompare >= $level_pair[1]->$levelToCompare){
 					array_push($brighters1, $level_pair[0]);
 					array_push($dimmers2_overlap_days, $level_pair[1]);
+					array_push($dimmers2_other_days, $level_pair[1]);
 				}else{
 					array_push($brighters2, $level_pair[1]);
 					array_push($dimmers1_overlap_days, $level_pair[0]);
+					array_push($dimmers1_other_days, $level_pair[0]);
+				}
+				break;
+			case 4:
+				if ($level_pair[0]->$levelToCompare >= $level_pair[1]->$levelToCompare){
+					array_push($brighters1, $level_pair[0]);
+					array_push($dimmers2_other_days, $level_pair[1]);
+				}else{
+					array_push($brighters2, $level_pair[1]);
+					array_push($dimmers1_overlap_days, $level_pair[0]);
+					array_push($dimmers2_overlap_days, $level_pair[0]);	//Not really dimmers of pair number 2, just using it
+					array_push($dimmers2_other_days, $level_pair[0]);
 				}
 				break;
 		}
 	}
+
 	array_push($modifiedPrograms, $brighters1, $brighters2, $dimmers1_overlap_days, $dimmers2_overlap_days, $dimmers1_other_days, $dimmers2_other_days);
-	print( "HERE: ");
-	print(json_encode($time1));
-	print("    1      ");
-	print(json_encode($time2));
-	print("    2      ");
-	print($weekdays);
-	print("    3      ");
-	print(json_encode($levels_array));
-	print("    4      ");
-	print(json_encode($modifiedPrograms));
 }
 
 function addGroup () {
