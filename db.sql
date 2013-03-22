@@ -103,14 +103,16 @@ DROP TABLE IF EXISTS `program_levels`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `program_levels` (
+  `id` int(32) NOT NULL AUTO_INCREMENT,
   `program_id` int(32) NOT NULL,
   `target_id` char(32) NOT NULL,
   `light_detector` tinyint(1) NOT NULL,
   `motion_detector` tinyint(1) NOT NULL,
   `light_level` int(3) NOT NULL,
   `motion_level` int(3) NOT NULL,
+  PRIMARY KEY (`id`),
   KEY `program_id` (`program_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=24 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -119,7 +121,7 @@ CREATE TABLE `program_levels` (
 
 LOCK TABLES `program_levels` WRITE;
 /*!40000 ALTER TABLE `program_levels` DISABLE KEYS */;
-INSERT INTO `program_levels` VALUES (1,'2',1,0,75,0),(1,'6',1,1,75,100),(2,'6',0,0,0,0);
+INSERT INTO `program_levels` VALUES (9,1,'1',0,0,0,0),(3,2,'6',0,0,0,0),(4,1,'1',1,1,78,84),(8,1,'1',0,0,0,0),(10,1,'1',0,0,0,0),(11,1,'1',0,0,0,0),(23,213,'1',1,0,62,0),(22,212,'1',1,0,67,0),(17,1,'1',0,0,0,0),(21,211,'1',0,0,0,0);
 /*!40000 ALTER TABLE `program_levels` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -131,14 +133,16 @@ DROP TABLE IF EXISTS `program_times`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `program_times` (
+  `id` int(32) NOT NULL AUTO_INCREMENT,
   `program_id` int(32) NOT NULL,
   `date_start` date DEFAULT NULL,
   `date_end` date DEFAULT NULL,
   `weekdays` char(7) NOT NULL,
   `time_start` time NOT NULL,
   `time_end` time NOT NULL,
+  PRIMARY KEY (`id`),
   KEY `program_id` (`program_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=115 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -147,7 +151,7 @@ CREATE TABLE `program_times` (
 
 LOCK TABLES `program_times` WRITE;
 /*!40000 ALTER TABLE `program_times` DISABLE KEYS */;
-INSERT INTO `program_times` VALUES (1,'0000-00-00','0000-00-00','1001101','00:00:00','00:00:00');
+INSERT INTO `program_times` VALUES (2,1,'0000-00-00','0000-00-00','1111111','00:02:22','00:00:00'),(3,1,'0000-00-00','0000-00-00','0010010','12:28:22','00:00:00'),(112,211,'0000-00-00','0000-00-00','0001000','00:00:02','00:00:03'),(113,212,'0000-00-00','0000-00-00','0010000','00:00:14','00:00:15'),(114,213,'0000-00-00','0000-00-00','0100000','00:00:02','00:00:03');
 /*!40000 ALTER TABLE `program_times` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -162,7 +166,7 @@ CREATE TABLE `programs` (
   `id` int(32) NOT NULL AUTO_INCREMENT,
   `name` char(32) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=66 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=214 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -171,7 +175,7 @@ CREATE TABLE `programs` (
 
 LOCK TABLES `programs` WRITE;
 /*!40000 ALTER TABLE `programs` DISABLE KEYS */;
-INSERT INTO `programs` VALUES (1,'Arki'),(2,'Wappu');
+INSERT INTO `programs` VALUES (1,'ArkiXXX'),(2,'Wappu'),(213,'123'),(212,'123'),(211,'123');
 /*!40000 ALTER TABLE `programs` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -184,4 +188,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2013-03-20 14:13:23
+-- Dump completed on 2013-03-22 10:28:09

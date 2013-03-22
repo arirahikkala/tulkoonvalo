@@ -379,6 +379,12 @@
 	    	"sliders": "slidersView",
 			},
 
+			initialize : function () {
+				// Remove null ID programs (those not saved)
+				this.bind("all", function(page) {
+					x=tempPrograms.get(null);console.log(x);
+				});
+			},
 	// note that the various *view functions are of course run each time you navigate to a view
 	// this means:
 	// - don't bind events to already existing elements (because they'll get bound multiple times)
