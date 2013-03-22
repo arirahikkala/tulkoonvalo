@@ -164,41 +164,22 @@ function programValidation($params) {
 				$errorTimes[$time->cid][] = 2;
 				break;
 			}
-			// Check each halves of the time
+			// Check each halve of times
+			$hours = true;
 			foreach (array((int)substr($t,0,2), (int)substr($t,3,4)) as $tHalf) {
-				if ($tHalf > 60 || $tHalf < 0) {
+				if (!$hours && ($tHalf > 59 || $tHalf < 0)) {
 					$errorTimes[$time->cid][] = 2;
 					break;
 				}
+				else if ($hours && ($tHalf > 23 || $tHalf < 0)) {
+					$errorTimes[$time->cid][] = 2;
+					break;
+				}
+				$hours = false;
 			}
 		}
-	
 		
-		/*
-		// Check time format
-		$startTime = $time->time_start;
-		if (strlen($startTime) == 0 or strlen($startTime) > 2) {
-			$timeFormatError = true;
-			$errorTimes[$time->cid][] = 2;
-		}
-		else if ($startTime > 24 || $startTime < 0) {
-			$timeFormatError = true;
-			$errorTimes[$time->cid][] = 2;
-		}
-		
-		$endTime = $time->time_end;
-		if (!$timeFormatError && (strlen($endTime) == 0 or strlen($endTime) > 2)) {
-			$timeFormatError = true;
-			$errorTimes[$time->cid][] = 2;
-		}
-		
-		else if (!$timeFormatError && ($endTime > 60 || $endTime < 0)) {
-			$timeFormatError = true;
-			$errorTimes[$time->cid][] = 2;
-		}
-		*/
-			
-		if (!$timeFormatError && (int)$time->time_start > (int)$time->time_end)
+		if (!$timeFormatError && strtotime($time->time_start) > strtotime($time->time_end))
 			$errorTimes[$time->cid][] = 5;
 	}
 	

@@ -46,6 +46,7 @@
 		},
 		
 		// Slider values changed
+		"change #level-group" : function() { this.model.set("target_id", this.$("#level-group").val() ); },
 		"slidechange #light-slider" : function () { this.model.set("light_level", this.$("#light-slider").slider("value")); },
 		"slidechange #motion-slider" : function () { this.model.set("motion_level", this.$("#motion-slider").slider("value")); },
 	
@@ -73,9 +74,10 @@
 		else
 			this.$("#programsErrorLevel").html("");
 	},
-	
+	// TODO: Level as number near slider
 	template: _.template("<div class='programError' id='programsErrorLevel'></div>\
 	<input id='level-item-remove' type='button' value='Poista ryhmä'>\
+	Ryhmä:<input id='level-group' value='1'><br/>\
 	Käytä valosensoria<input id='light-enabled' type='checkbox'>\
 		Käytä liiketunnistinta<input id='motion-enabled' type='checkbox'>\
 		<div class='program-slider' id='light-slider' />\
