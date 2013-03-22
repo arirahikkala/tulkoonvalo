@@ -225,7 +225,6 @@ function programValidation($params) {
 // TODO: Use this for editing. If ID is not null update value
 function savePrograms() {
 	$params = json_decode(Slim::getInstance()->request()->getBody());
-	
 	// If errors found in form return
 	$retArray = programValidation($params);	
 	if ($retArray) {
@@ -233,7 +232,8 @@ function savePrograms() {
 		print(json_encode($retArray));
 		return;
 	}
-	
+	print("checking…");
+	checkProgramsOverlap($params);
 	$times = $params->times;
 	$levels = $params->levels;
 	
@@ -332,18 +332,19 @@ function getPrograms($retJson = true) {
 
 function checkProgramsOverlap ($target) {
 	$prog=getPrograms(false);
-	$tTimes = $target->times;
+	//$tTimes = $target->times;
+	$tTimes = $prog[count($prog)-1]->times;
 
-	for ($i=0; $i<count($prog); $i++) {
+	for ($i=1; $i<count($prog); $i++) {
 		$times = $prog[$i]->times;
 		foreach ($times as $time){
 			foreach ($tTimes as $tTime) {
-				$weekdays=$tTime->weekdays + $time->weekdays;
+				$weekdays=$tTime->weekdays + $time->weekdays + 30000000;	//30000000 for not losing zeros at the beginning
 				if(stripos($weekdays, "2")!==false) {
-					if ((strtotime($time->time_start) < strtotime($tTime->time_start)) && 
+					if ((strtotime($time->time_start) <= strtotime($tTime->time_start)) && 
 					(strtotime($tTime->time_start) < strtotime($time->time_end))) {
 						if((strtotime($time->time_start) < strtotime($tTime->time_end)) && 
-						(strtotime($tTime->time_end) < strtotime($time->time_end))) {
+						(strtotime($tTime->time_end) <= strtotime($time->time_end))) {
 							$levels_array=checkLights ($target->levels, $prog[$i]->levels);
 							if (!empty($levels_array)) {
 								print("target: smaller than compared one!");
@@ -357,7 +358,7 @@ function checkProgramsOverlap ($target) {
 							}
 						}
 					}else if((strtotime($time->time_start) < strtotime($tTime->time_end)) && 
-					(strtotime($tTime->time_end) < strtotime($time->time_end))) {
+					(strtotime($tTime->time_end) <= strtotime($time->time_end))) {
 						$levels_array=checkLights ($target->levels, $prog[$i]->levels);
 						if (!empty($levels_array)) {
 							print("target: end time overlaps!");
@@ -400,20 +401,14 @@ function checkLights ($levels1, $levels2) {
 
 function modifyProgram ($time1, $time2, $weekdays, $levels_array, $type) {
 	$modifiedPrograms=array();	
-	$overlapDays=array();
 	
-	for ($i = 0; $i < 7; $i++) {
-		if ($weekdays[$i]===2){
-			$overlapDays[$i]=1;
-			$otherDays[$i]=0;
-		}else if($weekdays[$i]===1){
-			$overlapDays[$i]=0;
-			$otherDays[$i]=1;
-		}else{
-			$overlapDays[$i]=0;
-			$otherDays[$i]=0;
-		}
-	}
+	$days_together = array("1" , "2", "3");
+	$days_overlap = array("0", "1", "");	//remove previously added 3
+	$days_others = array("1", "0", "");
+	$overlapDays = str_replace($days_together, $days_overlap, $weekdays);
+	$otherDays1=str_replace($days_together, $days_others, ($time1->weekdays + $overlapDays + 30000000));
+	$otherDays2=str_replace($days_together, $days_others, ($time2->weekdays + $overlapDays + 30000000));
+
 	$brighters1=array($time1);
 	$brighters2=array($time2);
 
@@ -421,34 +416,34 @@ function modifyProgram ($time1, $time2, $weekdays, $levels_array, $type) {
 		//time1 completely inside time2
 		case 1:
 			$dimmers1_overlap_days=array("time_start" => $time2->time_start, 
-			"time_end" => $time1->time_start, $overlapDays);
+			"time_end" => $time1->time_start, "weekdays" => $overlapDays);
 			$dimmers2_overlap_days=array("time_start" => $time1->time_end, 
-			"time_end" => $time2->time_end, $overlapDays);
+			"time_end" => $time2->time_end, "weekdays" => $overlapDays);
 			break;
 		//time1's starting time inside time2
 		case 2:
 			$dimmers1_overlap_days=array("time_start" => $time2->time_end, 
-			"time_end" => $time1->time_end, $overlapDays);
+			"time_end" => $time1->time_end, "weekdays" => $overlapDays);
 			$dimmers2_overlap_days=array("time_start" => $time2->time_start, 
-			"time_end" => $time1->time_start, $overlapDays);
+			"time_end" => $time1->time_start, "weekdays" => $overlapDays);
 			break;
 		//time1's ending time inside time2
 		case 3:
 			$dimmers1_overlap_days=array("time_start" => $time1->time_start, 
-			"time_end" => $time2->time_start, $overlapDays);
+			"time_end" => $time2->time_start, "weekdays" => $overlapDays);
 			$dimmers2_overlap_days=array("time_start" => $time1->time_end, 
-			"time_end" => $time2->time_end, $overlapDays);
+			"time_end" => $time2->time_end, "weekdays" => $overlapDays);
 			break;
 		//time2 completely inside time1
 		case 4:
 			$dimmers1_overlap_days=array("time_start" => $time1->time_start, 
-			"time_end" => $time2->time_start, $overlapDays);
+			"time_end" => $time2->time_start, "weekdays" => $overlapDays);
 			$dimmers2_overlap_days=array("time_start" => $time2->time_end, 
-			"time_end" => $time1->time_end, $overlapDays);
+			"time_end" => $time1->time_end, "weekdays" => $overlapDays);
 			break;
 	}
-	$dimmers1_other_days=array("time_start" => $time1->time_end, "time_end" => $time1->time_end, $otherDays);
-	$dimmers2_other_days=array("time_start" => $time2->time_end, "time_end" => $time2->time_end, $otherDays);
+	$dimmers1_other_days=array("time_start" => $time1->time_start, "time_end" => $time1->time_end, "weekdays" => $otherDays1);
+	$dimmers2_other_days=array("time_start" => $time2->time_start, "time_end" => $time2->time_end, "weekdays" => $otherDays2);
 	$levelToCompare="light_level";
 	
 
@@ -481,6 +476,14 @@ function modifyProgram ($time1, $time2, $weekdays, $levels_array, $type) {
 	}
 	array_push($modifiedPrograms, $brighters1, $brighters2, $dimmers1_overlap_days, $dimmers2_overlap_days, $dimmers1_other_days, $dimmers2_other_days);
 	print( "HERE: ");
+	print(json_encode($time1));
+	print("    1      ");
+	print(json_encode($time2));
+	print("    2      ");
+	print($weekdays);
+	print("    3      ");
+	print(json_encode($levels_array));
+	print("    4      ");
 	print(json_encode($modifiedPrograms));
 }
 
