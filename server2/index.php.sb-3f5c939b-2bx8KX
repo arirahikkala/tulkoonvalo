@@ -54,28 +54,18 @@ function getLightsTree($retJson=true) {
 
 function getGroupsTree() {
 	$db = getConnection();
-	
-	//$sql = "select name,permanent_id from lights where isGroup=0";
-	//$groups = dbExec($db, $sql, null, 0);
 
-	$sql = "select name,permanent_id,parent_id from lights left join groups on (lights.permanent_id = groups.child_id) where isGroup=1";
-	$groups = dbExec($db, $sql, null, 0);
+	$sql = "select permanent_id,name from lights where isGroup=0 and detector_type=0";
+	$res = dbExec($db, $sql, null, 0);
 
-	$lights = getLightsTree(false);
-	$detectors = getDetectorsTree(false);
-	
+
+
 	$tree = array();
-	$used = array();
-
-
-	print(json_encode($tree));
-	/*$tree = array();
-	$newNode = array("data"=>"hello", "attr"=>array("id"=>1));
+	$newNode = array("data"=>"lol", "attr"=>array("id"=>1));
 	//newNode("");
 	$tree[] = $newNode;
 	//echo json_encode ($tree);
 	print(json_encode($tree));
-	*/
 }
 
 // Convenience function several DB statements
@@ -124,22 +114,21 @@ function deleteProgram($id) {
 
 function updateProgram($id) {
 	$params = json_decode(Slim::getInstance()->request()->getBody());
+	$retArray = array();
 	
-	$retArray = programValidation($params);	
-	if (1==2 && $retArray) {
-		Slim::getInstance()->response()->status(400);
-		print(json_encode($retArray));
-		return;
-	}
-	
+	// TODO: Parameter validity/safety conv. function
 	$db = getConnection();
 	
 	$sql = "update programs set name=? where id=?";	
 	dbExec($db, $sql, array($params->name, $params->id));
-
-	foreach ($params->times as $time) {	
-		if ($time->allow_delete == 1)
-			deleteTime($time->id);
+	print(json_encode($params));
+	foreach ($params->times as $time) {
+		// TODO: Need time removing
+		// TODO: Make inserted new_* value into false when OK response
+		// TODO: new_* name sucks, replace with new_item, try creating it in js too instead here (event type in adding)
+		
+		if ($time->allow_delete)
+			deleteTime($id);
 		
 		else if ($time->new_time) {
 			$sql = "insert into program_times values (null,?,?,?,?,?,?)";	
@@ -161,8 +150,10 @@ function updateProgram($id) {
 	}
 
 	foreach ($params->levels as $level) {
-		if ($level->allow_delete == 1)
-			deleteLevel($level->id);
+		// TODO: Need level removing
+
+		if ($time->allow_delete)
+			deleteLevel($id);
 			
 		else if ($level->new_level) {
 			$sql = "insert into program_levels values (null,?,?,?,?,?,?)";	
@@ -172,6 +163,7 @@ function updateProgram($id) {
 					$level->light_level, $level->motion_level)
 			);
 		}
+		//| id | program_id | target_id | light_detector | motion_detector | light_level | motion_level 
 		else {
 			$sql = "update program_levels set program_id=?, light_detector=?, motion_detector=?, light_level=?, motion_level=? where id=?";	
 			dbExec($db, $sql, array(
@@ -182,7 +174,7 @@ function updateProgram($id) {
 			);
 		}
 	}
-	//if ($retArray) print($retArray);
+	if ($retArray) print($retArray);
 }
 
 function programValidation($params) {
@@ -238,6 +230,7 @@ function programValidation($params) {
 				$hours = false;
 			}
 		}
+		
 		if (!$timeFormatError && strtotime($time->time_start) > strtotime($time->time_end))
 			$errorTimes[$time->cid][] = 5;
 	}
@@ -347,10 +340,7 @@ function getPrograms($retJson = true) {
 			$times = $stmt->fetchAll (PDO::FETCH_OBJ);
 			
 			foreach ($times as $cTime) {
-				$cTime->time_start = substr($cTime->time_start,0,5);
-				$cTime->time_end = substr($cTime->time_end,0,5);
 				$cTime->new_time = false;
-				$cTime->allow_delete = false;
 				unset($cTime->program_id);
 			}
 			
@@ -369,9 +359,9 @@ function getPrograms($retJson = true) {
 			$stmt->execute(array($cid));
 			$levels = $stmt->fetchAll (PDO::FETCH_OBJ);
 			
+			// Strip useless data
 			foreach ($levels as $cLevel) {
 				$cLevel->new_level = false;
-				$cLevel->allow_delete = false;
 				unset($cLevel->program_id);
 			}
 			$cProg->levels = $levels;
@@ -534,8 +524,8 @@ function modifyProgram ($time1, $time2, $weekdays, $levels_array, $type, $id1, $
 					$brighter = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2->time_start, 
 					"time_end" => $time2->time_end, "weekdays" => $time2->weekdays, "light_detector" => $level_pair[1]->light_detector, "motion_detector" 
 					=> $level_pair[1]->motion_detector, "light_level"=>$level_pair[1]->light_level, "motion_level"=>$level_pair[1]->motion_level);
-					$dimmer1 = array("programID" => $id1, "target_id" => $level_pair[0]->target_id, "time_start" => $time2->time_end, 
-					"time_end" => $time1->time_end, "weekdays" => $overlapDays, "light_detector" => $level_pair[0]->light_detector, "motion_detector" => 
+					$dimmer1 = array("programID" => $id1, "target_id" => $level_pair[0]->target_id, "time_start" => $time2->time_start, 
+					"time_end" => $time1->time_start, "weekdays" => $overlapDays, "light_detector" => $level_pair[0]->light_detector, "motion_detector" => 
 					$level_pair[0]->motion_detector, "light_level"=>$level_pair[0]->light_level, "motion_level"=>$level_pair[0]->motion_level);
 					array_push($modifiedPrograms, $brighter, $dimmer1);
 					if ($otherDays1 !== "0000000"){
