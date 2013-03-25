@@ -54,28 +54,45 @@ function getLightsTree($retJson=true) {
 
 function getGroupsTree() {
 	$db = getConnection();
+	$sql = "select name,permanent_id,parent_id,isGroup,detector_type from lights left join groups on (lights.permanent_id = groups.child_id)";
+	$groups = dbExec($db, $sql, null, 0);	
 	
-	//$sql = "select name,permanent_id from lights where isGroup=0";
-	//$groups = dbExec($db, $sql, null, 0);
-
-	$sql = "select name,permanent_id,parent_id from lights left join groups on (lights.permanent_id = groups.child_id) where isGroup=1";
-	$groups = dbExec($db, $sql, null, 0);
-
-	$lights = getLightsTree(false);
-	$detectors = getDetectorsTree(false);
-	
+	// Loop only those items with no parents here
 	$tree = array();
-	$used = array();
-
-
+	foreach ($groups as $g) {
+		if (!$g->parent_id) {
+			$newChildren = childLoop($g, $groups);
+			$tree[] = $newChildren;
+		}
+	}
 	print(json_encode($tree));
-	/*$tree = array();
-	$newNode = array("data"=>"hello", "attr"=>array("id"=>1));
-	//newNode("");
-	$tree[] = $newNode;
-	//echo json_encode ($tree);
-	print(json_encode($tree));
-	*/
+}
+
+// Drill down the groups tree and eventually return back up with all children
+function childLoop($cGroup, $groups) {
+	$newChild = array("data"=>$cGroup->name, "attr"=>array("id"=>$cGroup->permanent_id), "children"=>array());
+	
+	// Set the item type
+	// TODO: Maybe icons here too
+	if ($cGroup->isGroup == 1) $newChild["attr"]["type"] = 0;
+	else {
+		switch ($cGroup->detector_type) {
+			case 0: $newChild["attr"]["type"] = 1; break;
+			case 1: $newChild["attr"]["type"] = 2; break;
+			case 2: $newChild["attr"]["type"] = 3; break;
+		}
+	}
+	
+	foreach ($groups as $g) {
+		if ($g->parent_id == $cGroup->permanent_id) {
+			$subChildren = childLoop($g, $groups);
+			array_push($newChild["children"], $subChildren);
+		}
+	}
+	if (count($newChild["children"]) == 0)
+		unset($newChild["children"]);
+	
+	return($newChild);
 }
 
 // Convenience function several DB statements
