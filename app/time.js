@@ -69,9 +69,10 @@
 	    this.model.bind ("remove", this.remove, this);
 	    this.model.bind ("change:name", this.render, this);
 	    this.render();
-	    
+
 	    // Used for showing error messages in the right place
 	    this.model.set("cid", this.model.cid);
+	    console.log("CREATOR",this.model.get("cid"));
 	},
 	
 	drawErrors: function() {

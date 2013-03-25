@@ -40,7 +40,7 @@
 			this.$("#levelLightGroups").empty();
 			console.log("AFTER", $("#lightGroups"));
 			if (! this.model.get("new_level"))  {
-				var choice = confirm("Haluatko varmasti poistaa ajan?");
+				var choice = confirm("Haluatko varmasti poistaa ryhmän?");
 				if (choice) {
 					this.model.set("allow_delete", true)			
 					this.remove();
@@ -55,9 +55,13 @@
 		"slidechange #motion-slider" : function () { this.setSliderValues(); },
 	
 		// Checkboxes clicked
-		"click #light-enabled" : function (event) { this.model.set("light_detector", event.target.checked); },
-		"click #motion-enabled" : function (event) { this.model.set("motion_detector", event.target.checked); },
-	
+		"click #light-enabled" : function (event) { this.model.set("light_detector", event.target.checked); console.log(this.model.get("light_detector"));},
+		"click #motion-enabled" : function(event) {
+			// Set slider 0 if checkbox not ticked
+			this.$("#motion-slider").slider({disabled: ! event.target.checked, value: event.target.checked?this.model.get("motion_level"):0 });
+			this.model.set("motion_detector", event.target.checked);
+		},
+		
 		"click #levelGroupInput" : function () {
 	    $("#levelGroup #groupsPopup").hide();
 			this.$("#groupsPopup").show();
@@ -75,7 +79,6 @@
 		},
 		
 		"click #groupsPopupClose" : function() { this.$("#groupsPopup").hide(); },
-		"click #motion-enabled" : function(event) { this.$("#motion-slider").slider({disabled: ! event.target.checked}); },
 		
 		// TODO: Check that it's a group (here and server)
 		// TODO: Maybe show only groups here? (Own tree?)
@@ -88,7 +91,7 @@
 	},
 
 	initialize: function() {
-			this.model.bind("change:errors", function() { console.log( "asd",this.model.get("errors") ); this.drawErrors(); }, this );
+			this.model.bind("change:errors", function() { this.drawErrors(); }, this );
 	    this.model.bind ("remove", this.remove, this);
 	    this.model.bind ("change:name", this.render, this);
 	    this.render();
@@ -168,23 +171,21 @@
 			<td><div class='program-slider' id='motion-slider' /></td>\
 			<td>\
 				<input id='light-enabled' type='checkbox'>Käytä valosensoria<br />\
-				<input id='motion-enabled' type='checkbox'>Käytä liiketunnistinta\
+				<input id='motion-enabled' type='checkbox'>Käytä liiketunnistinta<br />\
 			</td>\
 		</tr>\
 	</table><br/><br/><br/><br/>"),
 	
 	render: function() {
 	    this.$el.html(this.template());
-
-	    this.$("#light-slider").slider({ orientation: "vertical" });
- 	    this.$("#motion-slider").slider({ orientation: "vertical" });
+	    
+	    this.$("#light-slider").slider({ orientation: "vertical", value: this.model.get("light_level") });
+ 	    this.$("#motion-slider").slider({ orientation: "vertical", value: this.model.get("motion_level") });
 			
 			// TODO: See license on jquery.ui.touch-punch.min.js library
 			this.$("#light-slider").draggable();
 			this.$("#motion-slider").draggable();
-			
-			// This didn't work above
-			this.$("#motion-slider").slider({disabled: true});
+			this.$("#motion-slider").slider({disabled: this.model.get("motion_detector")==0?true:false});
 
  	    this.$("#light-enabled").attr("checked", this.model.get("light_detector")==0?false:true);
  	    this.$("#motion-enabled").attr("checked", this.model.get("motion_detector")==0?false:true);

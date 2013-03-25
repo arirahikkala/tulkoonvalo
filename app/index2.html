@@ -175,12 +175,13 @@
       $("#programEditName").bind ("change", function() { Programs.models[0].set("name", $("#programEditName").val()); });
       $("#addEditTime").bind ("click", function() { tempTimes.add({}); });
       $("#addEditProgramSlider").bind ("click", function() { tempProgramLevels.add({}); });
-      $("#saveEditProgram").bind ("click", function() { Programs.models[0].save(null, {
+      $("#saveEditProgram").bind ("click", function() {console.log(Programs.where({"current_edit": true})[0]);
+      Programs.where({"current_edit": true})[0].save(null, {
       	success: function(m,r) {
       		// TODO: Need to change tab here
       	},
-      	error: function() {
-      		console.log("ERRORO");
+      	error: function(m,r) {
+      		console.log("ERRORO",m);
       	}
       }); });
 
@@ -222,6 +223,7 @@
 	  	})
 	  	
       $("#lightGroups").jstree ({
+      /*
 	  		"json_data": {
 	      		// the url from which jstree loads its information
 	      		// (note that updating to the server is done "out of view" from jstree, in callbacks below)
@@ -233,6 +235,13 @@
 	      		
 						"data"  : [testTree],
 	      	
+	  		},
+	  		*/
+	  		"json_data": {
+	  	  		"data": [testTree],
+            "ajax": {
+                "url": "../server2/groupsTree",
+            }
 	  		},
 	  		// allow selecting groups and their members independently
 	  		"checkbox": {
@@ -353,15 +362,6 @@
 			}
 		});
 		
-		$("#lightGroups").jstree ({
-			"json_data": {					
-					"data"  : [testTree],
-				
-			},
-
-			"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
-		})
-		
 		/*
 		// Programs time collection
 		*/
@@ -472,9 +472,7 @@
     var tempProgramLevels = new ProgramSliderCollection();
     var tempProgramLevelsView = new ProgramSliderCollectionView ({ model: tempProgramLevels, el: $("#ProgramLevels") });
     
-    // Get programs from DB
-		Programs.fetch({error: function(a,b){console.log("wrtf",b);}, success: function() {console.log("Fetched",Programs);
-		}});
+		Programs.fetch({success: function() { console.log("Fetched",Programs); }});
 		
     // Backbone.Router handles noticing where we're navigating to for us
     // (though see T36)
@@ -488,13 +486,17 @@
 			},
 
 			initialize : function () {
-				this.lastPage = null;
+				this.lastPage = "mainpage";
 				
 				this.bind("all", function() {
 					// Remove unsaved program when leaving new program page
 					if (this.lastPage == "programs") {
 						var cProg = Programs.where({id:null});
 						Programs.remove(cProg);
+					}
+					if (this.lastPage.substr(0,12) == "programsEdit") {
+						cProg = Programs.where({"current_edit": true})[0];
+						cProg.set("current_edit", false);
 					}
 					this.lastPage = Backbone.history.fragment;
 				});
@@ -555,30 +557,27 @@
 			newProg.set("levels", tempProgramLevels.models);
 	},
 	
-	programsEditView: function (progID) {
+	programsEditView: function (progID) {		
 		this.resetProgramsView();
-		$(".selected").attr("class", "");
-		
-		//tempPrograms.add(cProg);
-		//newProg = tempPrograms.models[0];
-		//newProg = Programs.where({id:progID})[0];
+		Times.models = [];
+		ProgramLevels.models = [];
+		$(".selected").attr("class", ""); // Unselect tabs
 		
 		newProg = Programs.get(progID);
-		var times = newProg.get("times");
-		var levels = newProg.get("levels");
+		newProg.set("current_edit", true);
+		
+		TimesView.$el = $("#programEditTimes");
+		ProgramLevelsView.$el = $("#programEditSliders");
+		
+		Times.add(newProg.get("times"));
+		ProgramLevels.add(newProg.get("levels"));
+		
+		newProg.set("times", Times);
+		newProg.set("levels", ProgramLevels);
 		
 		$("#programEditName").val(newProg.get("name"));
-		tempTimesView.$el = $("#programEditTimes");
-		tempProgramLevelsView.$el = $("#programEditSliders");
-
-		newProg.set("times", tempTimes.models);
-		newProg.set("levels", tempProgramLevels.models);
-
-		// Fill in the editing page
-		for (var i in times)
-			tempTimes.add(times[i]);
-		for (var i in levels) 
-			tempProgramLevels.add(levels[i]);
+		
+		console.log("prog",newProg);
 	},
 	
 	resetProgramsView: function () {

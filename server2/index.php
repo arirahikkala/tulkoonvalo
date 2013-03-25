@@ -54,18 +54,28 @@ function getLightsTree($retJson=true) {
 
 function getGroupsTree() {
 	$db = getConnection();
+	
+	//$sql = "select name,permanent_id from lights where isGroup=0";
+	//$groups = dbExec($db, $sql, null, 0);
 
-	$sql = "select permanent_id,name from lights where isGroup=0 and detector_type=0";
-	$res = dbExec($db, $sql, null, 0);
+	$sql = "select name,permanent_id,parent_id from lights left join groups on (lights.permanent_id = groups.child_id) where isGroup=1";
+	$groups = dbExec($db, $sql, null, 0);
 
-
-
+	$lights = getLightsTree(false);
+	$detectors = getDetectorsTree(false);
+	
 	$tree = array();
-	$newNode = array("data"=>"lol", "attr"=>array("id"=>1));
+	$used = array();
+
+
+	print(json_encode($tree));
+	/*$tree = array();
+	$newNode = array("data"=>"hello", "attr"=>array("id"=>1));
 	//newNode("");
 	$tree[] = $newNode;
 	//echo json_encode ($tree);
 	print(json_encode($tree));
+	*/
 }
 
 // Convenience function several DB statements
@@ -114,21 +124,22 @@ function deleteProgram($id) {
 
 function updateProgram($id) {
 	$params = json_decode(Slim::getInstance()->request()->getBody());
-	$retArray = array();
 	
-	// TODO: Parameter validity/safety conv. function
+	$retArray = programValidation($params);	
+	if (1==2 && $retArray) {
+		Slim::getInstance()->response()->status(400);
+		print(json_encode($retArray));
+		return;
+	}
+	
 	$db = getConnection();
 	
 	$sql = "update programs set name=? where id=?";	
 	dbExec($db, $sql, array($params->name, $params->id));
-	print(json_encode($params));
-	foreach ($params->times as $time) {
-		// TODO: Need time removing
-		// TODO: Make inserted new_* value into false when OK response
-		// TODO: new_* name sucks, replace with new_item, try creating it in js too instead here (event type in adding)
-		
-		if ($time->allow_delete)
-			deleteTime($id);
+
+	foreach ($params->times as $time) {	
+		if ($time->allow_delete == 1)
+			deleteTime($time->id);
 		
 		else if ($time->new_time) {
 			$sql = "insert into program_times values (null,?,?,?,?,?,?)";	
@@ -150,10 +161,8 @@ function updateProgram($id) {
 	}
 
 	foreach ($params->levels as $level) {
-		// TODO: Need level removing
-
-		if ($time->allow_delete)
-			deleteLevel($id);
+		if ($level->allow_delete == 1)
+			deleteLevel($level->id);
 			
 		else if ($level->new_level) {
 			$sql = "insert into program_levels values (null,?,?,?,?,?,?)";	
@@ -163,7 +172,6 @@ function updateProgram($id) {
 					$level->light_level, $level->motion_level)
 			);
 		}
-		//| id | program_id | target_id | light_detector | motion_detector | light_level | motion_level 
 		else {
 			$sql = "update program_levels set program_id=?, light_detector=?, motion_detector=?, light_level=?, motion_level=? where id=?";	
 			dbExec($db, $sql, array(
@@ -174,7 +182,7 @@ function updateProgram($id) {
 			);
 		}
 	}
-	if ($retArray) print($retArray);
+	//if ($retArray) print($retArray);
 }
 
 function programValidation($params) {
@@ -230,7 +238,6 @@ function programValidation($params) {
 				$hours = false;
 			}
 		}
-		
 		if (!$timeFormatError && strtotime($time->time_start) > strtotime($time->time_end))
 			$errorTimes[$time->cid][] = 5;
 	}
@@ -339,7 +346,10 @@ function getPrograms($retJson = true) {
 			$times = $stmt->fetchAll (PDO::FETCH_OBJ);
 			
 			foreach ($times as $cTime) {
+				$cTime->time_start = substr($cTime->time_start,0,5);
+				$cTime->time_end = substr($cTime->time_end,0,5);
 				$cTime->new_time = false;
+				$cTime->allow_delete = false;
 				unset($cTime->program_id);
 			}
 			
@@ -358,9 +368,9 @@ function getPrograms($retJson = true) {
 			$stmt->execute(array($cid));
 			$levels = $stmt->fetchAll (PDO::FETCH_OBJ);
 			
-			// Strip useless data
 			foreach ($levels as $cLevel) {
 				$cLevel->new_level = false;
+				$cLevel->allow_delete = false;
 				unset($cLevel->program_id);
 			}
 			$cProg->levels = $levels;

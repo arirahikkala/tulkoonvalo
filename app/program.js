@@ -34,6 +34,7 @@
 	  	name: '',
 	  	times: null,
 	  	levels: null,
+	  	current_edit: false,
 	  }
 	},
 
