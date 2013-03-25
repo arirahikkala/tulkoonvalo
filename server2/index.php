@@ -12,20 +12,72 @@ $app->get('/allchildren/:id/', function($id) { getAllChildren($id); });
 $app->get('/savesliders/:ids/:value/:timer', function($ids, $value, $timer) { saveSliders($ids, $value, $timer); });
 $app->get('/poll/:ids/:values/:timers/:enableds', function($ids, $values, $timers, $enableds) { poll($ids, $values, $timers, $enableds); });
 $app->get('/togglesliders/:ids/', function($ids) { toggleSliders($ids); });
-$app->get('/lightstree/', 'getLightsTree');
 $app->post('/lights', 'addGroup');
 $app->get('/programs/', 'getPrograms');
 $app->post('/programs/', 'savePrograms');
 $app->put('/programs/:id', function($id) { updateProgram($id); });
 $app->delete('/programs/:id', function($id) { deleteProgram($id); });
-
+$app->get('/groupsTree/', 'getGroupsTree');
+$app->get('/detectorsTree/', 'getDetectorsTree');
+$app->get('/lightsTree/', 'getLightsTree');
 $app->run();
 
-// Convenience DB function for INSERT, UPDATE and DELETE statements
-function dbUpdate($db, $sql, $dbArray) {
+function getDetectorsTree($retJson=true) {
+	$db = getConnection();
+	
+	$sql = "select permanent_id,name,detector_type from lights where isGroup=0 and detector_type!=0";
+	$res = dbExec($db, $sql, null, 0);
+
+	$tree = array();
+	foreach($res as $r) {
+		$newNode = array("data"=>$r->name, "attr"=>array("id"=>$r->permanent_id), "type"=>$r->detector_type);
+		$tree[] = $newNode;
+	}
+	if ($retJson) print(json_encode($tree));
+	else return($tree);
+}
+
+function getLightsTree($retJson=true) {
+	$db = getConnection();
+
+	$sql = "select permanent_id,name from lights where isGroup=0 and detector_type=0";
+	$res = dbExec($db, $sql, null, 0);
+
+	$tree = array();
+	foreach($res as $r) {
+		$newNode = array("data"=>$r->name, "attr"=>array("id"=>$r->permanent_id));
+		$tree[] = $newNode;
+	}
+	if ($retJson) print(json_encode($tree));
+	else return($tree);
+}
+
+function getGroupsTree() {
+	$db = getConnection();
+
+	$sql = "select permanent_id,name from lights where isGroup=0 and detector_type=0";
+	$res = dbExec($db, $sql, null, 0);
+
+
+
+	$tree = array();
+	$newNode = array("data"=>"lol", "attr"=>array("id"=>1));
+	//newNode("");
+	$tree[] = $newNode;
+	//echo json_encode ($tree);
+	print(json_encode($tree));
+}
+
+// Convenience function several DB statements
+// TODO: Make everyone use this
+function dbExec($db, $sql, $dbArray, $fetchType=null) {
 	try {
 		$stmt = $db->prepare($sql);
 		$stmt->execute($dbArray);
+		if ($fetchType == 0)
+			return($stmt->fetchAll(PDO::FETCH_OBJ));
+		else if ($fetchType == 1)
+			return($stmt->fetch(PDO::FETCH_OBJ));
 	}
 	catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}';
@@ -37,27 +89,27 @@ function deleteTime($id) {
 	$db = getConnection();
 	
 	$sql = "delete from program_times where id=?";	
-	dbUpdate($db, $sql, array($id));
+	dbExec($db, $sql, array($id));
 }
 
 function deleteLevel($id) {
 	$db = getConnection();
 	
 	$sql = "delete from program_levels where id=?";	
-	dbUpdate($db, $sql, array($id));
+	dbExec($db, $sql, array($id));
 }
 
 function deleteProgram($id) {
 	$db = getConnection();
 	
 	$sql = "delete from programs where id=?";	
-	dbUpdate($db, $sql, array($id));
+	dbExec($db, $sql, array($id));
 	
 	$sql = "delete from program_times where program_id=?";	
-	dbUpdate($db, $sql, array($id));
+	dbExec($db, $sql, array($id));
 	
 	$sql = "delete from program_levels where program_id=?";	
-	dbUpdate($db, $sql, array($id));
+	dbExec($db, $sql, array($id));
 }
 
 function updateProgram($id) {
@@ -68,7 +120,7 @@ function updateProgram($id) {
 	$db = getConnection();
 	
 	$sql = "update programs set name=? where id=?";	
-	dbUpdate($db, $sql, array($params->name, $params->id));
+	dbExec($db, $sql, array($params->name, $params->id));
 	print(json_encode($params));
 	foreach ($params->times as $time) {
 		// TODO: Need time removing
@@ -80,7 +132,7 @@ function updateProgram($id) {
 		
 		else if ($time->new_time) {
 			$sql = "insert into program_times values (null,?,?,?,?,?,?)";	
-			dbUpdate($db, $sql, array(
+			dbExec($db, $sql, array(
 					$id, $time->date_start, 
 					$time->date_end, $time->weekdays,
 					$time->time_start, $time->time_end)
@@ -88,7 +140,7 @@ function updateProgram($id) {
 		}
 		else {
 			$sql = "update program_times set date_start=?, date_end=?, weekdays=?, time_start=?, time_end=? where id=?";	
-			dbUpdate($db, $sql, array(
+			dbExec($db, $sql, array(
 					$time->date_start, 
 					$time->date_end, $time->weekdays,
 					$time->time_start, $time->time_end,
@@ -105,7 +157,7 @@ function updateProgram($id) {
 			
 		else if ($level->new_level) {
 			$sql = "insert into program_levels values (null,?,?,?,?,?,?)";	
-			dbUpdate($db, $sql, array(
+			dbExec($db, $sql, array(
 					$id, $level->target_id, 
 					$level->light_detector, $level->motion_detector,
 					$level->light_level, $level->motion_level)
@@ -114,7 +166,7 @@ function updateProgram($id) {
 		//| id | program_id | target_id | light_detector | motion_detector | light_level | motion_level 
 		else {
 			$sql = "update program_levels set program_id=?, light_detector=?, motion_detector=?, light_level=?, motion_level=? where id=?";	
-			dbUpdate($db, $sql, array(
+			dbExec($db, $sql, array(
 					$level->target_id, 
 					$level->light_detector, $level->motion_detector,
 					$level->light_level, $level->motion_level,
@@ -220,14 +272,14 @@ function savePrograms() {
 	$db = getConnection();
 	
 	$sql = "insert into programs values (null,?)";
-	dbUpdate($db, $sql, array($params->name));
+	dbExec($db, $sql, array($params->name));
 	$programID = $db->lastInsertId();
 	
 	// TODO: These common statements could be put into their own functions
 	$sql = "insert into program_times values (null,?,?,?,?,?,?)";
 	foreach ($params->times as $time) {
 			
-		dbUpdate($db, $sql, array(
+		dbExec($db, $sql, array(
 				$programID, $time->date_start, 
 				$time->date_end, $time->weekdays,
 				$time->time_start, $time->time_end)
@@ -236,7 +288,7 @@ function savePrograms() {
 	
 	$sql = "insert into program_levels values (null,?,?,?,?,?,?)";	
 	foreach ($params->levels as $level) {
-		dbUpdate($db, $sql, array(
+		dbExec($db, $sql, array(
 				$programID, $level->target_id, 
 				$level->light_detector, $level->motion_detector,
 				$level->light_level, $level->motion_level)
@@ -296,7 +348,6 @@ function getPrograms($retJson = true) {
 				$cLevel->new_level = false;
 				unset($cLevel->program_id);
 			}
-				
 			$cProg->levels = $levels;
 		}
 		catch(PDOException $e) {
@@ -475,10 +526,6 @@ function addGroup () {
 	catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}';
 	}
-}
-
-function getLightsTree() {
-	print("getlightstree");
 }
 
 function togglesliders($ids) {

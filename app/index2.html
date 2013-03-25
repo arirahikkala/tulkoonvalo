@@ -27,6 +27,8 @@
     <!-- lightGroups contains the tree of light groups. It's currently a jstree that's generated once and then only ever moved to different
 	 places in the document as necessary. -->
     <div id="lightGroups"></div>
+		<div id="detectorTree"></div>
+		<div id="lightsTree"></div>
 
     <!-- The page structure proper and the various container elements -->
     <div id="container">
@@ -48,14 +50,18 @@
     		<div id="groups" class="divit"><h2>Valoryhmät</h2>
       		<div id="groupContainer" class="programs">
 						<div id="groupsLightGroups"></div>
-						<div id="groupAdd" class="eiVierekkain">
-	  					<input id="addGroup" type="submit" value="Add" />
-						</div>
     			</div>
     			<div id="groupRemove" class="eiVierekkain">
-						<input id="deleteGroup" type="submit" value="Remove group" />
+    				<input id="addGroup" type="submit" value="+Uusi ryhmä" />
+						<input id="deleteGroup" type="submit" value="Poista ryhmä" />
     			</div>
-    		</div>
+
+					<div id="lightsTreeContainer" class="programs">
+					</div>
+					
+					<div id="detectorTreeContainer" class="programs">
+  				</div>
+  			</div>
 
     		<div id="programs" class="divit"><h2>Uusi sääntö</h2>
     			<div class='programError' id="programsErrorMain"></div>
@@ -180,12 +186,53 @@
 
 			// Sliders page
 			$("#slidersIDs").bind ("change", function() { console.log("new id"); });
+			//$("#selector").jstree();
+			
+			var testTree = 
+				[{
+					"data" : "Yritys", "attr" : { id : 6 }, "children" : 
+	        	[{ "data" : "Aula", "attr" : { id : 3 }, "children" :
+	        		[{"data" : "Aula Etu", "attr" : { id : 1 }},
+	        		 {"data" : "Aula Taka", "attr" : { id : 2 }},
+	        		]
+	        	},
+						{"data" : "Eteinen", "attr" : { id : 4 }, "children":
+	        		[{"data" : "Ulkovalo", "attr" : { id : 5 }}
+	        		]}
 
+	        	]
+	      },]
+		
+      $("#lightsTreeContainer").jstree ({
+	  		"json_data": {
+            "ajax": {
+                "url": "../server2/lightsTree",
+            }
+	  		},
+	  		"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
+	  	});
+	  	
+      $("#detectorTreeContainer").jstree ({
+	  		"json_data": {
+            "ajax": {
+                "url": "../server2/detectorsTree",
+            }
+	  		},
+	  		"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
+	  	})
+	  	
       $("#lightGroups").jstree ({
 	  		"json_data": {
-	      	// the url from which jstree loads its information
-	      	// (note that updating to the server is done "out of view" from jstree, in callbacks below)
-	      	"ajax": { "url": "../server/lightsTree" }
+	      		// the url from which jstree loads its information
+	      		// (note that updating to the server is done "out of view" from jstree, in callbacks below)
+	      		"url": { "url": "../server2/devices" },
+	      		"data": function(n) {console.log(n);
+	      		console.log("asdas");
+	      			return { id : n.attr ? n.attr("id") : 0 };
+	      		},
+	      		
+						"data"  : [testTree],
+	      	
 	  		},
 	  		// allow selecting groups and their members independently
 	  		"checkbox": {
@@ -195,11 +242,11 @@
 	  		"types": {
 	      	"light": { max_children: 0 }
 	  		},
-	  		"plugins": ["themes", "json_data", "checkbox", "ui", "dnd", "crrm", "types"]
+	  		"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
 	  	})
-
+	  	
     .bind("rename.jstree", function (e, data) {
-			console.log (data.rslt.obj.attr("id"));
+			console.log ("id",data.rslt.obj.attr("id"));
 			$.post(
 	    	"../server/lights/" + data.rslt.obj.attr("id") + "/name", 
 				JSON.stringify ({ "name" : data.rslt.new_name }), 
@@ -211,7 +258,7 @@
 			);
 		})
 		
-    .bind("dblclick.jstree", function () { 
+    .bind("dblclick.jstree", function () {
 			$("#lightGroups").jstree("rename", null)
     })
 
@@ -262,8 +309,7 @@
 			})
     });
     
-    $.jstree._reference($("#lightGroups")).hide_checkboxes();
-
+    //$.jstree._reference($("#lightGroups")).hide_checkboxes();
 
 		/*
 		// Light programs collection
@@ -287,7 +333,7 @@
 				this.$el.empty();
 				var _this = this;
 				this.model.each (function (x) { _this.$el.append (new Program.ProgramView ({model: x}).$el)});
-			}
+			},
 		});
 		
 		var ProgramCollectionMainView = Backbone.View.extend ({
@@ -306,6 +352,15 @@
 				this.model.each (function (x) { _this.$el.append (new Program.ProgramMainView ({model: x}).$el); x.set("router", AppRouter); });
 			}
 		});
+		
+		$("#lightGroups").jstree ({
+			"json_data": {					
+					"data"  : [testTree],
+				
+			},
+
+			"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
+		})
 		
 		/*
 		// Programs time collection
@@ -418,7 +473,7 @@
     var tempProgramLevelsView = new ProgramSliderCollectionView ({ model: tempProgramLevels, el: $("#ProgramLevels") });
     
     // Get programs from DB
-		Programs.fetch({success: function() {console.log("Fetched",Programs);
+		Programs.fetch({error: function(a,b){console.log("wrtf",b);}, success: function() {console.log("Fetched",Programs);
 		}});
 		
     // Backbone.Router handles noticing where we're navigating to for us
@@ -435,8 +490,8 @@
 			initialize : function () {
 				this.lastPage = null;
 				
-				// Remove unsaved program when leaving new program page
 				this.bind("all", function() {
+					// Remove unsaved program when leaving new program page
 					if (this.lastPage == "programs") {
 						var cProg = Programs.where({id:null});
 						Programs.remove(cProg);
@@ -452,6 +507,7 @@
 	// - don't load data if you could already have loaded it in the background earlier or bootstrapped it into the page
 	
 	mainpageView: function() {
+
 	},
 	
 	controlsView: function() {
@@ -465,13 +521,11 @@
 	},
 	
 	groupsView: function () {
-			/*
-			$.get("../server2/lightstree/");
+			$.get("../server2/lightsTree/");
 	    //$("#groupsLightGroups").empty();
-	    //$.jstree._reference($("#lightGroups")).hide_checkboxes();
+	    $.jstree._reference($("#lightGroups")).hide_checkboxes();
 	    $("#lightGroups").show();
 	    $("#groupsLightGroups").append($("#lightGroups"));
-			*/
 	},
 	
 	slidersView: function() {

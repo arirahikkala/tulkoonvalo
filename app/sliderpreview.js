@@ -69,7 +69,7 @@
 		
 		// Create new code and sliders
 		console.log(newIDs);
-		this.$("#slidersCode").val(this.model.get("slidersCodeStart")+"["+newIDs+"]"+this.model.get("slidersCodeEnd"));
+		this.$("#slidersCode").val(this.model.get("slidersCodeStart")+newIDs+this.model.get("slidersCodeEnd"));
 		this.model.get("SliderCollection").newSlider(newIDs, null);
 	},
 

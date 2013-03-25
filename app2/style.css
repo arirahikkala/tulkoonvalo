@@ -15,6 +15,12 @@
 	border-bottom: 1px solid #cccccc;
 	/*padding: 25px;*/
 }
+
+#ui-slider-handle-value
+{
+	margin-left: 1.5em;
+}
+
 .widget-header
 {
 	background: yellow;
@@ -54,14 +60,8 @@
 	background: #eeeeee;	
 }
 
-.program-time
-{
-	width: 10%;
-}
-.program-date
-{
-	width: 20%;
-}
+.program-time { width: 10%; }
+.program-date {	width: 20%; }
 
 .programslider-item
 {
@@ -71,12 +71,21 @@
 	background: #eeeeee;	
 }
 
-#motion-slider
+.programError
+{ color: #dd0000; }
+
+#groupsPopup
 {
-	margin-left: 200px;
+	border: solid 4px grey;
+	background: #eeeeee;
+	width: 200px;
+	height: 200px;
+	position: absolute;
+	display: none;
+	z-index: 10;
 }
 
-.programError
+#levelSettings td
 {
-	color: red;
+	padding-right: 3em;
 }
