@@ -524,8 +524,8 @@ function modifyProgram ($time1, $time2, $weekdays, $levels_array, $type, $id1, $
 					$brighter = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2->time_start, 
 					"time_end" => $time2->time_end, "weekdays" => $time2->weekdays, "light_detector" => $level_pair[1]->light_detector, "motion_detector" 
 					=> $level_pair[1]->motion_detector, "light_level"=>$level_pair[1]->light_level, "motion_level"=>$level_pair[1]->motion_level);
-					$dimmer1 = array("programID" => $id1, "target_id" => $level_pair[0]->target_id, "time_start" => $time2->time_end, 
-					"time_end" => $time1->time_end, "weekdays" => $overlapDays, "light_detector" => $level_pair[0]->light_detector, "motion_detector" => 
+					$dimmer1 = array("programID" => $id1, "target_id" => $level_pair[0]->target_id, "time_start" => $time2->time_start, 
+					"time_end" => $time1->time_start, "weekdays" => $overlapDays, "light_detector" => $level_pair[0]->light_detector, "motion_detector" => 
 					$level_pair[0]->motion_detector, "light_level"=>$level_pair[0]->light_level, "motion_level"=>$level_pair[0]->motion_level);
 					array_push($modifiedPrograms, $brighter, $dimmer1);
 					if ($otherDays1 !== "0000000"){
