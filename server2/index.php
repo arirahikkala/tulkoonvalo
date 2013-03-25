@@ -1,5 +1,3 @@
-//create table programs_parse (program_id int(32), target_id int(32), date_start date, date_end date, weekdays char(7), time_start time, time_end time , light_detector tinyint(1), motion_detector tinyint(1), light_level int(3), motion_level int(3) ) ;
-
 <?php // -*- PHP -*-
 
 require 'slim/Slim.php';
@@ -72,7 +70,7 @@ function getGroupsTree() {
 
 // Convenience function several DB statements
 // TODO: Make everyone use this
-function dbExec($db, $sql, $dbArray, $fetchType=null) {
+function dbExec($db, $sql, $dbArray, $fetchType=-1) {
 	try {
 		$stmt = $db->prepare($sql);
 		$stmt->execute($dbArray);
@@ -273,10 +271,11 @@ function savePrograms() {
 	
 	$db = getConnection();
 	
+
 	$sql = "insert into programs values (null,?)";
 	dbExec($db, $sql, array($params->name));
 	$programID = $db->lastInsertId();
-
+/*
 	$modifiedPrograms = checkProgramsOverlap($params, $programID);
 	$sql = "insert into program_parse values (null,?,?,null,null,?,?,?,?,?,?,?)";
 	if  (!empty($modifiedPrograms)){
@@ -291,11 +290,10 @@ function savePrograms() {
 			}
 		}
 	}
-
+*/
 	// TODO: These common statements could be put into their own functions
 	$sql = "insert into program_times values (null,?,?,?,?,?,?)";
 	foreach ($params->times as $time) {
-			
 		dbExec($db, $sql, array(
 				$programID, $time->date_start, 
 				$time->date_end, $time->weekdays,
