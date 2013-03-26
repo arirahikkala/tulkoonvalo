@@ -50,7 +50,7 @@ var SliderCollection = Backbone.Collection.extend ({
 			children: curLight["children"], allChildren: curLight["all_children"], 
 			collection: this, lightID: curLight["permanent_id"], 
 			enabled: isEnabled, timer: curLight["timer"], timerLast: curLight["timer_full"],
-			level: null });
+			level: null, ghost: curLight["ghost"] });
 
 			// Keep record of sliders with a certain ID
 			var cid = curLight["permanent_id"];

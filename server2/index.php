@@ -525,6 +525,47 @@ function getPrograms($retJson = true) {
 	}
 }
 
+function getGhost ($id) {
+	$db=getConnection();
+	$sql = "select * from programs_parse";
+	$programs=dbExec($db, $sql, array(), 0);
+
+	$time = getdate();
+	$todaysPrograms=array();
+
+	/*$days = array();
+
+	for ($i=1; $i<=7; $i++){
+		if ($time["wday"]==$i ||
+		($time["wday"]==0 && $i==7))
+			array_push($days, "1");
+		else
+			array_push($days, "0");
+	}	
+	$today=implode($days);*/
+
+	$today=$time["wday"]-1;
+	if ($today==-1)
+		$today=6;
+	//print(
+	
+	foreach ($programs as $prog) {
+		if ($prog->target_id==$id){
+			$weekdays=$prog->weekdays;
+			if (substr($weekdays, $today, 1)=="1"){
+				if ((strtotime($prog->time_start) <= $time[0]) && 
+				($time[0] < strtotime($prog->time_end))) {
+					if ($prog->motion_detector==1)
+						return ($prog->motion_level);
+					else
+						return ($prog->light_level);
+				}
+			}
+		}					
+	}
+	return(0);
+}
+
 function checkProgramsOverlap ($target, $targetID) {
 	$prog=getPrograms(false);
 	//if (count($prog)==1)
@@ -943,7 +984,7 @@ function saveSliders($ids, $value, $timer) {
 
 // Get light/group data and children
 // TODO: Inexistent IDs
-function getObjectData ($ids) {
+function getObjectData ($ids) {	
 	$ids_array = preg_split ("/,/", $ids);
 	$retArray = array();
 	
@@ -975,6 +1016,7 @@ function getObjectData ($ids) {
 		$lights -> all_children = getAllChildren($id);
 		$lights -> ends_at = $lights->ends_at;
 		$lights -> timer_full = strtotime($lights->ends_at)-strtotime($lights->activated_at);
+		$lights -> ghost = getGhost($id);
 		$retArray[] = $lights;
 	}
 	print(json_encode($retArray));
