@@ -12,7 +12,7 @@ $app->get('/allchildren/:id/', function($id) { getAllChildren($id); });
 $app->get('/savesliders/:ids/:value/:timer', function($ids, $value, $timer) { saveSliders($ids, $value, $timer); });
 $app->get('/poll/:ids/:values/:timers/:enableds', function($ids, $values, $timers, $enableds) { poll($ids, $values, $timers, $enableds); });
 $app->get('/togglesliders/:ids/', function($ids) { toggleSliders($ids); });
-$app->post('/lights', 'addGroup');
+//$app->post('/lights', 'addGroup');
 $app->get('/programs/', 'getPrograms');
 $app->post('/programs/', 'savePrograms');
 $app->put('/programs/:id', function($id) { updateProgram($id); });
@@ -20,7 +20,124 @@ $app->delete('/programs/:id', function($id) { deleteProgram($id); });
 $app->get('/groupsTree/', 'getGroupsTree');
 $app->get('/detectorsTree/', 'getDetectorsTree');
 $app->get('/lightsTree/', 'getLightsTree');
+$app->post('/groups', 'addGroup');
+$app->post('/groups/:id/name', function($id) { renameGroup($id); });
+$app->post('/groups/:id/parent', function($id) { moveGroup($id); });
+$app->delete('/groups/:id', function($id) { removeGroup($id); });
+
 $app->run();
+
+function removeGroup($id) {
+	$db = getConnection();
+
+	// Get deleted group's children
+	$sql = "select child_id from groups where parent_id=?";
+	$children = dbExec($db, $sql, array($id), 0);
+	
+	$sql = "select * from groups";
+	$groups = dbExec($db, $sql, array($id), 0);
+	
+	// Find out all children an remove them
+	$allChildren = array();
+	foreach ($children as $c) {
+		$allChildren = childLoopID($c, $groups, $allChildren);
+	}
+	
+	// To avoid problems remove group associations first then groups
+	foreach ($allChildren as $c) {
+		$sql = "delete from light_activations where id=?";
+		dbExec($db, $sql, array($c));
+	
+		$sql = "delete from groups where child_id=?";
+		dbExec($db, $sql, array($c));
+	
+		$sql = "delete from lights where permanent_id=? and isGroup=1";
+		dbExec($db, $sql, array($c));
+	}
+	
+	/*foreach ($allChildren as $c) {
+		$sql = "delete from lights where permanent_id=?";
+		dbExec($db, $sql, array($c));
+	}*/
+	
+	// Delete the parent
+	$sql = "delete from light_activations where id=?";
+	dbExec($db, $sql, array($id));
+	
+	$sql = "delete from groups where child_id=?";
+	dbExec($db, $sql, array($id));
+
+	$sql = "delete from lights where permanent_id=? and isGroup=1";
+	dbExec($db, $sql, array($id));
+}
+
+function childLoopID($c, $groups, $allChildren) {
+	array_push($allChildren, $c->child_id);
+	foreach ($groups as $g) {
+		if ($g->parent_id == $c->child_id) {
+			$allChildren = childLoopID($g, $groups, $allChildren);
+			array_push($allChildren, $g->child_id);
+		}
+	}
+	return($allChildren);
+}
+
+function moveGroup($id) {
+	$params = json_decode(Slim::getInstance()->request()->getBody());
+	$db = getConnection();
+	
+	// The parent must be group
+	$newParent = $params->parent_id;
+	$sql = "select isGroup from lights where permanent_id=?";
+	$isGroup = dbExec($db, $sql, array($newParent), 1);
+	if ($isGroup && !$isGroup->isGroup) {
+		print(json_encode($params));
+		return;
+	}
+	
+	if ($newParent == -1) {
+		$sql = "delete from groups where child_id=?";
+		dbExec($db, $sql, array($id));
+	}
+	else {
+		if ($params->only_move) {
+			$sql = "delete from groups where child_id=?";
+			dbExec($db, $sql, array($id));
+		
+			$sql = "insert into groups values (?,?)";
+			dbExec($db, $sql, array($id, $newParent));
+		}
+		else {
+			$sql = "insert into groups values (?,?)";
+			dbExec($db, $sql, array($id, $newParent));
+		}
+	}
+}
+
+function renameGroup($id) {
+	$params = json_decode(Slim::getInstance()->request()->getBody());
+	$db = getConnection();
+	
+	$sql = "update lights set name=? where permanent_id=?";
+	dbExec($db, $sql, array($params->name, $id));
+}
+
+function addGroup() {
+	$params = json_decode(Slim::getInstance()->request()->getBody());
+	$db = getConnection();
+	
+	// TODO: Allow random ID?
+	$newID = rand();
+	
+	$sql = "insert into lights values (?,?,1,0)";
+	dbExec($db, $sql, array($params->name, $newID));
+
+	if ($params->parent_id != -1) {
+		$sql = "insert into groups values (?,?)";
+		dbExec($db, $sql, array($newID, $params->parent_id));
+	}
+	print($newID);
+}
 
 function getDetectorsTree($retJson=true) {
 	$db = getConnection();
@@ -30,7 +147,10 @@ function getDetectorsTree($retJson=true) {
 
 	$tree = array();
 	foreach($res as $r) {
-		$newNode = array("data"=>$r->name, "attr"=>array("id"=>$r->permanent_id), "type"=>$r->detector_type);
+		if ($r->detector_type == 1) $dType = "detector_light";
+		else $dType = "detector_motion";
+	
+		$newNode = array("data"=>$r->name, "attr"=>array("id"=>$r->permanent_id, "rel"=>$dType));
 		$tree[] = $newNode;
 	}
 	if ($retJson) print(json_encode($tree));
@@ -45,7 +165,7 @@ function getLightsTree($retJson=true) {
 
 	$tree = array();
 	foreach($res as $r) {
-		$newNode = array("data"=>$r->name, "attr"=>array("id"=>$r->permanent_id));
+		$newNode = array("data"=>$r->name, "attr"=>array("id"=>$r->permanent_id, "rel"=>"light"));
 		$tree[] = $newNode;
 	}
 	if ($retJson) print(json_encode($tree));
@@ -60,7 +180,7 @@ function getGroupsTree() {
 	// Loop only those items with no parents here
 	$tree = array();
 	foreach ($groups as $g) {
-		if (!$g->parent_id) {
+		if (!$g->parent_id && $g->isGroup) {
 			$newChildren = childLoop($g, $groups);
 			$tree[] = $newChildren;
 		}
@@ -74,14 +194,15 @@ function childLoop($cGroup, $groups) {
 	
 	// Set the item type
 	// TODO: Maybe icons here too
-	if ($cGroup->isGroup == 1) $newChild["attr"]["type"] = 0;
+	if ($cGroup->isGroup == 1) $childType = "group";//$newChild["attr"]["type"] = 0;
 	else {
 		switch ($cGroup->detector_type) {
-			case 0: $newChild["attr"]["type"] = 1; break;
-			case 1: $newChild["attr"]["type"] = 2; break;
-			case 2: $newChild["attr"]["type"] = 3; break;
+			case 0: $childType = "light";//$newChild["attr"]["type"] = 1; break;
+			case 1: $childType = "detector_light";//$newChild["attr"]["type"] = 2; break;
+			case 2: $childType = "detector_motion";//$newChild["attr"]["type"] = 3; break;
 		}
 	}
+	$newChild["attr"]["rel"] = $childType;
 	
 	foreach ($groups as $g) {
 		if ($g->parent_id == $cGroup->permanent_id) {
@@ -642,6 +763,7 @@ function modifyProgram ($time1, $time2, $weekdays, $levels_array, $type, $id1, $
 	return($modifiedPrograms);
 }
 
+/*
 function addGroup () {
 	$sql = "insert into lights (name, brightness, parent, isGroup) values (?, ?, ?, ?)";
 	$requestBody = json_decode (Slim::getInstance()->request()->getBody());
@@ -657,6 +779,7 @@ function addGroup () {
 		echo '{"error":{"text":'. $e->getMessage() .'}}';
 	}
 }
+*/
 
 function togglesliders($ids) {
 	$ids_array = preg_split ("/,/", $ids);

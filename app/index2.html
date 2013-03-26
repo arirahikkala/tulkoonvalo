@@ -210,6 +210,9 @@
                 "url": "../server2/lightsTree",
             }
 	  		},
+				"crrm": {
+					move : { check_move: function () { return(false); }}
+				},
 	  		"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
 	  	});
 	  	
@@ -219,49 +222,55 @@
                 "url": "../server2/detectorsTree",
             }
 	  		},
+				"crrm": {
+					move : { check_move: function () { return(false); }}
+				},
 	  		"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
 	  	})
 	  	
       $("#lightGroups").jstree ({
-      /*
 	  		"json_data": {
-	      		// the url from which jstree loads its information
-	      		// (note that updating to the server is done "out of view" from jstree, in callbacks below)
-	      		"url": { "url": "../server2/devices" },
-	      		"data": function(n) {console.log(n);
-	      		console.log("asdas");
-	      			return { id : n.attr ? n.attr("id") : 0 };
-	      		},
-	      		
-						"data"  : [testTree],
-	      	
+            "ajax": { "url": "../server2/groupsTree", }
 	  		},
-	  		*/
-	  		"json_data": {
-	  	  		//"data": [testTree],
-            "ajax": {
-                "url": "../server2/groupsTree",
-            }
-	  		},
+	  		
+				"crrm": {
+					move : {
+						"always_copy": "multitree",
+						check_move: function (m,data) {
+							//console.log(m,data);
+					 		return(true);
+					 	}
+					}
+				},
+				"types" : {
+					"types" : {
+						"group" : {
+							//"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
+						},
+						"light" : {
+							//"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
+						},
+					}
+				},
 	  		// allow selecting groups and their members independently
-	  		"checkbox": {
+	  		/*"checkbox": {
   	    	"two_state": "false",
   	    },
-	  		// note T4, T5, T6; this is currently a no-op
+  	    
+	  		 note T4, T5, T6; this is currently a no-op
 	  		"types": {
 	      	"light": { max_children: 0 }
-	  		},
+	  		},*/
 	  		"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
 	  	})
 	  	
     .bind("rename.jstree", function (e, data) {
-			console.log ("id",data.rslt.obj.attr("id"));
 			$.post(
-	    	"../server/lights/" + data.rslt.obj.attr("id") + "/name", 
-				JSON.stringify ({ "name" : data.rslt.new_name }), 
+	    	"../server2/groups/" + data.rslt.obj.attr("id") + "/name", 
+				JSON.stringify ({ name: data.rslt.new_name }), 
 				
 				function (r) {
-			    if(r !== "{}")
+			    if(r.length != 0)
 						$.jstree.rollback(data.rlbk);
 				}
 			);
@@ -272,41 +281,53 @@
     })
 
     .bind("move_node.jstree", function (e, data) {
-			console.log (data);
-				$.post ("../server/lights/" + data.rslt.o.attr("id") + "/parent",
-			
+    		// TODO: How to stop moving groups in detectors etc. here?
+    		// The node is moved from some other tree
+    		var only_move = (data.rslt.op[0].id=="lightGroups")?true:false;
+    		
+				$.post ("../server2/groups/" + data.rslt.o.attr("id") + "/parent",
 				JSON.stringify ({
-		 	   "parent" : data.rslt.cr === -1 ? 1 : data.rslt.np.attr("id")
+		 	   "parent_id" : data.rslt.cr == -1 ? -1 : data.rslt.np.attr("id"),
+		 	   "only_move": only_move,
 				}),
 		
 				function (r) {
-		    	if(r !== "{}")
+		    	if(r.length != 0)
 						$.jstree.rollback(data.rlbk);
 				}
 			);
     })
 
     .bind("remove.jstree", function (e, data) {
-			data.rslt.obj.each(function () {
-	    	$.ajax({
-					async : false,
-					type: 'DELETE',
-					url: "../server/lights/" + this.id,
-					success : function (r) {
-		    		if(r !== "{}")
-							data.inst.refresh();
-					}
-	    	});
-			});
+    	var cid = data.rslt.obj.attr("id");
+
+    	// Only ask if a group and has children
+    	if (data.rslt.obj.attr("rel") == "group" && data.rslt.obj.children().find("a").length != 0) {
+	    	var choice = confirm("Myös kaikki aliryhmät poistetaan. Haluatko jatkaa?");
+				if (choice)	{console.log("wtf",choice);
+					data.rslt.obj.each(function () {
+							$.ajax({
+								async : false,
+								type: 'DELETE',
+								url: "../server2/groups/" + this.id,
+								success : function (r) {
+									if(r.length != 0)
+										data.inst.refresh();
+								}
+							});
+					});
+				}
+				else $.jstree.rollback(data.rlbk);
+			}
+
     })
     
     // create a new node
     // note T65
     .bind("create.jstree", function (e, data) {
-    console.log(data.rslt);
 			$.post (
-	    	"../server2/lights",
-	    	JSON.stringify ({ name: data.rslt.name}),
+	    	"../server2/groups",
+	    	JSON.stringify ({ name: data.rslt.name, parent_id: data.rslt.parent==-1?-1:data.rslt.parent[0].id}),
 			function (r) {
 		    var res = JSON.parse (r);
 		    if (r['error'] !== undefined)
