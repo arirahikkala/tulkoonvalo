@@ -39,8 +39,8 @@
 			childrenFetched: false,
 			childElement: null,
 			collection: null, // TODO: Ok, you don't need to declare this here
-			
 			level: 1,
+			ghost: 0,
 	  };
 	
 	},
@@ -74,7 +74,7 @@
 	</div>\
 	<table border=0px>\
 	<tr>\
-		<td><div class='slider-widget' /></td>\
+		<td><div class='slider-widget'></td>\
 	</tr>\
 	<tr>\
 		<td>\<input class='timer-add' type='button' value='+' /></td>\
@@ -228,7 +228,7 @@
 	},
 	
 	enabledChange: function() {
-		console.log("enabledChange", this.model.get("name"));
+		console.log("enabledChange", this.model.get("name"), this.model.get("ghost"));
 		this.model.set("enabled", false);
 		
 		$.get("../server2/togglesliders/"+this.model.get("lightID")+','+this.model.get("allChildren"));
@@ -268,7 +268,7 @@
 			
 			// TODO: Is this necessary?
 			// Cut too long names
-			var header = this.model.get("name");
+			var header = this.model.get("name")+this.model.get("ghost");
 			if (header.length > 15)
 				header = header.substring(0, 12)+"...";
 			this.$(".widget-header").html(header);

@@ -445,13 +445,10 @@ function savePrograms() {
 	dbExec($db, $sql, array($params->name));
 	$programID = $db->lastInsertId();
 
-	$sql = "delete from programs_parse";	
-	dbExec($db, $sql, array());
-
 	$modifiedPrograms = checkProgramsOverlap($params, $programID);
 	$sql = "insert into programs_parse values (?,?,null,null,?,?,?,?,?,?,?)";
-	for ($i=0; $i<count($modifiedPrograms); $i++) {
-		foreach ($modifiedPrograms[$i] as $prog){
+	//for ($i=0; $i<count($modifiedPrograms); $i++) {
+		foreach ($modifiedPrograms as $prog){
 			
 			dbExec($db, $sql, array(
 					$prog["programID"], $prog["target_id"], $prog["weekdays"], 
@@ -459,7 +456,7 @@ function savePrograms() {
 					$prog["motion_detector"], $prog["light_level"], $prog["motion_level"])
 			);
 		}
-	}
+	//}
 
 	// TODO: These common statements could be put into their own functions
 	$sql = "insert into program_times values (null,?,?,?,?,?,?)";
@@ -549,83 +546,203 @@ function getPrograms($retJson = true) {
 	}
 }
 
-function checkProgramsOverlap ($target, $targetID) {
-	$prog=getPrograms(false);
-	//if (count($prog)==1)
-	//	return(array());
-	$tTimes = $target->times;
-	$modifiedPrograms=array();
+function getProgramsParse() {
+	$db=getConnection();
+	$sql = "select * from programs_parse";
+	$programs=dbExec($db, $sql, array(), 0);
+	return($programs);
+}
 
-	for ($i=1; $i<count($prog); $i++) {
-		$times = $prog[$i]->times;
-		foreach ($times as $time){
-			foreach ($tTimes as $tTime) {
-				$weekdays=$tTime->weekdays + $time->weekdays + 30000000; //3 for not losing zeros at the beginning, removed later
-				if(stripos($weekdays, "2")!==false) {
-					if ((strtotime($time->time_start) <= strtotime($tTime->time_start)) && 
-					(strtotime($tTime->time_start) < strtotime($time->time_end))) {
-						if(strtotime($tTime->time_end) <= strtotime($time->time_end)) {
-							$levels_array=checkLights ($target->levels, $prog[$i]->levels);
-							if (!empty($levels_array)) 
-								array_push($modifiedPrograms, modifyProgram($tTime, $time, $weekdays, 
-								$levels_array, 1, $targetID, $prog[$i]->id));
+function deleteProgramsParse() {
+	$db=getConnection();
+	$sql = "delete from programs_parse";	
+	dbExec($db, $sql, array());
+}
+
+function getGhost ($id) {
+	$programs=getProgramsParse();
+
+	$time = getdate();
+	$todaysPrograms=array();
+
+	$today=$time["wday"]-1;
+	if ($today==-1)
+		$today=6;
+	
+	foreach ($programs as $prog) {
+		if ($prog->target_id==$id){
+			$weekdays=$prog->weekdays;
+			if (substr($weekdays, $today, 1)=="1"){
+				if ((strtotime($prog->time_start) <= $time[0]) && 
+				($time[0] < strtotime($prog->time_end))) {
+					if ($prog->motion_detector==1)
+						return ($prog->motion_level);
+					else
+						return ($prog->light_level);
+				}
+			}
+		}					
+	}
+	return(0);
+}
+
+function checkProgramsOverlap ($target, $targetID) {
+	$programs2=getPrograms(false);
+	$modifiedPrograms=array();
+	$modifiedTarget=array(array("times" => $target->times, "levels" => $target->levels));
+
+	if (count($programs2)==1){
+		foreach ($target->times as $tTime){
+			foreach ($target->levels as $level){
+				array_push($modifiedPrograms, array("programID" => $targetID, 
+				"target_id" => $level->target_id, "time_start" => $tTime->time_start, 
+				"time_end" => $tTime->time_end, "weekdays" => $tTime->weekdays, 
+				"light_detector" => $level->light_detector, "motion_detector" 
+				=> $level->motion_detector, "light_level" => $level->light_level, 
+				"motion_level" => $level->motion_level));
+			}
+		}
+		return($modifiedPrograms);
+	}
+
+	$programs=getProgramsParse();
+	deleteProgramsParse();
+	print("   !!!    ");print(json_encode($programs));print("   !!!    ");
+
+//	for ($i=0; $i<(count($prog)-1); $i++) {
+//		$times = $prog[$i]->times;
+		foreach ($programs as $prog){
+			foreach($modifiedTarget as $target){
+				foreach($target["times"] as $tTime){
+					$weekdays=$tTime->weekdays + $prog->weekdays + 30000000; //3 for not losing zeros at the beginning, removed later
+					if(stripos($weekdays, "2")!==false) {
+						if ((strtotime($prog->time_start) <= strtotime($tTime->time_start)) && 
+						(strtotime($tTime->time_start) < strtotime($prog->time_end))) {
+							if(strtotime($tTime->time_end) <= strtotime($prog->time_end)) {
+								$levels_array=checkLights ($target["levels"], $prog);
+								print(json_encode($levels_array));print($prog->program_id);
+								if (!empty($levels_array)){
+									//print("tässäpänämä : ");print($tTime);print(json_encode($prog));print($weekdays);print($targetID);
+									$allMods = modifyProgram($tTime, $prog, $weekdays, $levels_array, 1, $targetID, $prog->program_id);
+									$targetMods = $allMods[count($allMods)-1];
+									array_pop($allMods);
+									$progMods = $allMods;
+									foreach($progMods as $progMod)
+										array_push($modifiedPrograms, $progMod);
+									if(!empty($targetMods))
+										array_push($modifiedTarget, $targetMods);
+								}
+							}else{
+								$levels_array=checkLights ($target["levels"], $prog);
+								if (!empty($levels_array)){
+									$allMods = modifyProgram($tTime, $prog, $weekdays, $levels_array, 2, $targetID, $prog->program_id);
+									$targetMods = $allMods[count($allMods)-1];
+									array_pop($allMods);
+									$progMods = $allMods;
+									foreach($progMods as $progMod)
+										array_push($modifiedPrograms, $progMod);
+									if(!empty($targetMods))
+										array_push($modifiedTarget, $targetMods);
+								}
+							}
+						}else if((strtotime($prog->time_start) < strtotime($tTime->time_end)) && 
+						(strtotime($tTime->time_end) <= strtotime($prog->time_end))) {
+							$levels_array=checkLights ($target["levels"], $prog);
+							if (!empty($levels_array)){
+								$allMods = modifyProgram($tTime, $prog, $weekdays, $levels_array, 3, $targetID, $prog->program_id);
+								$targetMods = $allMods[count($allMods)-1];
+								array_pop($allMods);
+								$progMods = $allMods;
+								foreach($progMods as $progMod)
+									array_push($modifiedPrograms, $progMod);
+								if(!empty($targetMods))
+									array_push($modifiedTarget, $targetMods);
+							}
+						}else if((strtotime($tTime->time_start) < strtotime($prog->time_start)) && 
+						(strtotime($prog->time_end) < strtotime($tTime->time_end))) {
+							$levels_array=checkLights ($target["levels"], $prog);
+							if (!empty($levels_array)){
+								$allMods = modifyProgram($tTime, $prog, $weekdays, $levels_array, 4, $targetID, $prog->program_id);
+								$targetMods = $allMods[count($allMods)-1];
+								array_pop($allMods);
+								$progMods = $allMods;
+								foreach($progMods as $progMod)
+									array_push($modifiedPrograms, $progMod);
+								if(!empty($targetMods))
+									array_push($modifiedTarget, $targetMods);
+							}
 						}else{
-							$levels_array=checkLights ($target->levels, $prog[$i]->levels);
-							if (!empty($levels_array))
-								array_push($modifiedPrograms, modifyProgram($tTime, $time, $weekdays, 
-								$levels_array, 2, $targetID, $prog[$i]->id));
+							array_push($modifiedPrograms, array("programID" => $prog->program_id, 
+							"target_id" => $prog->target_id, "time_start" => $prog->time_start, 
+							"time_end" => $prog->time_end, "weekdays" => $prog->weekdays, 
+							"light_detector" => $prog->light_detector, "motion_detector" 
+							=> $prog->motion_detector, "light_level" => $prog->light_level, 
+							"motion_level" => $prog->motion_level));
 						}
-					}else if((strtotime($time->time_start) < strtotime($tTime->time_end)) && 
-					(strtotime($tTime->time_end) <= strtotime($time->time_end))) {
-						$levels_array=checkLights ($target->levels, $prog[$i]->levels);
-						if (!empty($levels_array))
-							array_push($modifiedPrograms, modifyProgram($tTime, $time, $weekdays, $levels_array, 3, $targetID, $prog[$i]->id));
-					}else if((strtotime($tTime->time_start) < strtotime($time->time_start)) && 
-					(strtotime($time->time_end) < strtotime($tTime->time_end))) {
-						$levels_array=checkLights ($target->levels, $prog[$i]->levels);
-						if (!empty($levels_array))
-							array_push($modifiedPrograms, modifyProgram($tTime, $time, $weekdays, $levels_array, 4, $targetID, $prog[$i]->id));
-					}
-				}else{
-					foreach ($prog[$i]->levels as $level){
-						array_push($modifiedPrograms, array("programID" => $targetID, "target_id" => $level->target_id, "time_start" => $tTime->time_start, 
-						"time_end" => $tTime->time_end, "weekdays" => $tTime->weekdays, "light_detector" => $level->light_detector, "motion_detector" 
-						=> $level->motion_detector, "light_level" => $level->light_level, "motion_level" => $level->motion_level));
+					}else{
+						array_push($modifiedPrograms, array("programID" => $prog->program_id, 
+						"target_id" => $prog->target_id, "time_start" => $prog->time_start, 
+						"time_end" => $prog->time_end, "weekdays" => $prog->weekdays, 
+						"light_detector" => $prog->light_detector, "motion_detector" 
+						=> $prog->motion_detector, "light_level" => $prog->light_level, 
+						"motion_level" => $prog->motion_level));
 					}
 				}
 			}
 		}
+	//}
+	
+	if (count($modifiedTarget)==1){
+		print(json_encode($modifiedTarget));
+		foreach ($modifiedTarget[0]["times"] as $time){
+			foreach ($modifiedTarget[0]["levels"] as $level){
+				array_push($modifiedPrograms, array("programID" => $targetID, "target_id" => $level->target_id, "time_start" => $time->time_start, 
+				"time_end" => $time->time_end, "weekdays" => $time->weekdays, "light_detector" => $level->light_detector, "motion_detector" 
+				=> $level->motion_detector, "light_level" => $level->light_level, "motion_level" => $level->motion_level));
+			}
+		}
+	}else{
+		for ($i=1; $i<count($modifiedTarget); $i++){	//Don't use the original in $i=0, if there is any changes in modifiedTarget
+			foreach($modifiedTarget[$i] as $targetMod){
+				$time=$targetMod["times"];
+				$level=$targetMod["levels"];
+				array_push($modifiedPrograms, array("programID" => $targetMod["programID"], "target_id" => $level["target_id"], "time_start" => $time["time_start"], 
+				"time_end" => $time["time_end"], "weekdays" => $time["weekdays"], "light_detector" => $level["light_detector"], "motion_detector" 
+				=> $level["motion_detector"], "light_level" => $level["light_level"], "motion_level" => $level["motion_level"]));
+			}
+		}
 	}
+
+	print("  here1  ");print(json_encode($modifiedPrograms));
 	return($modifiedPrograms);
 }
 
-function checkLights ($levels1, $levels2) {
+function checkLights ($targetLevels, $prog) {
 	$levels_array=array();
 
-	foreach ($levels1 as $level1) {
-		$id1=$level1->target_id;
-		foreach ($levels2 as $level2){
-			$id2=$level2->target_id;
-			if ($id1==$id2) {
-				$matching_levels=array($level1, $level2);
-				array_push($levels_array, $matching_levels);
-			}	
-		}
+	foreach ($targetLevels as $level) {
+		$target_id=$level->target_id;
+		if ($prog->target_id==$target_id) {
+			$matching_levels=array($level, $prog);
+			array_push($levels_array, $matching_levels);
+		}	
 	} 
 	return ($levels_array);
 }
 
-function modifyProgram ($time1, $time2, $weekdays, $levels_array, $type, $id1, $id2) {
-	$modifiedPrograms=array();	
+function modifyProgram ($time1, $prog, $weekdays, $levels_array, $type, $id1, $id2) {
+	$modifiedPrograms=array();
+	$modifiedTarget=array();
+	$time2=array("time_start" => $prog->time_start, "time_end" => $prog->time_end, "weekdays" => $prog->weekdays);
 	
 	$days_together = array("1" , "2", "3");
 	$days_overlap = array("0", "1", "");	//remove previously added 3
 	$days_others = array("1", "0", "");
 	$overlapDays = str_replace($days_together, $days_overlap, $weekdays);
 	$otherDays1=str_replace($days_together, $days_others, ($time1->weekdays + $overlapDays + 30000000));
-	$otherDays2=str_replace($days_together, $days_others, ($time2->weekdays + $overlapDays + 30000000));
+	$otherDays2=str_replace($days_together, $days_others, ($time2["weekdays"] + $overlapDays + 30000000));
 	$levelToCompare="light_level";
-	$addedAlready=false;
+	//$addedAlready=false;
 	
 
 	foreach ($levels_array as $level_pair){
@@ -634,156 +751,167 @@ function modifyProgram ($time1, $time2, $weekdays, $levels_array, $type, $id1, $
 		($level_pair[1]->motion_detector === true))
 			$levelToCompare="motion_level";
 
+	print($levelToCompare);
+
 		switch($type){
 			case 1:
 				if ($level_pair[0]->$levelToCompare >= $level_pair[1]->$levelToCompare){
-					if (!$addedAlready){
-						$brighter = array("programID" => $id1, "target_id" => $level_pair[0]->target_id, "time_start" => $time1->time_start, 
-						"time_end" => $time1->time_end, "weekdays" => $time1->weekdays, "light_detector" => $level_pair[0]->light_detector, "motion_detector" 
+					/*if (!$addedAlready){
+						$brighter = array("programID" => $id1, "target_id" => $level_pair[0]->target_id, "times" => 
+						array( "time_start" => $time1->time_start, "time_end" => $time1->time_end, "weekdays" => 
+						$time1->weekdays, "light_detector" => $level_pair[0]->light_detector, "motion_detector"
 						=> $level_pair[0]->motion_detector, "light_level"=>$level_pair[0]->light_level, "motion_level"=>$level_pair[0]->motion_level);
 						$addedAlready=true;
 						array_push($modifiedPrograms, $brighter);
-					}
-					$dimmer1 = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2->time_start, 
+					}*/
+					$dimmer1 = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2["time_start"], 
 					"time_end" => $time1->time_start, "weekdays" => $overlapDays, "light_detector" => $level_pair[1]->light_detector, "motion_detector" => 
 					$level_pair[1]->motion_detector, "light_level"=>$level_pair[1]->light_level, "motion_level"=>$level_pair[1]->motion_level);
 					$dimmer2 = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time1->time_end, 
-					"time_end" => $time2->time_end, "weekdays" => $overlapDays, "light_detector" => $level_pair[1]->light_detector, "motion_detector" => 
+					"time_end" => $time2["time_end"], "weekdays" => $overlapDays, "light_detector" => $level_pair[1]->light_detector, "motion_detector" => 
 					$level_pair[1]->motion_detector, "light_level"=>$level_pair[1]->light_level, "motion_level"=>$level_pair[1]->motion_level);
 					array_push($modifiedPrograms, $dimmer1, $dimmer2);
 					if ($otherDays2 !== "0000000"){
-						$dimmer3 = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2->time_start, 
-						"time_end" => $time2->time_end, "weekdays" => $otherDays2, "light_detector" => $level_pair[1]->light_detector, 
+						$dimmer3 = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2["time_start"], 
+						"time_end" => $time2["time_end"], "weekdays" => $otherDays2, "light_detector" => $level_pair[1]->light_detector, 
 						"motion_detector" => $level_pair[1]->motion_detector, "light_level"=>$level_pair[1]->light_level, "motion_level"=>
 						$level_pair[1]->motion_level);
 						array_push($modifiedPrograms, $dimmer3);
 					} 
 				}else{
-					$brighter = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2->time_start, 
-					"time_end" => $time2->time_end, "weekdays" => $time2->weekdays, "light_detector" => $level_pair[1]->light_detector, "motion_detector" 
+					$brighter = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2["time_start"], 
+					"time_end" => $time2["time_end"], "weekdays" => $time2["weekdays"], "light_detector" => $level_pair[1]->light_detector, "motion_detector" 
 					=> $level_pair[1]->motion_detector, "light_level"=>$level_pair[1]->light_level, "motion_level"=>$level_pair[1]->motion_level);
 					array_push($modifiedPrograms, $brighter);
 					if ($otherDays1 !== "0000000"){
-						$dimmer1 = array("programID" => $id1, "target_id" => $level_pair[0]->target_id, "time_start" => $time1->time_start, 
-						"time_end" => $time1->time_end, "weekdays" => $otherDays1, "light_detector" => $level_pair[0]->light_detector, 
-						"motion_detector" => $level_pair[0]->motion_detector, "light_level"=>$level_pair[0]->light_level, "motion_level"=>
-						$level_pair[0]->motion_level);
-						array_push($modifiedPrograms, $dimmer1);
+						$dimmer1 = array("programID" => $id1, "times" => array("time_start" => $time1->time_start, "time_end" => $time1->time_end, 
+						"weekdays" => $otherDays1), "levels" => array("target_id" => $level_pair[0]->target_id, "light_detector" => 
+						$level_pair[0]->light_detector, "motion_detector" => $level_pair[0]->motion_detector, "light_level"=> 
+						$level_pair[0]->light_level, "motion_level"=> $level_pair[0]->motion_level));
+						array_push($modifiedTarget, $dimmer1);
 					}
 				}
 				break;
 			case 2: 
 				if ($level_pair[0]->$levelToCompare >= $level_pair[1]->$levelToCompare){
-					if (!$addedAlready){
+					/*if (!$addedAlready){
 						$brighter = array("programID" => $id1, "target_id" => $level_pair[0]->target_id, "time_start" => $time1->time_start, 
 						"time_end" => $time1->time_end, "weekdays" => $time1->weekdays, "light_detector" => $level_pair[0]->light_detector, "motion_detector" 
 						=> $level_pair[0]->motion_detector, "light_level"=>$level_pair[0]->light_level, "motion_level"=>$level_pair[0]->motion_level);
 						$addedAlready=true;
 						array_push($modifiedPrograms, $brighter);
-					}
-					$dimmer1 = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time1->time_end, 
-					"time_end" => $time2->time_end, "weekdays" => $overlapDays, "light_detector" => $level_pair[1]->light_detector, "motion_detector" => 
+					}*/
+					$dimmer1 = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2["time_start"], 
+					"time_end" => $time1->time_start, "weekdays" => $overlapDays, "light_detector" => $level_pair[1]->light_detector, "motion_detector" => 
 					$level_pair[1]->motion_detector, "light_level"=>$level_pair[1]->light_level, "motion_level"=>$level_pair[1]->motion_level);
 					array_push($modifiedPrograms, $dimmer1);
 					if ($otherDays2 !== "0000000"){
-						$dimmer2 = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2->time_start, 
-						"time_end" => $time2->time_end, "weekdays" => $otherDays2, "light_detector" => $level_pair[1]->light_detector, 
+						$dimmer2 = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2["time_start"], 
+						"time_end" => $time2["time_end"], "weekdays" => $otherDays2, "light_detector" => $level_pair[1]->light_detector, 
 						"motion_detector" => $level_pair[1]->motion_detector, "light_level"=>$level_pair[1]->light_level, "motion_level"=>
 						$level_pair[1]->motion_level);
 						array_push($modifiedPrograms, $dimmer2);
 						}
 				}else{
-					$brighter = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2->time_start, 
-					"time_end" => $time2->time_end, "weekdays" => $time2->weekdays, "light_detector" => $level_pair[1]->light_detector, "motion_detector" 
+					$brighter = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2["time_start"], 
+					"time_end" => $time2["time_end"], "weekdays" => $time2["weekdays"], "light_detector" => $level_pair[1]->light_detector, "motion_detector" 
 					=> $level_pair[1]->motion_detector, "light_level"=>$level_pair[1]->light_level, "motion_level"=>$level_pair[1]->motion_level);
-					$dimmer1 = array("programID" => $id1, "target_id" => $level_pair[0]->target_id, "time_start" => $time2->time_end, 
-					"time_end" => $time1->time_end, "weekdays" => $overlapDays, "light_detector" => $level_pair[0]->light_detector, "motion_detector" => 
-					$level_pair[0]->motion_detector, "light_level"=>$level_pair[0]->light_level, "motion_level"=>$level_pair[0]->motion_level);
-					array_push($modifiedPrograms, $brighter, $dimmer1);
+					array_push($modifiedPrograms, $brighter);
+					$dimmer1 = array("programID" => $id1, "times" => array("time_start" => $time2["time_end"], 
+					"time_end" => $time1->time_end, "weekdays" => $overlapDays), "levels" => array("target_id" => $level_pair[0]->target_id, 
+					"light_detector" => $level_pair[0]->light_detector, "motion_detector" => $level_pair[0]->motion_detector, "light_level"=> 
+					$level_pair[0]->light_level, "motion_level"=>$level_pair[0]->motion_level));
+					array_push($modifiedTarget, $dimmer1);
 					if ($otherDays1 !== "0000000"){
-						$dimmer2 = array("programID" => $id1, "target_id" => $level_pair[0]->target_id, "time_start" => $time1->time_start, 
-						"time_end" => $time1->time_end, "weekdays" => $otherDays1, "light_detector" => $level_pair[0]->light_detector, 
-						"motion_detector" => $level_pair[0]->motion_detector, "light_level"=>$level_pair[0]->light_level, "motion_level"=>
-						$level_pair[0]->motion_level);
-						array_push($modifiedPrograms, $dimmer2);
+						$dimmer2 = array("programID" => $id1, "times" => array("time_start" => $time1->time_start, 
+						"time_end" => $time1->time_end, "weekdays" => $otherDays1), "levels" => array("target_id" => 
+						$level_pair[0]->target_id, "light_detector" => $level_pair[0]->light_detector, "motion_detector" => 
+						$level_pair[0]->motion_detector, "light_level"=>$level_pair[0]->light_level, "motion_level"=> $level_pair[0]->motion_level));
+						array_push($modifiedTarget, $dimmer2);
 					}
 				}
 				break;
 			case 3: 
 				if ($level_pair[0]->$levelToCompare >= $level_pair[1]->$levelToCompare){
-					if (!$addedAlready){
+					/*if (!$addedAlready){
 						$brighter = array("programID" => $id1, "target_id" => $level_pair[0]->target_id, "time_start" => $time1->time_start, 
 						"time_end" => $time1->time_end, "weekdays" => $time1->weekdays, "light_detector" => $level_pair[0]->light_detector, "motion_detector" 
 						=> $level_pair[0]->motion_detector, "light_level"=>$level_pair[0]->light_level, "motion_level"=>$level_pair[0]->motion_level);
 						$addedAlready=true;
 						array_push($modifiedPrograms, $brighter);
-					}
+					}*/
 					$dimmer1 = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time1->time_end, 
-					"time_end" => $time2->time_end, "weekdays" => $overlapDays, "light_detector" => $level_pair[1]->light_detector, "motion_detector" => 
+					"time_end" => $time2["time_end"], "weekdays" => $overlapDays, "light_detector" => $level_pair[1]->light_detector, "motion_detector" => 
 					$level_pair[1]->motion_detector, "light_level"=>$level_pair[1]->light_level, "motion_level"=>$level_pair[1]->motion_level);
 					array_push($modifiedPrograms, $dimmer1);
 					if ($otherDays2 !== "0000000"){
-						$dimmer2 = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2->time_start, 
-						"time_end" => $time2->time_end, "weekdays" => $otherDays2, "light_detector" => $level_pair[1]->light_detector, 
+						$dimmer2 = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2["time_start"], 
+						"time_end" => $time2["time_end"], "weekdays" => $otherDays2, "light_detector" => $level_pair[1]->light_detector, 
 						"motion_detector" => $level_pair[1]->motion_detector, "light_level"=>$level_pair[1]->light_level, "motion_level"=>
 						$level_pair[1]->motion_level);
 						array_push($modifiedPrograms, $dimmer2);
 					}
 				}else{
-					$brighter = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2->time_start, 
-					"time_end" => $time2->time_end, "weekdays" => $time2->weekdays, "light_detector" => $level_pair[1]->light_detector, "motion_detector" 
+					$brighter = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2["time_start"], 
+					"time_end" => $time2["time_end"], "weekdays" => $time2["weekdays"], "light_detector" => $level_pair[1]->light_detector, "motion_detector" 
 					=> $level_pair[1]->motion_detector, "light_level"=>$level_pair[1]->light_level, "motion_level"=>$level_pair[1]->motion_level);
-					$dimmer1 = array("programID" => $id1, "target_id" => $level_pair[0]->target_id, "time_start" => $time2->time_start, 
-					"time_end" => $time1->time_start, "weekdays" => $overlapDays, "light_detector" => $level_pair[0]->light_detector, "motion_detector" => 
-					$level_pair[0]->motion_detector, "light_level"=>$level_pair[0]->light_level, "motion_level"=>$level_pair[0]->motion_level);
-					array_push($modifiedPrograms, $brighter, $dimmer1);
+					array_push($modifiedPrograms, $brighter);
+					$dimmer1 = array("programID" => $id1, "times" => array("time_start" => $time1->time_start, 
+					"time_end" => $time2["time_start"], "weekdays" => $overlapDays), "levels" => array("target_id" => $level_pair[0]->target_id, 
+					"light_detector" => $level_pair[0]->light_detector, "motion_detector" => $level_pair[0]->motion_detector, 
+					"light_level"=>$level_pair[0]->light_level, "motion_level"=>$level_pair[0]->motion_level));
+					array_push($modifiedTarget, $dimmer1);
 					if ($otherDays1 !== "0000000"){
-						$dimmer2 = array("programID" => $id1, "target_id" => $level_pair[0]->target_id, "time_start" => $time1->time_start, 
-						"time_end" => $time1->time_end, "weekdays" => $otherDays1, "light_detector" => $level_pair[0]->light_detector, 
-						"motion_detector" => $level_pair[0]->motion_detector, "light_level"=>$level_pair[0]->light_level, "motion_level"=>
-						$level_pair[0]->motion_level);
-						array_push($modifiedPrograms, $dimmer2);
+						$dimmer2 = array("programID" => $id1, "times" => array("time_start" => $time1->time_start, 
+						"time_end" => $time1->time_end, "weekdays" => $otherDays1), "levels" => array("target_id" => 
+						$level_pair[0]->target_id,"light_detector" => $level_pair[0]->light_detector, "motion_detector" => 
+						$level_pair[0]->motion_detector, "light_level"=>$level_pair[0]->light_level, "motion_level" => $level_pair[0]->motion_level));
+						array_push($modifiedTarget, $dimmer2);
 					}
 				}
 				break;
 
 			case 4:
 				if ($level_pair[0]->$levelToCompare >= $level_pair[1]->$levelToCompare){
-					if (!$addedAlready){
+					/*if (!$addedAlready){
 						$brighter = array("programID" => $id1, "target_id" => $level_pair[0]->target_id, "time_start" => $time1->time_start, 
 						"time_end" => $time1->time_end, "weekdays" => $time1->weekdays, "light_detector" => $level_pair[0]->light_detector, "motion_detector" 
 						=> $level_pair[0]->motion_detector, "light_level"=>$level_pair[0]->light_level, "motion_level"=>$level_pair[0]->motion_level);
 						$addedAlready=true;
 						array_push($modifiedPrograms, $brighter);
-					}
+					}*/
 					if ($otherDays2 !== "0000000")
-						$dimmer1 = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2->time_start, 
-						"time_end" => $time2->time_end, "weekdays" => $otherDays2, "light_detector" => $level_pair[1]->light_detector, 
+						$dimmer1 = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2["time_start"], 
+						"time_end" => $time2["time_end"], "weekdays" => $otherDays2, "light_detector" => $level_pair[1]->light_detector, 
 						"motion_detector" => $level_pair[1]->motion_detector, "light_level"=>$level_pair[1]->light_level, "motion_level"=>
 						$level_pair[1]->motion_level);
 					array_push($modifiedPrograms, $dimmer1);
 				}else{
-					$brighter = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2->time_start, 
-					"time_end" => $time2->time_end, "weekdays" => $time2->weekdays, "light_detector" => $level_pair[1]->light_detector, "motion_detector" 
+					$brighter = array("programID" => $id2, "target_id" => $level_pair[1]->target_id, "time_start" => $time2["time_start"], 
+					"time_end" => $time2["time_end"], "weekdays" => $time2["weekdays"], "light_detector" => $level_pair[1]->light_detector, "motion_detector" 
 					=> $level_pair[1]->motion_detector, "light_level"=>$level_pair[1]->light_level, "motion_level"=>$level_pair[1]->motion_level);
-					$dimmer1 = array("programID" => $id1, "target_id" => $level_pair[0]->target_id, "time_start" => $time1->time_start, 
-					"time_end" => $time2->time_start, "weekdays" => $overlapDays, "light_detector" => $level_pair[0]->light_detector, "motion_detector" => 
-					$level_pair[0]->motion_detector, "light_level"=>$level_pair[0]->light_level, "motion_level"=>$level_pair[0]->motion_level);
-					$dimmer2 = array("programID" => $id1, "target_id" => $level_pair[0]->target_id, "time_start" => $time2->time_end, 
-					"time_end" => $time1->time_end, "weekdays" => $overlapDays, "light_detector" => $level_pair[0]->light_detector, "motion_detector" => 
-					$level_pair[0]->motion_detector, "light_level"=>$level_pair[0]->light_level, "motion_level"=>$level_pair[0]->motion_level);
-					array_push($modifiedPrograms, $brighter, $dimmer1, $dimmer2);
+					$dimmer1 = array("programID" => $id1, "times" => array("time_start" => $time1->time_start, 
+					"time_end" => $time2["time_start"], "weekdays" => $overlapDays), "levels" => array("target_id" => $level_pair[0]->target_id, 
+					"light_detector" => $level_pair[0]->light_detector, "motion_detector" => $level_pair[0]->motion_detector, "light_level" => 
+					$level_pair[0]->light_level, "motion_level"=>$level_pair[0]->motion_level));
+					$dimmer2 = array("programID" => $id1, "times" => array("time_start" => $time2["time_end"], "time_end" => $time1->time_end, 
+					"weekdays" => $overlapDays), "levels" => array("target_id" => $level_pair[0]->target_id, "light_detector" => 
+					$level_pair[0]->light_detector, "motion_detector" => $level_pair[0]->motion_detector, "light_level"=>$level_pair[0]->light_level, 
+					"motion_level"=>$level_pair[0]->motion_level));
+					array_push($modifiedPrograms, $brighter);
+					array_push($modifiedTarget, $dimmer1, $dimmer2);
 					if ($otherDays1 !== "0000000"){
-						$dimmer3 = array("programID" => $id1, "target_id" => $level_pair[0]->target_id, "time_start" => $time2->time_start, 
-						"time_end" => $time2->time_end, "weekdays" => $otherDays1, "light_detector" => $level_pair[0]->light_detector, 
-						"motion_detector" => $level_pair[0]->motion_detector, "light_level"=>$level_pair[0]->light_level, "motion_level"=>
-						$level_pair[0]->motion_level);
-						array_push($modifiedPrograms, $dimmer3);
+						$dimmer3 = array("programID" => $id1, "times" => array("time_start" => $time1->time_start, 
+						"time_end" => $time1->time_end, "weekdays" => $otherDays1), "levels" => array("target_id" => $level_pair[0]->target_id, 
+						"light_detector" => $level_pair[0]->light_detector, "motion_detector" => $level_pair[0]->motion_detector, "light_level"=>
+						$level_pair[0]->light_level, "motion_level"=> $level_pair[0]->motion_level));
+						array_push($modifiedTarget, $dimmer3);
 					}
 				}
 				break;
 		}
 	}
+	array_push($modifiedPrograms, $modifiedTarget);
 	return($modifiedPrograms);
 }
 
@@ -967,7 +1095,7 @@ function saveSliders($ids, $value, $timer) {
 
 // Get light/group data and children
 // TODO: Inexistent IDs
-function getObjectData ($ids) {
+function getObjectData ($ids) {	
 	$ids_array = preg_split ("/,/", $ids);
 	$retArray = array();
 	
@@ -999,6 +1127,7 @@ function getObjectData ($ids) {
 		$lights -> all_children = getAllChildren($id);
 		$lights -> ends_at = $lights->ends_at;
 		$lights -> timer_full = strtotime($lights->ends_at)-strtotime($lights->activated_at);
+		$lights -> ghost = getGhost($id);
 		$retArray[] = $lights;
 	}
 	print(json_encode($retArray));
