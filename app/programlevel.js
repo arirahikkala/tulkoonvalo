@@ -16,8 +16,7 @@
 	defaults: function() {
 	  return {
 	  	id: null,
-	  	target_id: 1, // TODO: Get this from tree
-	  	group: 1,
+	  	target_id: null,
 	  	light_detector: false,
 	  	motion_detector: false,
 	  	light_level: 0,
@@ -35,10 +34,6 @@
 
 	events: {
 		"click #level-item-remove" : function() {
-			$("#levelGroup #groupsPopup").hide();
-			console.log("BFE#F", $("#lightGroups"));
-			this.$("#levelLightGroups").empty();
-			console.log("AFTER", $("#lightGroups"));
 			if (! this.model.get("new_level"))  {
 				var choice = confirm("Haluatko varmasti poistaa ryhmän?");
 				if (choice) {
@@ -46,7 +41,7 @@
 					this.remove();
 				}
 			}
-			else this.model.destroy();
+			else { this.model.destroy(); this.remove(); }
 		},
 		
 		// Slider values changed
@@ -62,27 +57,16 @@
 			this.model.set("motion_detector", event.target.checked);
 		},
 		
+		// Functionality for the tree popup
 		"click #levelGroupInput" : function () {
 	    $("#levelGroup #groupsPopup").hide();
 			this.$("#groupsPopup").show();
-
-			/*			
-			var tree =jQuery.jstree._instance(1, $("levelLightGroupsContainer"));
-			console.log( tree);
-	    this.$("#levelLightGroupsContainer").append($("#lightGroups"));
-
-	    //$.get("../server2/lightsTree/");
-	    //var ref = $.jstree._reference(this.$("#levelLightGroups"));
-	    this.$("#lightGroups").show();
-	    //this.$("#levelLightGroupsContainer").append(this.$("#levelLightGroups"));
-		*/
 		},
 		
+		// Click popup close button
 		"click #groupsPopupClose" : function() { this.$("#groupsPopup").hide(); },
 		
-		// TODO: Check that it's a group (here and server)
-		// TODO: Maybe show only groups here? (Own tree?)
-		// Get selected node ID and put the group name in
+		// Get selected treee node ID and put the group name in the input
 		"click #levelLightGroups a" : function() {
 			this.model.set("target_id", this.$("#levelLightGroups").jstree('get_selected').attr('id'));
 			this.$("#levelGroupInput").attr({"value": $('.jstree-clicked').text().substr(1)});
@@ -91,46 +75,20 @@
 	},
 
 	initialize: function() {
-			this.model.bind("change:errors", function() { this.drawErrors(); }, this );
-	    this.model.bind ("remove", this.remove, this);
-	    this.model.bind ("change:name", this.render, this);
+   		this.model.bind("remove", function() { this.remove(); }, this);
+			this.model.bind("change:errors", function() { this.drawErrors(); }, this);
 	    this.render();
 	    
 	    // Used for showing error messages in the right place
 	    this.model.set("cid", this.model.cid);
 	    
-			var testTree = 
-				[{
-					"data" : "Yritys", "attr" : { id : 6 }, "children" : 
-	        	[{ "data" : "Aula", "attr" : { id : 3 }, "children" :
-	        		[{"data" : "Aula Etu", "attr" : { id : 1 }},
-	        		 {"data" : "Aula Taka", "attr" : { id : 2 }},
-	        		]
-	        	},
-						{"data" : "Eteinen", "attr" : { id : 4 }, "children":
-	        		[{"data" : "Ulkovalo", "attr" : { id : 5 }}
-	        		]}
-
-	        	]
-	      },]
-	    
       this.tree = this.$("#levelLightGroups").jstree ({
 	  		"json_data": {
-	      		// the url from which jstree loads its information
-	      		// (note that updating to the server is done "out of view" from jstree, in callbacks below)
-	      		"url": { "url": "../server2/lightsTree" },
-	      		"data": function(n) {console.log(n);
-	      			return { id : n.attr ? n.attr("id") : 0 };
-	      		},
-	      		
-						"data"  : [testTree],
-	      	
+            "ajax": {
+                "url": "../server2/groupsTree/1",
+            }
 	  		},
-	  		// allow selecting groups and their members independently
-	  		"checkbox": {
-  	    	"two_state": "false",
-  	    },
-	  		// note T4, T5, T6; this is currently a no-op
+	  		// TODO: Group icons and others here too
 	  		"types": {
 	      	"light": { max_children: 0 }
 	  		},
@@ -158,11 +116,10 @@
 	template: _.template("<div class='programError' id='programsErrorLevel'></div>\
 	<input id='level-item-remove' type='button' value='Poista ryhmä'>\
 	<div id='levelGroup'>\
-		Ryhmä:<input id='levelGroupInput'><br/>\
+		Ryhmä:<input id='levelGroupInput' readonly='readonly'><br/>\
 		<div id='groupsPopup'>\
 			<input id='groupsPopupClose' type='button' value='Sulje'>\
 			<div id='levelLightGroups'></div>\
-			<div id='levelLightGroupsContainer'></div>\
 		</div>\
 	</div>\
 	<table id='levelSettings'>\

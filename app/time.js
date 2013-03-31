@@ -56,7 +56,7 @@
 					this.remove();
 				}
 			}
-			else this.model.destroy();
+			else { this.model.destroy(); this.remove(); }
 		},
 		
 		// Time is changed
@@ -65,14 +65,14 @@
 	},
 
 	initialize: function() {
-			this.model.bind("change:errors", function() { this.drawErrors() }, this );
-	    this.model.bind ("remove", this.remove, this);
-	    this.model.bind ("change:name", this.render, this);
-	    this.render();
+			this.model.bind("change:errors", function() { this.drawErrors(); }, this );
+   		this.model.bind("remove", function() { this.remove(); }, this);
 
+	    this.render();
+	    
 	    // Used for showing error messages in the right place
 	    this.model.set("cid", this.model.cid);
-	    console.log("CREATOR",this.model.get("cid"));
+	    console.log("CREATOR",this.model.get("cid"), this.$el);
 	},
 	
 	drawErrors: function() {

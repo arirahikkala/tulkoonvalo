@@ -12,15 +12,6 @@
     }
 
     Program.Program = Backbone.RelationalModel.extend ({
-	//idAttribute: 'programid',
-
-	/*
-	relations: [{
-	    type: Backbone.HasMany,
-	    key: 'lines',
-	    relatedModel: 'ProgramLine.ProgramLine',
-	}],
-	*/
 
 	urlRoot: "../server2/programs/",	
 	url: function() {
@@ -34,7 +25,6 @@
 	  	name: '',
 	  	times: null,
 	  	levels: null,
-	  	current_edit: false,
 	  }
 	},
 
@@ -46,8 +36,6 @@
 		tagClass: 'program-item',
 	
 		initialize: function() {
-				this.model.bind ("remove", this.remove, this);
-				this.model.bind ("change:name", this.render, this);
 				this.render();
 		},
 		
@@ -82,7 +70,6 @@
 				},
 				
 			"click #program-delete": function(e) {
-					console.log("Deleltel");
 					var choice = confirm("Haluatko varmasti poistaa säännön '"+this.model.get("name")+"'?");
 					console.log(choice);
 					if (choice) {
@@ -93,8 +80,6 @@
 			},
 			
 		initialize: function() {
-				this.model.bind ("remove", this.remove, this);
-				this.model.bind ("change:name", this.render, this);
 				this.render();
 		},
 		

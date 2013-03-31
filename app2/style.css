@@ -89,3 +89,10 @@
 {
 	padding-right: 3em;
 }
+
+#sliderIDTree
+{
+	width: 30%;
+	height: 40%;
+	border: solid 4px grey;
+}

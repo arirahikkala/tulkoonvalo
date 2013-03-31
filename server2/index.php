@@ -17,7 +17,7 @@ $app->get('/programs/', 'getPrograms');
 $app->post('/programs/', 'savePrograms');
 $app->put('/programs/:id', function($id) { updateProgram($id); });
 $app->delete('/programs/:id', function($id) { deleteProgram($id); });
-$app->get('/groupsTree/', 'getGroupsTree');
+$app->get('/groupsTree/:onlyGroups', function($onlyGroups) { getGroupsTree($onlyGroups); });
 $app->get('/detectorsTree/', 'getDetectorsTree');
 $app->get('/lightsTree/', 'getLightsTree');
 $app->post('/groups', 'addGroup');
@@ -172,7 +172,7 @@ function getLightsTree($retJson=true) {
 	else return($tree);
 }
 
-function getGroupsTree() {
+function getGroupsTree($onlyGroups=false) {
 	$db = getConnection();
 	$sql = "select name,permanent_id,parent_id,isGroup,detector_type from lights left join groups on (lights.permanent_id = groups.child_id)";
 	$groups = dbExec($db, $sql, null, 0);	
@@ -181,7 +181,7 @@ function getGroupsTree() {
 	$tree = array();
 	foreach ($groups as $g) {
 		if (!$g->parent_id && $g->isGroup) {
-			$newChildren = childLoop($g, $groups);
+			$newChildren = childLoop($g, $groups, $onlyGroups);
 			$tree[] = $newChildren;
 		}
 	}
@@ -189,7 +189,7 @@ function getGroupsTree() {
 }
 
 // Drill down the groups tree and eventually return back up with all children
-function childLoop($cGroup, $groups) {
+function childLoop($cGroup, $groups, $onlyGroups=false) {
 	$newChild = array("data"=>$cGroup->name, "attr"=>array("id"=>$cGroup->permanent_id), "children"=>array());
 	
 	// Set the item type
@@ -207,7 +207,9 @@ function childLoop($cGroup, $groups) {
 	foreach ($groups as $g) {
 		if ($g->parent_id == $cGroup->permanent_id) {
 			$subChildren = childLoop($g, $groups);
-			array_push($newChild["children"], $subChildren);
+			
+			if ((!$onlyGroups) || ($onlyGroups && $g->isGroup == 1))
+				array_push($newChild["children"], $subChildren);
 		}
 	}
 	if (count($newChild["children"]) == 0)
@@ -262,9 +264,29 @@ function deleteProgram($id) {
 
 function updateProgram($id) {
 	$params = json_decode(Slim::getInstance()->request()->getBody());
-	
+	/*
+	$paramsObj = new ArrayObject($params);
+	$validParams = $paramsObj->getArrayCopy();
+	print(json_encode($validParams));
+	// Remove items to be removed from the checked list
+	$counter = 0;
+	foreach ($validParams->times as $time) {
+		if ($time->allow_delete == 1) {
+			unset($validParams->times[$counter]);
+		}
+		$counter++;
+	}
+	$counter = 0;
+	foreach ($validParams->levels as $level) {
+		if ($level->allow_delete == 1) {
+			unset($validParams->levels[$counter]);
+		}
+		$counter++;
+	}
+	*/
+	// If errors found in form return
 	$retArray = programValidation($params);	
-	if (1==2 && $retArray) {
+	if ($retArray) {
 		Slim::getInstance()->response()->status(400);
 		print(json_encode($retArray));
 		return;
@@ -297,10 +319,10 @@ function updateProgram($id) {
 			);
 		}
 	}
-
+	
 	foreach ($params->levels as $level) {
-		if ($level->allow_delete == 1)
-			deleteLevel($level->id);
+		if ($level->allow_delete == 1) {
+			deleteLevel($level->id);}
 			
 		else if ($level->new_level) {
 			$sql = "insert into program_levels values (null,?,?,?,?,?,?)";	
@@ -311,7 +333,7 @@ function updateProgram($id) {
 			);
 		}
 		else {
-			$sql = "update program_levels set program_id=?, light_detector=?, motion_detector=?, light_level=?, motion_level=? where id=?";	
+			$sql = "update program_levels set target_id=?, light_detector=?, motion_detector=?, light_level=?, motion_level=? where id=?";	
 			dbExec($db, $sql, array(
 					$level->target_id, 
 					$level->light_detector, $level->motion_detector,
@@ -320,7 +342,6 @@ function updateProgram($id) {
 			);
 		}
 	}
-	//if ($retArray) print($retArray);
 }
 
 function programValidation($params) {
@@ -345,11 +366,10 @@ function programValidation($params) {
 		$errorMain["levels"] = 4;
 		
 	// TODO: Additional sanitation here for all values
-	// TODO: not same target_id allowed in levels in one program
 	
-		
 	foreach ($params->times as $time) {
-	
+		if ($time->allow_delete) continue;
+		
 		if ($time->weekdays == "0000000")
 			$errorTimes[$time->cid][] = 1;
 			
@@ -379,12 +399,16 @@ function programValidation($params) {
 		if (!$timeFormatError && strtotime($time->time_start) > strtotime($time->time_end))
 			$errorTimes[$time->cid][] = 5;
 	}
-	
-	// Don't allow same group to be set in sliders multiple times
+	// TODO: Check that it's a group used in a program
+	// TODO: Level must be in the range of 0...100
+
 	$usedLevels = array();
 	foreach ($params->levels as $level) {
+		if ($level->allow_delete) continue;
 		$usedLevels[$level->target_id][] = $level->cid;
 	}
+	
+	// Check that same group isn't there twice
 	foreach ($usedLevels as $group) {
 		if (count($group) > 1) {
 			foreach ($group as $cid)
@@ -403,6 +427,7 @@ function programValidation($params) {
 // TODO: Use this for editing. If ID is not null update value
 function savePrograms() {
 	$params = json_decode(Slim::getInstance()->request()->getBody());
+	
 	// If errors found in form return
 	$retArray = programValidation($params);	
 	if ($retArray) {
@@ -415,7 +440,6 @@ function savePrograms() {
 	$levels = $params->levels;
 	
 	$db = getConnection();
-	
 
 	$sql = "insert into programs values (null,?)";
 	dbExec($db, $sql, array($params->name));
