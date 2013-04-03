@@ -145,6 +145,7 @@
 			this.model.stopTimer();
 			isDisabled = true;
 			sliderColor = "red";
+			this.model.set("value", this.model.get("ghost"));
 		}
 		else {
 			if (this.model.get("alreadyEnabled") == 0) {
