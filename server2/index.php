@@ -260,6 +260,21 @@ function deleteProgram($id) {
 	
 	$sql = "delete from program_levels where program_id=?";	
 	dbExec($db, $sql, array($id));
+
+	deleteProgramsParse();
+	$programs=getPrograms(false);
+	foreach ($programs as $target){
+		//$levels=$target->levels;
+		$modifiedPrograms = checkProgramsOverlap($target, $target->id);
+		$sql = "insert into programs_parse values (?,?,null,null,?,?,?,?,?,?,?)";
+		foreach ($modifiedPrograms as $prog){		
+			dbExec($db, $sql, array(
+				$prog["programID"], $prog["target_id"], $prog["weekdays"], 
+				$prog["time_start"], $prog["time_end"], $prog["light_detector"], 
+				$prog["motion_detector"], $prog["light_level"], $prog["motion_level"])
+			);
+		}
+	}
 }
 
 function updateProgram($id) {
@@ -447,16 +462,13 @@ function savePrograms() {
 
 	$modifiedPrograms = checkProgramsOverlap($params, $programID);
 	$sql = "insert into programs_parse values (?,?,null,null,?,?,?,?,?,?,?)";
-	//for ($i=0; $i<count($modifiedPrograms); $i++) {
-		foreach ($modifiedPrograms as $prog){
-			
-			dbExec($db, $sql, array(
-					$prog["programID"], $prog["target_id"], $prog["weekdays"], 
-					$prog["time_start"], $prog["time_end"], $prog["light_detector"], 
-					$prog["motion_detector"], $prog["light_level"], $prog["motion_level"])
-			);
-		}
-	//}
+	foreach ($modifiedPrograms as $prog){		
+		dbExec($db, $sql, array(
+				$prog["programID"], $prog["target_id"], $prog["weekdays"], 
+				$prog["time_start"], $prog["time_end"], $prog["light_detector"], 
+				$prog["motion_detector"], $prog["light_level"], $prog["motion_level"])
+		);
+	}
 
 	// TODO: These common statements could be put into their own functions
 	$sql = "insert into program_times values (null,?,?,?,?,?,?)";
@@ -591,7 +603,7 @@ function checkProgramsOverlap ($target, $targetID) {
 	$modifiedPrograms=array();
 	$modifiedTarget=array(array("times" => $target->times, "levels" => $target->levels));
 
-	if (count($programs2)==1){
+	if (count($programs2)==1 || getProgramsParse()==false){
 		foreach ($target->times as $tTime){
 			foreach ($target->levels as $level){
 				array_push($modifiedPrograms, array("programID" => $targetID, 
@@ -607,62 +619,19 @@ function checkProgramsOverlap ($target, $targetID) {
 
 	$programs=getProgramsParse();
 	deleteProgramsParse();
-	print("   !!!    ");print(json_encode($programs));print("   !!!    ");
 
-//	for ($i=0; $i<(count($prog)-1); $i++) {
-//		$times = $prog[$i]->times;
-		foreach ($programs as $prog){
-			foreach($modifiedTarget as $target){
-				foreach($target["times"] as $tTime){
-					$weekdays=$tTime->weekdays + $prog->weekdays + 30000000; //3 for not losing zeros at the beginning, removed later
-					if(stripos($weekdays, "2")!==false) {
-						if ((strtotime($prog->time_start) <= strtotime($tTime->time_start)) && 
-						(strtotime($tTime->time_start) < strtotime($prog->time_end))) {
-							if(strtotime($tTime->time_end) <= strtotime($prog->time_end)) {
-								$levels_array=checkLights ($target["levels"], $prog);
-								print(json_encode($levels_array));print($prog->program_id);
-								if (!empty($levels_array)){
-									//print("tässäpänämä : ");print($tTime);print(json_encode($prog));print($weekdays);print($targetID);
-									$allMods = modifyProgram($tTime, $prog, $weekdays, $levels_array, 1, $targetID, $prog->program_id);
-									$targetMods = $allMods[count($allMods)-1];
-									array_pop($allMods);
-									$progMods = $allMods;
-									foreach($progMods as $progMod)
-										array_push($modifiedPrograms, $progMod);
-									if(!empty($targetMods))
-										array_push($modifiedTarget, $targetMods);
-								}
-							}else{
-								$levels_array=checkLights ($target["levels"], $prog);
-								if (!empty($levels_array)){
-									$allMods = modifyProgram($tTime, $prog, $weekdays, $levels_array, 2, $targetID, $prog->program_id);
-									$targetMods = $allMods[count($allMods)-1];
-									array_pop($allMods);
-									$progMods = $allMods;
-									foreach($progMods as $progMod)
-										array_push($modifiedPrograms, $progMod);
-									if(!empty($targetMods))
-										array_push($modifiedTarget, $targetMods);
-								}
-							}
-						}else if((strtotime($prog->time_start) < strtotime($tTime->time_end)) && 
-						(strtotime($tTime->time_end) <= strtotime($prog->time_end))) {
+	foreach ($programs as $prog){
+		foreach($modifiedTarget as $target){
+			foreach($target["times"] as $tTime){
+				$weekdays=$tTime->weekdays + $prog->weekdays + 30000000; //3 for not losing zeros at the beginning, removed later
+				if(stripos($weekdays, "2")!==false) {
+					if ((strtotime($prog->time_start) <= strtotime($tTime->time_start)) && 
+					(strtotime($tTime->time_start) < strtotime($prog->time_end))) {
+						if(strtotime($tTime->time_end) <= strtotime($prog->time_end)) {
 							$levels_array=checkLights ($target["levels"], $prog);
+							print(json_encode($levels_array));print($prog->program_id);
 							if (!empty($levels_array)){
-								$allMods = modifyProgram($tTime, $prog, $weekdays, $levels_array, 3, $targetID, $prog->program_id);
-								$targetMods = $allMods[count($allMods)-1];
-								array_pop($allMods);
-								$progMods = $allMods;
-								foreach($progMods as $progMod)
-									array_push($modifiedPrograms, $progMod);
-								if(!empty($targetMods))
-									array_push($modifiedTarget, $targetMods);
-							}
-						}else if((strtotime($tTime->time_start) < strtotime($prog->time_start)) && 
-						(strtotime($prog->time_end) < strtotime($tTime->time_end))) {
-							$levels_array=checkLights ($target["levels"], $prog);
-							if (!empty($levels_array)){
-								$allMods = modifyProgram($tTime, $prog, $weekdays, $levels_array, 4, $targetID, $prog->program_id);
+								$allMods = modifyProgram($tTime, $prog, $weekdays, $levels_array, 1, $targetID, $prog->program_id);
 								$targetMods = $allMods[count($allMods)-1];
 								array_pop($allMods);
 								$progMods = $allMods;
@@ -672,12 +641,43 @@ function checkProgramsOverlap ($target, $targetID) {
 									array_push($modifiedTarget, $targetMods);
 							}
 						}else{
-							array_push($modifiedPrograms, array("programID" => $prog->program_id, 
-							"target_id" => $prog->target_id, "time_start" => $prog->time_start, 
-							"time_end" => $prog->time_end, "weekdays" => $prog->weekdays, 
-							"light_detector" => $prog->light_detector, "motion_detector" 
-							=> $prog->motion_detector, "light_level" => $prog->light_level, 
-							"motion_level" => $prog->motion_level));
+							$levels_array=checkLights ($target["levels"], $prog);
+							if (!empty($levels_array)){
+								$allMods = modifyProgram($tTime, $prog, $weekdays, $levels_array, 2, $targetID, $prog->program_id);
+								$targetMods = $allMods[count($allMods)-1];
+								array_pop($allMods);
+								$progMods = $allMods;
+								foreach($progMods as $progMod)
+									array_push($modifiedPrograms, $progMod);
+								if(!empty($targetMods))
+									array_push($modifiedTarget, $targetMods);
+							}
+						}
+					}else if((strtotime($prog->time_start) < strtotime($tTime->time_end)) && 
+					(strtotime($tTime->time_end) <= strtotime($prog->time_end))) {
+						$levels_array=checkLights ($target["levels"], $prog);
+						if (!empty($levels_array)){
+							$allMods = modifyProgram($tTime, $prog, $weekdays, $levels_array, 3, $targetID, $prog->program_id);
+							$targetMods = $allMods[count($allMods)-1];
+							array_pop($allMods);
+							$progMods = $allMods;
+							foreach($progMods as $progMod)
+								array_push($modifiedPrograms, $progMod);
+							if(!empty($targetMods))
+								array_push($modifiedTarget, $targetMods);
+						}
+					}else if((strtotime($tTime->time_start) < strtotime($prog->time_start)) && 
+					(strtotime($prog->time_end) < strtotime($tTime->time_end))) {
+						$levels_array=checkLights ($target["levels"], $prog);
+						if (!empty($levels_array)){
+							$allMods = modifyProgram($tTime, $prog, $weekdays, $levels_array, 4, $targetID, $prog->program_id);
+							$targetMods = $allMods[count($allMods)-1];
+							array_pop($allMods);
+							$progMods = $allMods;
+							foreach($progMods as $progMod)
+								array_push($modifiedPrograms, $progMod);
+							if(!empty($targetMods))
+								array_push($modifiedTarget, $targetMods);
 						}
 					}else{
 						array_push($modifiedPrograms, array("programID" => $prog->program_id, 
@@ -687,10 +687,17 @@ function checkProgramsOverlap ($target, $targetID) {
 						=> $prog->motion_detector, "light_level" => $prog->light_level, 
 						"motion_level" => $prog->motion_level));
 					}
+				}else{
+					array_push($modifiedPrograms, array("programID" => $prog->program_id, 
+					"target_id" => $prog->target_id, "time_start" => $prog->time_start, 
+					"time_end" => $prog->time_end, "weekdays" => $prog->weekdays, 
+					"light_detector" => $prog->light_detector, "motion_detector" 
+					=> $prog->motion_detector, "light_level" => $prog->light_level, 
+					"motion_level" => $prog->motion_level));
 				}
 			}
 		}
-	//}
+	}
 	
 	if (count($modifiedTarget)==1){
 		print(json_encode($modifiedTarget));

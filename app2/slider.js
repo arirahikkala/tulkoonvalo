@@ -146,6 +146,7 @@
 			this.model.stopTimer();
 			isDisabled = true;
 			sliderColor = "red";
+			this.model.set("value", this.model.get("ghost"));
 		}
 		else {
 			this.model.startTimer();
