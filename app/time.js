@@ -65,7 +65,7 @@
 	},
 
 	initialize: function() {
-			this.model.bind("change:errors", function() { this.drawErrors(); }, this );
+			this.model.bind("change:errors", function() { this.drawErrors(); }, this);
    		this.model.bind("remove", function() { this.remove(); }, this);
 
 	    this.render();

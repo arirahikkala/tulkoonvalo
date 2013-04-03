@@ -1,10 +1,9 @@
-// TODO: All this could be moved to slider.js
 
 var SliderCollection = Backbone.Collection.extend ({
 	model: Slider.Slider,
 	lightIds : [],
 	parentEl: null,
-	//sliderList: JSON.stringify(new Object()),
+	
 	sliderList: {},
 	sliderIDs: [],
 
@@ -13,7 +12,6 @@ var SliderCollection = Backbone.Collection.extend ({
 	},
 
 	initialize: function() {
-		//this.on ("add", function (m, c) { c.sync()});
 		this.longPoll();
 	},
 
@@ -34,7 +32,7 @@ var SliderCollection = Backbone.Collection.extend ({
 		if (this.query) this.query.abort();
 		
 		var childWrap = null;
-		var now = new Date();
+		//var now = new Date();
 
 		for (var i in response) {
 			var curLight = response[i];
@@ -51,7 +49,7 @@ var SliderCollection = Backbone.Collection.extend ({
 			collection: this, lightID: curLight["permanent_id"], 
 			enabled: isEnabled, timer: curLight["timer"], timerLast: curLight["timer_full"],
 			level: null, ghost: curLight["ghost"] });
-
+			
 			// Keep record of sliders with a certain ID
 			var cid = curLight["permanent_id"];
 			if (! this.sliderList[cid]) {
@@ -70,9 +68,7 @@ var SliderCollection = Backbone.Collection.extend ({
 
 				var childEl = $(".slider:last");
 				childWrap.append(childEl);
-
-				//var newLevel = this.parentEl.model.get("level")+1;
-				//newLevel = "a";
+				
 				if (this.parentEl.model.get("level")%2 == 0)
 					levelColor = "red";
 			else
@@ -112,6 +108,7 @@ var SliderCollection = Backbone.Collection.extend ({
 		var sliderValues = [];
 		var timerValues = [];
 		var enabledValues = [];
+		
 		// Create arrays to be sent
 		for (var cid in this.sliderList) {
 			sliderValues.push(this.sliderList[cid][0].get("value"));
@@ -150,7 +147,6 @@ var SliderCollectionView = Backbone.View.extend ({
 	},
 
 	render: function() {
-		//console.log ("rendered");
 		this.$el.empty();
 		var _this = this;
 		this.model.each (function (x) { _this.$el.append (new Slider.SliderView ({model: x}).$el)});

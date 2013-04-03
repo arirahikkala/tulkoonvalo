@@ -32,13 +32,14 @@
 			timerMax: 86400, // 24h
 			timerEnabled: false,
 			enabled: 0,
+			alreadyEnabled: 0,
 			name: "",
 			children: null, // Children right under
 			allChildren: null, // Children on all levels
 			showChildren: false,
 			childrenFetched: false,
 			childElement: null,
-			collection: null, // TODO: Ok, you don't need to declare this here
+			collection: null, // TODO: Ok, you can get this easier way
 			level: 1,
 			ghost: 0,
 	  };
@@ -46,12 +47,9 @@
 	},
 	
 	startTimer: function() {
-			//console.log("START TIMER", this.get("name"),this.get("timerEnabled"));
 			if (! this.get("timerEnabled")) {
-				//console.log("STARTED", this.get("name"));
 				var _this = this;
 				_this.interval = setInterval(function() {_this.set("timer", _this.get("timer")-1)}, 1000);
-				//console.log("timer started",_this.get("timer"), this.get("name"));
 				this.set("timerEnabled", true);
 			}
 	},
@@ -104,7 +102,6 @@
 	    this.render();
 	    var _this = this;
 	    this.updateUIFromModel();
-	    //this.longPoll();
 	    
 			this.model.bind("change:value", function() { this.updateSliderFromModel(); }, this);
 			this.model.bind("change:timer", function() { this.timerFormat(this.timerEndCheck(-1)); }, this );
@@ -141,13 +138,19 @@
 	// Disable/enable UI elements and timer
 	updateUIFromModel: function() {
 		if (! this.model.get("enabled")) {
-			this.model.set("timer", this.model.get("timerDefault"));
+			this.model.set("alreadyEnabled", 0);
+			this.model.set("timer", 0);
 			this.model.set("timerLast", this.model.get("timer"));
+			this.model.set("value", 0);
 			this.model.stopTimer();
 			isDisabled = true;
 			sliderColor = "red";
 		}
 		else {
+			if (this.model.get("alreadyEnabled") == 0) {
+				this.model.set("alreadyEnabled", 1);
+				this.model.set("timer", this.model.get("timerDefault"));
+			}
 			this.model.startTimer();
 			isDisabled = false;
 			sliderColor = "green";
@@ -237,7 +240,7 @@
 	},
 	
 	childrenChange: function() {
-		// TODO: After time-out return light values to rule levels (if none, zero)
+		// TODO: Don't change own values from
 		
 		var coll = this.model.get("collection");
 		for (var j in this.model.get("allChildren")) {
@@ -247,9 +250,9 @@
 				coll.sliderList[cid][i].set("value", this.model.get("value"));
 				coll.sliderList[cid][i].set("timer", this.model.get("timer"));
 				coll.sliderList[cid][i].set("timerLast", this.model.get("timer"));
-				console.log( coll.sliderList[cid][i].get("enabled"), "enabled" );
 			}
 		}
+		
 		// Insert slider values into DB
 		$.get("../server2/savesliders/"+this.model.get("lightID")+','+this.model.get("allChildren")+"/"+this.model.get("value")+"/"+this.model.get("timer"));
 		return false;

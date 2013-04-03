@@ -963,7 +963,6 @@ function poll($ids, $values, $timers, $enableds) {
 	(count($timers_array) != count($enableds_array)) )
 		return;
 		
-	// TODO: IP check if necessary
 	// Create the array of original values
 	$origLevels = array();
 	$counter = 0;
@@ -983,30 +982,35 @@ function poll($ids, $values, $timers, $enableds) {
 		else if ($timer > 86400)
 			$timer = 86400;
 		$origLevels[$cid]["timer"] = $timer;
-			
-		$isEnabled = (int)$enableds_array[$counter];
-		if ($isEnabled > 0)
+		
+		$isEnabled = $enableds_array[$counter];
+		if ($isEnabled == "false")
 			$isEnabled = false;
 		else
 			$isEnabled = true;	
 		$origLevels[$cid]["enabled"] = $isEnabled;
+
 		
 		$counter++;
 	}
 	$time = time();
 	
-	// Loop 60 seconds at a time with small pauses in between
+	// Loop for 60 seconds at a time with small pauses in between
 	while((time() - $time) < 60) {
 		$newLevels = getLevels($ids_array);
 		$retArray = array();
-
-		// Original values doesn't match the new one, return new values
-		foreach($newLevels as $id => $carray) {
-			if (($origLevels[$id]["current_level"] != (int)$carray["current_level"]) ||
-			($origLevels[$id]["timer"] != (int)$carray["timer"]) ||
-			($origLevels[$id]["enabled"] != (int)$carray["enabled"]) )
-				$retArray[$id] = $carray;
-		}
+		
+		/*
+			print(json_encode($origLevels));
+			print("<-ORIG");
+			print(json_encode($newLevels));
+			print("NEW");
+		*/
+			// Original values doesn't match the new one, return new values
+			foreach($newLevels as $id => $carray) {
+				if ($newLevels[$id] != $origLevels[$id])
+						$retArray[$id] = $carray;
+			}
 		if ($retArray) {
 			print(json_encode($retArray));
 			break;
@@ -1030,15 +1034,23 @@ function getLevels($ids_array) {
 			$stmt->execute(array($cid));
 			$level = $stmt->fetch (PDO::FETCH_OBJ);
 			
-			try {
+			// There may or may not be DB results
+			if ($level) {
 				$retArray[$level->id] = array();
-				$retArray[$level->id]["current_level"] = (int)$level->current_level;
-				$retArray[$level->id]["timer"] = (int)strtotime($level->ends_at)-(int)strtotime($level->activated_at);
-				$retArray[$level->id]["enabled"] = true;
+				
+				// If timer has run out, deactivate everything
+				if (strtotime($level->ends_at)-time() <= 0) {
+					$retArray[$level->id]["timer"] = 0;
+					$retArray[$level->id]["current_level"] = 0;
+					$retArray[$level->id]["enabled"] = false;
+				}
+				else {
+					$retArray[$level->id]["timer"]  = strtotime($level->ends_at)-strtotime($level->activated_at);
+					$retArray[$level->id]["current_level"] = $level->current_level;	
+					$retArray[$level->id]["enabled"] = true;
+				}
 			}
-			// TODO: Get real rule values for this and the ghost slider
-			// Slider was turned off (hopefully)
-			catch(Exception $e) {
+			else {
 				$retArray[$cid] = array();
 				$retArray[$cid]["enabled"] = false;
 				$retArray[$cid]["current_level"] = 0;
@@ -1099,12 +1111,14 @@ function getObjectData ($ids) {
 	$ids_array = preg_split ("/,/", $ids);
 	$retArray = array();
 	
-	// TODO: This belongs elsewhere (or just put timestamp in DB)
+	// TODO: This belongs elsewhere
 	// Used in converting SQL datetime into timestamp
 	date_default_timezone_set('Europe/Helsinki');
 	
 	foreach ($ids_array as $id) {
 		$lights = newGetLights($id);
+		if (count($lights) == 0) return;
+		
 		$lights = $lights[0]; // PHP version problem
 		
 		// Get the time remaining
@@ -1125,8 +1139,11 @@ function getObjectData ($ids) {
 		}
 		$lights -> children = $childrenIds;
 		$lights -> all_children = getAllChildren($id);
-		$lights -> ends_at = $lights->ends_at;
-		$lights -> timer_full = strtotime($lights->ends_at)-strtotime($lights->activated_at);
+		
+		$timerFull = strtotime($lights->ends_at)-time();
+		if ($timerFull <= 0) $timerFull = 0;
+		$lights -> timer_full = $timerFull;
+
 		$lights -> ghost = getGhost($id);
 		$retArray[] = $lights;
 	}
@@ -1191,69 +1208,6 @@ function getAllChildren ($id) {
 		}
 	}
 	return($allChildren);
-}
-
-function getLights ($ids) {
-	$foo = array ("lights" => array (
-			      array ("name" => "Aula Etu",
-				     "id" => "1",
-				     "isGroup" => false,
-				     "level" => 50,
-				     "activated_at" => 1360230859,
-				      "ends_at" => 1893448800),
-			      array ("name" => "Aula Taka",
-				     "id" => "2",
-				     "isGroup" => false),
-			      array ("name" => "Aula",
-				     "id" => "3",
-				     "isGroup  p" => true),
-			      array ("name" => "Eteinen",
-				     "id" => "4",
-				     "isGroup" => true,
-				     "level" => 100,
-				     "activated_at" => 1360230883,
-				     "ends_at" => 1893448800),
-			      array ("name" => "Ulkovalo",
-				     "id" => "5",
-				     "isGroup" => false)),
-		      "groups" => array (
-			      array ("p" => "3",
-				     "c" => "1"),
-			      array ("p" => "3",
-				     "c" => "2"),
-			      array ("p" => "4",
-				     "c" => "5")));
-
-	// TODO: Delimit ids by something safer (in other places too)
-	$ids_array = preg_split ("/,/", $ids);
-
-	$bar = array();
-
-	foreach ($ids_array as $x) {
-		if ($x == "3") {
-			$bar[] = "2";
-			$bar[] = "1";
-		}
-		if ($x == "4") {
-			$bar[] = "5";
-		}
-		$bar[] = $x;
-	}
-	$bar = array_unique ($bar);
-
-	$rv = array ("lights" => array (), "groups" => array ());
-	foreach ($bar as $i) {
-		foreach ($foo["lights"] as $light) {
-			if ($light["id"] == $i) {
-				$rv["lights"][] = $light;
-			}
-		}
-		foreach ($foo["groups"] as $group) {
-			if ($group["p"] == $i)
-				$rv["groups"][] = array ("p" => $i, "c" => $group["c"]);
-		}
-	}
-	print (json_encode ($rv));
 }
 
 function getConnection() {
