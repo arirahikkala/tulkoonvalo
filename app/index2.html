@@ -232,19 +232,24 @@
 					move : {
 						"always_copy": "multitree",
 						check_move: function (m,data) {
-							//console.log(m,data);
 					 		return(true);
 					 	}
 					}
 				},
 				"types" : {
 					"types" : {
+						"root" : {
+							"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
+						},
 						"group" : {
 							//"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
 						},
 						"light" : {
 							//"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
 						},
+						"detector": {
+							//"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
+						}
 					}
 				},
 	  		"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
@@ -290,22 +295,20 @@
     	// Only ask if a group and has children
     	if (data.rslt.obj.attr("rel") == "group" && data.rslt.obj.children().find("a").length != 0) {
 	    	var choice = confirm("Myös kaikki aliryhmät poistetaan. Haluatko jatkaa?");
-				if (choice)	{console.log("wtf",choice);
-					data.rslt.obj.each(function () {
-							$.ajax({
-								async : false,
-								type: 'DELETE',
-								url: "../server2/groups/" + this.id,
-								success : function (r) {
-									if(r.length != 0)
-										data.inst.refresh();
-								}
-							});
-					});
-				}
-				else $.jstree.rollback(data.rlbk);
+				if (! choice) { $.jstree.rollback(data.rlbk); return; }
 			}
-
+			
+			data.rslt.obj.each(function () {
+					$.ajax({
+						async : false,
+						type: 'DELETE',
+						url: "../server2/groups/" + this.id,
+						success : function (r) {
+							if(r.length != 0)
+								data.inst.refresh();
+						}
+					});
+			});
     })
     
     // create a new node
