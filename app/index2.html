@@ -209,10 +209,24 @@
 				}); 
       });
       
-<<<<<<< HEAD
     	var treeSettings = [
-    		{
-=======
+				{
+					"root" : {
+						"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
+					},
+					"group" : {
+						"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
+					},
+					"light" : {
+						//"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
+					},
+					"detector" : {
+						//"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
+					},
+				},
+				["themes", "json_data", "ui", "dnd", "crrm", "types"]
+			]
+
       $("#lightsTreeContainer").jstree ({
 	  		"json_data": {
             "ajax": {
@@ -250,31 +264,9 @@
 					 	}
 					}
 				},
-				"types" : {
->>>>>>> 0554bdca16e4b1d3c237782d483776bd21325935
-					"types" : {
-						"root" : {
-							"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
-						},
-						"group" : {
-							"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
-						},
-						"light" : {
-							//"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
-						},
-<<<<<<< HEAD
-						"detector" : {
-							//"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
-						},
-=======
-						"detector": {
-							//"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
-						}
->>>>>>> 0554bdca16e4b1d3c237782d483776bd21325935
-					}
-				},
-				["themes", "json_data", "ui", "dnd", "crrm", "types"]
-			]
+				"types" : treeSettings[0],
+	  		"plugins": treeSettings[1],
+	  	});
       
       $("#lightsTreeContainer").jstree ({
 	  		"json_data": { "ajax": { "url": "../server2/lightsTree", } },
@@ -338,11 +330,7 @@
     	// Only ask if a group and has children
     	if (data.rslt.obj.attr("rel") == "group" && data.rslt.obj.children().find("a").length != 0) {
 	    	var choice = confirm("Myös kaikki aliryhmät poistetaan. Haluatko jatkaa?");
-<<<<<<< HEAD
 				if (! choice)	{ $.jstree.rollback(data.rlbk); return; }
-=======
-				if (! choice) { $.jstree.rollback(data.rlbk); return; }
->>>>>>> 0554bdca16e4b1d3c237782d483776bd21325935
 			}
 			
 			data.rslt.obj.each(function () {
@@ -356,10 +344,6 @@
 						}
 					});
 			});
-<<<<<<< HEAD
-
-=======
->>>>>>> 0554bdca16e4b1d3c237782d483776bd21325935
     })
     
     // create a new node
