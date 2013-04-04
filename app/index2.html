@@ -48,19 +48,29 @@
     		</div>
     
     		<div id="groups" class="divit"><h2>Valoryhmät</h2>
-      		<div id="groupContainer" class="programs">
-						<div id="groupsLightGroups"></div>
-    			</div>
+						<div id="groupsLightGroups" class="programs"></div>
     			<div id="groupRemove" class="eiVierekkain">
     				<input id="addGroup" type="submit" value="+Uusi ryhmä" />
 						<input id="deleteGroup" type="submit" value="Poista ryhmä" />
     			</div>
-
-					<div id="lightsTreeContainer" class="programs">
-					</div>
-					
-					<div id="detectorTreeContainer" class="programs">
-  				</div>
+					<table>
+					<tr>
+						<td>
+							<div id='groupTableContainer' class='programs'>
+								<b>Valot</b>
+								<div id="lightsTreeContainer"></div>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<div id='groupTableContainer' class="programs">
+								<b>Detektorit</b>
+								<div id="detectorTreeContainer"></div>
+							</div>
+						</td>
+  				</tr>
+  				</table>
   			</div>
 
     		<div id="programs" class="divit"><h2>Uusi sääntö</h2>
@@ -199,55 +209,41 @@
 				}); 
       });
       
-      $("#lightsTreeContainer").jstree ({
-	  		"json_data": {
-            "ajax": {
-                "url": "../server2/lightsTree",
-            }
-	  		},
-				"crrm": {
-					move : { check_move: function () { return(false); }}
-				},
-	  		"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
-	  	});
-	  	
-      $("#detectorTreeContainer").jstree ({
-	  		"json_data": {
-            "ajax": {
-                "url": "../server2/detectorsTree",
-            }
-	  		},
-				"crrm": {
-					move : { check_move: function () { return(false); }}
-				},
-	  		"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
-	  	})
-	  	
-      $("#lightGroups").jstree ({
-	  		"json_data": {
-            "ajax": { "url": "../server2/groupsTree/0", }
-	  		},
-	  		
-				"crrm": {
-					move : {
-						"always_copy": "multitree",
-						check_move: function (m,data) {
-							//console.log(m,data);
-					 		return(true);
-					 	}
-					}
-				},
-				"types" : {
+    	var treeSettings = [
+    		{
 					"types" : {
 						"group" : {
-							//"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
+							"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
 						},
 						"light" : {
 							//"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
 						},
+						"detector" : {
+							//"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
+						},
 					}
 				},
-	  		"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
+				["themes", "json_data", "ui", "dnd", "crrm", "types"]
+			]
+      
+      $("#lightsTreeContainer").jstree ({
+	  		"json_data": { "ajax": { "url": "../server2/lightsTree", } },
+				"crrm": { move : { check_move: function () { return(false); }} },
+	  		"plugins": treeSettings[1],
+	  	});
+	  	
+      $("#detectorTreeContainer").jstree ({
+	  		"json_data": { "ajax": {"url": "../server2/detectorsTree", }},
+				"crrm": { move : { check_move: function () { return(false); }} },
+				"types" : treeSettings[0],
+	  		"plugins": treeSettings[1],
+	  	})
+	  	
+      $("#lightGroups").jstree ({
+	  		"json_data": { "ajax": { "url": "../server2/groupsTree/0", } },
+				"crrm": { move : { "always_copy": "multitree" } },
+				"types" : treeSettings[0],
+	  		"plugins": treeSettings[1],
 	  	})
 	  	
     .bind("rename.jstree", function (e, data) {
@@ -286,25 +282,26 @@
 
     .bind("remove.jstree", function (e, data) {
     	var cid = data.rslt.obj.attr("id");
-
+    	
+    	if (data.rslt.obj.attr("rel") == "root") { $.jstree.rollback(data.rlbk); return; }
+    	
     	// Only ask if a group and has children
     	if (data.rslt.obj.attr("rel") == "group" && data.rslt.obj.children().find("a").length != 0) {
 	    	var choice = confirm("Myös kaikki aliryhmät poistetaan. Haluatko jatkaa?");
-				if (choice)	{console.log("wtf",choice);
-					data.rslt.obj.each(function () {
-							$.ajax({
-								async : false,
-								type: 'DELETE',
-								url: "../server2/groups/" + this.id,
-								success : function (r) {
-									if(r.length != 0)
-										data.inst.refresh();
-								}
-							});
-					});
-				}
-				else $.jstree.rollback(data.rlbk);
+				if (! choice)	{ $.jstree.rollback(data.rlbk); return; }
 			}
+			
+			data.rslt.obj.each(function () {
+					$.ajax({
+						async : false,
+						type: 'DELETE',
+						url: "../server2/groups/" + this.id,
+						success : function (r) {
+							if(r.length != 0)
+								data.inst.refresh();
+						}
+					});
+			});
 
     })
     

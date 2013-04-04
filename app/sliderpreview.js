@@ -70,8 +70,10 @@
 	      	"light": { max_children: 0 }
 	  		},
 	  		
-				"dnd" : { "drop_finish" : function (data) { _this.setSliderIDs(data); } },
-				
+				"dnd" : {
+					"drop_finish" : function (data) { _this.setSliderIDs(data); },
+					"drop_check" : function(data) {console.log(data.o);return false;},
+				},
 	  		"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
 	  	})
 	},

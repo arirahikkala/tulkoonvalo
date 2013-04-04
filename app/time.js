@@ -58,7 +58,7 @@
 			}
 			else { this.model.destroy(); this.remove(); }
 		},
-		
+			
 		// Time is changed
 		"change #time-start" : function (event) { this.model.set("time_start", event.target.value); },
 		"change #time-end" : function (event) { this.model.set("time_end", event.target.value); },
@@ -72,7 +72,6 @@
 	    
 	    // Used for showing error messages in the right place
 	    this.model.set("cid", this.model.cid);
-	    console.log("CREATOR",this.model.get("cid"), this.$el);
 	},
 	
 	drawErrors: function() {

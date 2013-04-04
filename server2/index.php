@@ -38,29 +38,10 @@ function removeGroup($id) {
 	$groups = dbExec($db, $sql, array($id), 0);
 	
 	// Find out all children an remove them
-	$allChildren = array();
-	foreach ($children as $c) {
-		$allChildren = childLoopID($c, $groups, $allChildren);
-	}
+	foreach ($children as $c)
+		childLoopID($c, $groups, $db);
 	
-	// To avoid problems remove group associations first then groups
-	foreach ($allChildren as $c) {
-		$sql = "delete from light_activations where id=?";
-		dbExec($db, $sql, array($c));
-	
-		$sql = "delete from groups where child_id=?";
-		dbExec($db, $sql, array($c));
-	
-		$sql = "delete from lights where permanent_id=? and isGroup=1";
-		dbExec($db, $sql, array($c));
-	}
-	
-	/*foreach ($allChildren as $c) {
-		$sql = "delete from lights where permanent_id=?";
-		dbExec($db, $sql, array($c));
-	}*/
-	
-	// Delete the parent
+	// Remove the parent
 	$sql = "delete from light_activations where id=?";
 	dbExec($db, $sql, array($id));
 	
@@ -71,15 +52,21 @@ function removeGroup($id) {
 	dbExec($db, $sql, array($id));
 }
 
-function childLoopID($c, $groups, $allChildren) {
-	array_push($allChildren, $c->child_id);
+function childLoopID($c, $groups, $db) {
 	foreach ($groups as $g) {
-		if ($g->parent_id == $c->child_id) {
-			$allChildren = childLoopID($g, $groups, $allChildren);
-			array_push($allChildren, $g->child_id);
-		}
+		if ($g->parent_id == $c->child_id)
+			childLoopID($g, $groups, $db);
 	}
-	return($allChildren);
+	
+	// This removes the children from the lower end
+	$sql = "delete from light_activations where id=?";
+	dbExec($db, $sql, array($c->child_id));
+
+	$sql = "delete from groups where child_id=?";
+	dbExec($db, $sql, array($c->child_id));
+
+	$sql = "delete from lights where permanent_id=? and isGroup=1";
+	dbExec($db, $sql, array($c->child_id));
 }
 
 function moveGroup($id) {
@@ -185,7 +172,7 @@ function getGroupsTree($onlyGroups=false) {
 			$tree[] = $newChildren;
 		}
 	}
-	print(json_encode($tree));
+	print(json_encode( array("data"=>"Ryhmät", "attr"=>array("id"=>-1, "rel"=>"root"), "children"=>$tree) ));
 }
 
 // Drill down the groups tree and eventually return back up with all children
@@ -193,7 +180,6 @@ function childLoop($cGroup, $groups, $onlyGroups=false) {
 	$newChild = array("data"=>$cGroup->name, "attr"=>array("id"=>$cGroup->permanent_id), "children"=>array());
 	
 	// Set the item type
-	// TODO: Maybe icons here too
 	if ($cGroup->isGroup == 1) $childType = "group";//$newChild["attr"]["type"] = 0;
 	else {
 		switch ($cGroup->detector_type) {
