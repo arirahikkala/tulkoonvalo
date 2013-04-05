@@ -141,7 +141,6 @@
 			this.model.set("alreadyEnabled", 0);
 			this.model.set("timer", 0);
 			this.model.set("timerLast", this.model.get("timer"));
-			this.model.set("value", 0);
 			this.model.stopTimer();
 			isDisabled = true;
 			sliderColor = "red";

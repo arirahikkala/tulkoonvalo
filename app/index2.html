@@ -211,6 +211,7 @@
       
     	var treeSettings = [
 				{
+				   "types": {
 					"root" : {
 						"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
 					},
@@ -218,59 +219,23 @@
 						"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
 					},
 					"light" : {
-						//"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
+						"icon" : { "image" : "http://www.student.oulu.fi/~mikkonev/lamp.svg" },
 					},
-					"detector" : {
-						//"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
+					"detector_light" : {
+						"icon" : { "image" : "http://www.student.oulu.fi/~mikkonev/detector.svg" },
 					},
+					"detector_motion" : {
+						"icon" : { "image" : "http://www.student.oulu.fi/~mikkonev/detector.svg" },
+					},
+				   },
 				},
 				["themes", "json_data", "ui", "dnd", "crrm", "types"]
 			]
-
-      $("#lightsTreeContainer").jstree ({
-	  		"json_data": {
-            "ajax": {
-                "url": "../server2/lightsTree",
-            }
-	  		},
-				"crrm": {
-					move : { check_move: function () { return(false); }}
-				},
-	  		"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
-	  	});
-	  	
-      $("#detectorTreeContainer").jstree ({
-	  		"json_data": {
-            "ajax": {
-                "url": "../server2/detectorsTree",
-            }
-	  		},
-				"crrm": {
-					move : { check_move: function () { return(false); }}
-				},
-	  		"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
-	  	})
-	  	
-      $("#lightGroups").jstree ({
-	  		"json_data": {
-            "ajax": { "url": "../server2/groupsTree/0", }
-	  		},
-	  		
-				"crrm": {
-					move : {
-						"always_copy": "multitree",
-						check_move: function (m,data) {
-					 		return(true);
-					 	}
-					}
-				},
-				"types" : treeSettings[0],
-	  		"plugins": treeSettings[1],
-	  	});
       
       $("#lightsTreeContainer").jstree ({
 	  		"json_data": { "ajax": { "url": "../server2/lightsTree", } },
 				"crrm": { move : { check_move: function () { return(false); }} },
+				"types": treeSettings[0],
 	  		"plugins": treeSettings[1],
 	  	});
 	  	
