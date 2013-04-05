@@ -161,6 +161,7 @@
 		this.$(".timer-sub").attr("disabled", isDisabled);
 		this.$(".onoff").attr("disabled", isDisabled);
 		this.$(".timer").css({"border-color": sliderColor});
+		this.$(".slider-widget #ui-slider-handle-value").html(this.model.get("value"));
 		
 		// Format time for display
 		this.timerFormat(this.timerEndCheck(0));
@@ -171,11 +172,12 @@
 		this.undelegateEvents();
 		this.$(".slider-widget").slider("value", this.model.get("value"));
 		this.delegateEvents();
+		this.$(".slider-widget #ui-slider-handle-value").html(this.model.get("value"));
 	},
 	
 	sliderChange: function(ev, ui) {
 		this.model.set("enabled", 1);
-	  this.model.set("value", this.$(".slider-widget").slider("option", "value"));
+		this.model.set("value", this.$(".slider-widget").slider("option", "value"));
 		this.childrenChange();
 	},
 	
@@ -268,6 +270,8 @@
 			
 			// TODO: See license on jquery.ui.touch-punch.min.js library
 			this.$(".slider-widget").draggable();
+			this.$(".slider-widget .ui-slider-handle").append("<div id='ui-slider-handle-value'></div>");
+			
 			
 			// TODO: Is this necessary?
 			// Cut too long names
