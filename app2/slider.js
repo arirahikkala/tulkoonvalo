@@ -135,41 +135,6 @@
 			}
 		}
 	},
-<<<<<<< HEAD
-=======
-
-	// (todo: also move over name changes to the UI)
-	// Disable/enable UI elements and timer
-	updateUIFromModel: function() {
-		if (! this.model.get("enabled")) {
-			this.model.set("alreadyEnabled", false);
-			this.model.set("timer", 0);
-			//this.model.set("value", 0);
-			this.model.stopTimer();
-			isDisabled = true;
-			timerColor = "red";
-			//this.model.set("value", this.model.get("ghost"));
-		}
-		else {
-			if (! this.model.get("alreadyEnabled")) {
-				this.model.set("alreadyEnabled", true);
-				this.model.set("timer", this.model.get("timerDefault"));
-			}
-			this.model.startTimer();
-			isDisabled = false;
-			timerColor = "green";
-		}
-
-		this.$(".timer").attr("disabled", isDisabled);
-		this.$(".timer-add").attr("disabled", isDisabled);
-		this.$(".timer-sub").attr("disabled", isDisabled);
-		this.$(".onoff").attr("disabled", isDisabled);
-		this.$(".timer").css({"border-color": timerColor});
-		
-		// Format time for display
-		this.timerFormat(this.timerEndCheck(0));
-	},
->>>>>>> feb4f8376b609a7d172e33f143856489e83aebe5
 	
 	updateSliderWidget: function() {
 		// Disable events to prevent cascading calls in children

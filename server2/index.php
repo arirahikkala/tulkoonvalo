@@ -6,13 +6,11 @@ $app = new Slim();
 
 $app->get('/data/:id/', function($id) { getObjectData($id); });
 $app->get('/lights/:ids/', function($ids) { getLights($ids); });
-$app->get('/newlights/:ids/', function($ids) { newGetLights($ids); });
 $app->get('/children/:id/', function($id) { getChildren($id); });
 $app->get('/allchildren/:id/', function($id) { getAllChildren($id); });
 $app->post('/savesliders', 'saveSliders');
 $app->get('/poll/:ids/:values/:timers/:enableds', function($ids, $values, $timers, $enableds) { poll($ids, $values, $timers, $enableds); });
 $app->get('/togglesliders/:ids/', function($ids) { toggleSliders($ids); });
-//$app->post('/lights', 'addGroup');
 $app->get('/programs/', 'getPrograms');
 $app->post('/programs/', 'savePrograms');
 $app->put('/programs/:id', function($id) { updateProgram($id); });
@@ -27,6 +25,7 @@ $app->delete('/groups/:id', function($id) { removeGroup($id); });
 
 $app->run();
 
+// Remove groups from the admin view
 function removeGroup($id) {
 	$db = getConnection();
 
@@ -38,10 +37,9 @@ function removeGroup($id) {
 	$groups = dbExec($db, $sql, array($id), 0);
 	
 	// Find out all children an remove them
-	foreach ($children as $c)
-		childLoopID($c, $groups, $db);
+	foreach ($children as $c) childrenRemove($c, $groups, $db);
 	
-	// Remove the parent
+	// Finally remove the parent
 	$sql = "delete from light_activations where id=?";
 	dbExec($db, $sql, array($id));
 	
@@ -52,10 +50,11 @@ function removeGroup($id) {
 	dbExec($db, $sql, array($id));
 }
 
-function childLoopID($c, $groups, $db) {
+// Drill down to find children and remove them
+function childrenRemove($c, $groups, $db) {
 	foreach ($groups as $g) {
 		if ($g->parent_id == $c->child_id)
-			childLoopID($g, $groups, $db);
+			childrenRemove($g, $groups, $db);
 	}
 	
 	// This removes the children from the lower end
@@ -69,6 +68,7 @@ function childLoopID($c, $groups, $db) {
 	dbExec($db, $sql, array($c->child_id));
 }
 
+// Move groups around in the admin view
 function moveGroup($id) {
 	$params = json_decode(Slim::getInstance()->request()->getBody());
 	$db = getConnection();
@@ -81,13 +81,13 @@ function moveGroup($id) {
 		print(json_encode($params));
 		return;
 	}
-	
+	// The group can be moved to the root level
 	if ($newParent == -1) {
 		$sql = "delete from groups where child_id=?";
 		dbExec($db, $sql, array($id));
 	}
 	else {
-		// Moved inside the tree, delete the original and insert a new one
+		// Group is moved inside a tree
 		if ($params->only_move == 1) {
 			$sql = "delete from groups where child_id=?";
 			dbExec($db, $sql, array($id));
@@ -102,6 +102,7 @@ function moveGroup($id) {
 	}
 }
 
+// Rename groups in the admin view
 function renameGroup($id) {
 	$params = json_decode(Slim::getInstance()->request()->getBody());
 	$db = getConnection();
@@ -117,6 +118,7 @@ function renameGroup($id) {
 	else print(json_encode($params));
 }
 
+// Add new groups from the admin view
 function addGroup() {
 	$params = json_decode(Slim::getInstance()->request()->getBody());
 	$db = getConnection();
@@ -134,6 +136,7 @@ function addGroup() {
 	print($newID);
 }
 
+// Get one-level tree of detectors to the admin view
 function getDetectorsTree($retJson=true) {
 	$db = getConnection();
 	
@@ -152,6 +155,7 @@ function getDetectorsTree($retJson=true) {
 	else return($tree);
 }
 
+// Get one-level tree of lights to the admin view
 function getLightsTree($retJson=true) {
 	$db = getConnection();
 
@@ -167,6 +171,7 @@ function getLightsTree($retJson=true) {
 	else return($tree);
 }
 
+// Get the whole tree with groups, lights and detectors to the admin view
 function getGroupsTree($onlyGroups=false) {
 	$db = getConnection();
 	$sql = "select name,permanent_id,parent_id,isGroup,detector_type from lights left join groups on (lights.permanent_id = groups.child_id)";
@@ -183,7 +188,7 @@ function getGroupsTree($onlyGroups=false) {
 	print(json_encode( array("data"=>"Ryhmät", "attr"=>array("id"=>-1, "rel"=>"root"), "children"=>$tree) ));
 }
 
-// Drill down the groups tree and eventually return back up with all children
+// Drill down the groups tree and get all the children
 function childLoop($cGroup, $groups, $onlyGroups=false) {
 	$newChild = array("data"=>$cGroup->name, "attr"=>array("id"=>$cGroup->permanent_id), "children"=>array());
 	
@@ -215,7 +220,7 @@ function childLoop($cGroup, $groups, $onlyGroups=false) {
 	return($newChild);
 }
 
-// Convenience function several DB statements
+// Convenience function for several DB statements
 // TODO: Make everyone use this
 function dbExec($db, $sql, $dbArray, $fetchType=-1) {
 	try {
@@ -232,6 +237,7 @@ function dbExec($db, $sql, $dbArray, $fetchType=-1) {
 	}
 }
 
+// Delete times from a program in the admin view
 function deleteTime($id) {
 	$db = getConnection();
 	
@@ -239,6 +245,7 @@ function deleteTime($id) {
 	dbExec($db, $sql, array($id));
 }
 
+// Remove program level settings in the admin view
 function deleteLevel($id) {
 	$db = getConnection();
 	
@@ -246,6 +253,7 @@ function deleteLevel($id) {
 	dbExec($db, $sql, array($id));
 }
 
+// Delete programs from the admin view
 function deleteProgram($id) {
 	$db = getConnection();
 	
@@ -258,10 +266,10 @@ function deleteProgram($id) {
 	$sql = "delete from program_levels where program_id=?";	
 	dbExec($db, $sql, array($id));
 
+	// TODO: Commendaros
 	deleteProgramsParse();
 	$programs=getPrograms(false);
 	foreach ($programs as $target){
-		//$levels=$target->levels;
 		$modifiedPrograms = checkProgramsOverlap($target, $target->id);
 		$sql = "insert into programs_parse values (?,?,null,null,?,?,?,?,?,?,?)";
 		foreach ($modifiedPrograms as $prog){		
@@ -274,28 +282,10 @@ function deleteProgram($id) {
 	}
 }
 
+// Update programs from the admin view
 function updateProgram($id) {
 	$params = json_decode(Slim::getInstance()->request()->getBody());
-	/*
-	$paramsObj = new ArrayObject($params);
-	$validParams = $paramsObj->getArrayCopy();
-	print(json_encode($validParams));
-	// Remove items to be removed from the checked list
-	$counter = 0;
-	foreach ($validParams->times as $time) {
-		if ($time->allow_delete == 1) {
-			unset($validParams->times[$counter]);
-		}
-		$counter++;
-	}
-	$counter = 0;
-	foreach ($validParams->levels as $level) {
-		if ($level->allow_delete == 1) {
-			unset($validParams->levels[$counter]);
-		}
-		$counter++;
-	}
-	*/
+	
 	// If errors found in form return
 	$retArray = programValidation($params);	
 	if ($retArray) {
@@ -356,18 +346,20 @@ function updateProgram($id) {
 	}
 }
 
+// Validate values in programs being created or updated
 function programValidation($params) {
 	$errorMain = array();
 	$errorTimes = array();
 	$errorLevels = array();
 	$retArray = array();
 	
-	$times = $params->times; // Must not be empty
-	$levels = $params->levels; // Must not be empty
+	$times = $params->times;
+	$levels = $params->levels;
 	
 	$nameLen = strlen($params->name);
 	
 	// TODO: Form needs testing with lengths etc.
+	// Generic errors with name and lack of time or level items
 	if ($nameLen == 0 || $nameLen > 32)
 		$errorMain["name"] = 0;
 		
@@ -377,8 +369,7 @@ function programValidation($params) {
 	if (count($levels) == 0)
 		$errorMain["levels"] = 4;
 		
-	// TODO: Additional sanitation here for all values
-	
+	// Check time values
 	foreach ($params->times as $time) {
 		if ($time->allow_delete) continue;
 		
@@ -394,7 +385,7 @@ function programValidation($params) {
 				$errorTimes[$time->cid][] = 2;
 				break;
 			}
-			// Check each halve of times
+			// Check each halve that the time range is correct
 			$hours = true;
 			foreach (array((int)substr($t,0,2), (int)substr($t,3,4)) as $tHalf) {
 				if (!$hours && ($tHalf > 59 || $tHalf < 0)) {
@@ -408,19 +399,21 @@ function programValidation($params) {
 				$hours = false;
 			}
 		}
+		// Start time must be before end time
 		if (!$timeFormatError && strtotime($time->time_start) > strtotime($time->time_end))
 			$errorTimes[$time->cid][] = 5;
 	}
 	// TODO: Check that it's a group used in a program
 	// TODO: Level must be in the range of 0...100
 
+	// Check level settings
 	$usedLevels = array();
 	foreach ($params->levels as $level) {
 		if ($level->allow_delete) continue;
 		$usedLevels[$level->target_id][] = $level->cid;
 	}
 	
-	// Check that same group isn't there twice
+	// Check that same group isn't in the program twice
 	foreach ($usedLevels as $group) {
 		if (count($group) > 1) {
 			foreach ($group as $cid)
@@ -428,6 +421,7 @@ function programValidation($params) {
 		}
 	}
 	
+	// Finally show errors if they exist
  	if (count($errorMain) || count($errorTimes) || count($errorLevels)) {
  		$retArray["main_errors"] = $errorMain;
   	$retArray["time_errors"] = $errorTimes;
@@ -436,7 +430,7 @@ function programValidation($params) {
  	}
 }
 
-// TODO: Use this for editing. If ID is not null update value
+// Create new programs in the admin view
 function savePrograms() {
 	$params = json_decode(Slim::getInstance()->request()->getBody());
 	
@@ -492,7 +486,7 @@ function savePrograms() {
 
 function getPrograms($retJson = true) {
 
-	// Get the programs first
+	// Get plain programs first
 	$sql = "select * from programs";
 	try {
 		$db = getConnection();
@@ -505,7 +499,7 @@ function getPrograms($retJson = true) {
 	}
 	
 	// TODO: Refactor this SQL mess?
-	// Get times for each program
+	// Get time items for each program
 	$sql = "select * from program_times where program_id=?";
 	foreach ($programs as $cProg) {
 		$cid = $cProg->id;
@@ -529,6 +523,7 @@ function getPrograms($retJson = true) {
 		}
 	}
 	
+	// Get level items for each program
 	$sql = "select * from program_levels where program_id=?";
 	foreach ($programs as $cProg) {
 		$cid = $cProg->id;
@@ -548,13 +543,13 @@ function getPrograms($retJson = true) {
 			echo '{"error":{"text":'. $e->getMessage() .'}}';
 		}
 	}
-	if ($retJson){
-		print(json_encode($programs));
-	}else{
-		return($programs);
-	}
+	
+	// We may or may not want JSON return
+	if ($retJson) print(json_encode($programs));
+	else return($programs);
 }
 
+// TODO: Commendaros
 function getProgramsParse() {
 	$db=getConnection();
 	$sql = "select * from programs_parse";
@@ -562,6 +557,7 @@ function getProgramsParse() {
 	return($programs);
 }
 
+// TODO: Commendaros
 function deleteProgramsParse() {
 	$db=getConnection();
 	$sql = "delete from programs_parse";	
@@ -595,6 +591,7 @@ function deleteProgramsParse() {
 	return(0);
 }*/
 
+// TODO: Commendaros
 function checkProgramsOverlap ($target, $targetID) {
 	$programs2=getPrograms(false);
 	$modifiedPrograms=array();
@@ -919,24 +916,8 @@ function modifyProgram ($time1, $prog, $weekdays, $levels_array, $type, $id1, $i
 	return($modifiedPrograms);
 }
 
-/*
-function addGroup () {
-	$sql = "insert into lights (name, brightness, parent, isGroup) values (?, ?, ?, ?)";
-	$requestBody = json_decode (Slim::getInstance()->request()->getBody());
-	try {
-		$db = getConnection();
-		$stmt = $db->prepare($sql);
-		$stmt->execute(array ($requestBody->name, null, 1, true));
-		
-		print ("{id: '" + $db->lastInsertId('id') + "'}");
-	}
-	
-	catch(PDOException $e) {
-		echo '{"error":{"text":'. $e->getMessage() .'}}';
-	}
-}
-*/
-
+// TODO: Is this even called anymore?
+// TODO: Sliders work properly if nothing in light_activations?
 function togglesliders($ids) {
 	$ids_array = preg_split ("/,/", $ids);
 	$sql = "delete from light_activations where id=?";
@@ -954,7 +935,8 @@ function togglesliders($ids) {
 	}
 }
 
-// TODO: Should send parameters fancier way?
+// TODO: Should send parameters fancier way? - no other way in get?
+// Long polling used by the sliders
 function poll($ids, $values, $timers, $enableds) {
 	$ids_array = preg_split ("/,/", $ids);
 	$values_array = preg_split( "/,/", $values);
@@ -967,7 +949,7 @@ function poll($ids, $values, $timers, $enableds) {
 	(count($timers_array) != count($enableds_array)) )
 		return;
 		
-	// Create the array of original values
+	// Create an array from the given values
 	$origLevels = array();
 	$counter = 0;
 	foreach ($ids_array as $cid) {
@@ -993,7 +975,6 @@ function poll($ids, $values, $timers, $enableds) {
 		else
 			$isEnabled = true;	
 		$origLevels[$cid]["enabled"] = $isEnabled;
-
 		
 		$counter++;
 	}
@@ -1004,17 +985,11 @@ function poll($ids, $values, $timers, $enableds) {
 		$newLevels = getLevels($ids_array);
 		$retArray = array();
 		
-		/*
-			print(json_encode($origLevels));
-			print("<-ORIG");
-			print(json_encode($newLevels));
-			print("NEW");
-		*/
-			// Original values doesn't match the new one, return new values
-			foreach($newLevels as $id => $carray) {
-				if ($newLevels[$id] != $origLevels[$id])
-						$retArray[$id] = $carray;
-			}
+		// If original values don't match with values in DB, return new values
+		foreach($newLevels as $id => $carray) {
+			if ($newLevels[$id] != $origLevels[$id])
+					$retArray[$id] = $carray;
+		}
 		if ($retArray) {
 			print(json_encode($retArray));
 			break;
@@ -1023,6 +998,7 @@ function poll($ids, $values, $timers, $enableds) {
 	}
 }
 
+// Get new values from the DB for long polling
 function getLevels($ids_array) {
 	// TODO: This belongs elsewhere
 	date_default_timezone_set('Europe/Helsinki');
@@ -1058,7 +1034,7 @@ function getLevels($ids_array) {
 	return($retArray);
 }
 
-// Save slider level
+// Save sliders when user does something
 function saveSliders() {
 	$params = json_decode(Slim::getInstance()->request()->getBody());
 	print(json_encode($params));
@@ -1101,7 +1077,7 @@ function saveSliders() {
 	}
 }
 
-// Get light/group data and children
+// Get light/group data and children to create new sliders
 // TODO: Inexistent IDs
 function getObjectData ($ids) {	
 	$ids_array = preg_split ("/,/", $ids);
@@ -1111,13 +1087,15 @@ function getObjectData ($ids) {
 	// Used in converting SQL datetime into timestamp
 	date_default_timezone_set('Europe/Helsinki');
 	
-	foreach ($ids_array as $id) {
-		$lights = newGetLights($id);
+	foreach ($ids_array as $id) {		
+		$sql = "select * from lights left join light_activations on lights.permanent_id=light_activations.id where permanent_id=?";
+		$db = getConnection();
+		$lights = dbExec($db, $sql, array($id), 0);
+		
 		if (count($lights) == 0) return;
+		$lights = $lights[0];
 		
-		$lights = $lights[0]; // PHP version problem
-		
-		// Get the time remaining
+		// Get time remaining
 		$timer = strtotime($lights -> ends_at)-time();
 		if ($timer < 0)
 			$timer = 0;
@@ -1139,56 +1117,21 @@ function getObjectData ($ids) {
 		$timerFull = strtotime($lights->ends_at)-time();
 		if ($timerFull <= 0) $timerFull = 0;
 		$lights -> timer_full = $timerFull;
-
-		//$lights -> ghost = getGhost($id);
+		
 		$retArray[] = $lights;
 	}
 	print(json_encode($retArray));
 }
 
-function newGetLights ($ids) {
-	// TODO: Delimit ids by something safer
-	$ids_array = preg_split ("/,/", $ids);
-
-	// Get joined data from "lights" and "light_activations" tables
-	$sql = "select * from lights left join light_activations on lights.permanent_id=light_activations.id where permanent_id=?";
-
-	$lights=array();
-
-	try {
-		$db = getConnection();
-		$stmt = $db->prepare($sql);
-
-		foreach ($ids_array as $x) {
-			$stmt->execute(array($x));
-			$lights = $stmt->fetchAll (PDO::FETCH_OBJ);
-		}
-		//TODO: If empty...
-	}
-	catch(PDOException $e) {
-		echo '{"error":{"text":'. $e->getMessage() .'}}';
-	}
-
-	return ($lights);
-}
-
+// Get children for a light
 function getChildren ($id) {
 	$sql = "select * from lights where permanent_id in (select child_id from groups where parent_id=?)";
-	
-	try {
-		$db = getConnection();
-		$stmt = $db->prepare($sql);
-
-		$stmt->execute(array($id));
-		$children = $stmt->fetchAll (PDO::FETCH_OBJ);
-	}
-	catch(PDOException $e) {
-		echo '{"error":{"text":'. $e->getMessage() .'}}';
-	}
-
+	$db = getConnection();
+	$children = dbExec($db, $sql, array($id), 0);
 	return ($children);
 }
 
+// Get all children in all levels for a light
 function getAllChildren ($id) {
 	$allChildren = array();
 	$tempChildren[] = $id;
