@@ -43,7 +43,7 @@
     		</ul>
     
     		<div id="mainpage" class="divit"><h2>Etusivu</h2>
-      		<table class="programs" id="programsList">
+      		<table id="programsList">
       		</table>
     		</div>
     
@@ -88,6 +88,7 @@
 	    			<div id="ProgramLevels"></div>
 	    			<input id="addProgramSlider" type="submit" value="+Lisää ryhmä" />
 					</div>
+					<br />
 					<input id="saveProgram" type=button value="Tallenna" />
     		</div>
     		
@@ -124,7 +125,7 @@
 			errorMessages = { 
 				0:"Ohjelman nimen on oltava 1-32 merkkiä pitkä.",
 				1:"Valitse vähintään yksi viikonpäivä.",
-				2:"Vääränlainen kellonaika",
+				2:"Vääränlainen kellonaika.",
 				3:"Ohjelmalla on oltava vähintään yksi aika-asetus.",
 				4:"Ohjelmalla on oltava vähintään yksi ryhmäasetus.",
 				5:"Aloitusajan on oltava lopetusaikaa pienempi.",
@@ -167,7 +168,7 @@
 						colls[x].remove(colls[x].models[i]);
 				}
 			}
-		
+			
       // Set up the light groups page
       $("#deleteGroup").bind ("click", function() { $.jstree._reference("#lightGroups").remove() });
       $("#addGroup").bind ("click", function() { $.jstree._reference ("#lightGroups").create() });
@@ -194,19 +195,15 @@
       $("#addEditTime").bind ("click", function() { tempTimes.add({}); });
       $("#addEditProgramSlider").bind ("click", function() { tempProgramLevels.add({}); });
       $("#saveEditProgram").bind ("click", function() {
-				var editProg = tempPrograms.models[0];
-			
-				editProg.set("times", tempTimes);
-				editProg.set("levels", tempProgramLevels);
-			
-				editProg.save(null, {
-					success: function(m,r) {
-						// TODO: Need to change tab here
-						console.log("huge success");
-						appRouter.navigate('mainpage', {trigger: true, replace: true});
-					},
+				var editProg = tempPrograms.pop();
+				editProg.set("times", tempTimes.models.slice(0));
+				editProg.set("levels", tempProgramLevels.models.slice(0));
+				
+				Backbone.sync("update", editProg, {
+					// TODO: Goto main page
+					success: function() { editProg.trigger("reset"); },
 					error: function(m,r) { parseErrors(m,r,"programsErrorMainEdit"); }
-				}); 
+				});
       });
       
       // TODO: Icon paths
@@ -332,33 +329,17 @@
 					data.inst.refresh();
 		    }
 			})
-    });
+    })
+		.bind("loaded.jstree", function (e, data) {
+			data.inst.open_node("#-1");
+		});
     
-    //$.jstree._reference($("#lightGroups")).hide_checkboxes();
-
-		/*
+    /*
 		// Light programs collection
 		*/
 		var ProgramCollection = Backbone.Collection.extend ({
 			model: Program.Program,
 			url: "../server2/programs/",
-		});
-		
-		var ProgramCollectionView = Backbone.View.extend ({
-			tagName: "div",
-			className: 'program-collection',
-			
-			initialize: function() {
-				var _this = this;
-				this.model.on ("add", function (m, c) { _this.$el.append (new Program.ProgramView ({model: m}).$el)});
-				//this.render();
-			},
-
-			render: function() {
-				this.$el.empty();
-				var _this = this;
-				this.model.each (function (x) { _this.$el.append (new Program.ProgramView ({model: x}).$el)});
-			},
 		});
 		
 		var ProgramCollectionMainView = Backbone.View.extend ({
@@ -367,14 +348,14 @@
 			
 			initialize: function() {
 				var _this = this;
-				this.model.on ("add", function (m, c) { _this.$el.append (new Program.ProgramMainView ({model: m, router: AppRouter}).$el)});
+				this.model.on("add", function (m, c) { _this.$el.append (new Program.ProgramMainView ({model: m, router: AppRouter}).$el)});
 				this.model.on("reset", function() { _this.render(); });
 			},
 
 			render: function() {
 				this.$el.empty();
 				var _this = this;
-				this.model.each (function (x) { _this.$el.append (new Program.ProgramMainView ({model: x}).$el); x.set("router", AppRouter); });
+				this.model.each (function (x) { _this.$el.append (new Program.ProgramMainView ({model: x}).$el); });
 			}
 		});
 		
@@ -469,7 +450,7 @@
 		
 		// Collections for a variety of uses
 		var Programs = new ProgramCollection();
-		var ProgramsView = new ProgramCollectionView ({ model: Programs, el: $("#current_program") });
+		//var ProgramsView = new ProgramCollectionView ({ model: Programs, el: $("#current_program") });
 		var ProgramsMainView = new ProgramCollectionMainView ({ model: Programs, el: $("#programsList") });
 
 		var Times = new TimeCollection();  
@@ -480,10 +461,9 @@
     
     var sliderPreview = new SliderPreviewCollection();
     var sliderPreviewView = new SliderPreviewCollectionView({ model: sliderPreview, el: $("#sliders") });
-    sliderPreview.add({});
 
 		var tempPrograms = new ProgramCollection();
-		var tempProgramsView = new ProgramCollectionView ({ model: Programs });
+		var tempProgramsView = new ProgramCollectionMainView ({ model: Programs });
 
     var tempTimes = new TimeCollection();
     var tempTimesView = new TimeCollectionView ({ model: tempTimes });
@@ -518,17 +498,13 @@
 			
 	mainpageView: function() {
 		console.log("mainpage");
+		console.log("mainnn",Programs.models[0]);
 	},
 	
 	groupsView: function () {
 			$.get("../server2/lightsTree/");
-	    //$("#groupsLightGroups").empty();
-	    $.jstree._reference($("#lightGroups")).hide_checkboxes();
 	    $("#lightGroups").show();
 	    $("#groupsLightGroups").append($("#lightGroups"));
-	},
-	
-	slidersView: function() {
 	},
 	
 	programsView: function () {
@@ -539,8 +515,10 @@
 		tempTimesView.$el = $("#programTimes");
 		tempProgramLevelsView.$el = $("#ProgramLevels");
 
-		// Create a null ID program
+		// Create a null ID program with time and level items
 		tempPrograms.add({id:null});
+		tempProgramLevels.add({});
+		tempTimes.add({});	
 	},
 	
 	programsEditView: function (progID) {		
@@ -559,12 +537,18 @@
 		
 		$("#programEditName").val(editProg.get("name"));
 	},
+	
+	slidersView: function() {
+		sliderPreview.add({});
+	},
     });
     // I assume Backbone internally sets some global variable to make this work, because yes, this is needed to make the router run
      var appRouter = new AppRouter;
      
     // we're done with everything, roll it
     Backbone.history.start();
+    // TODO: Some way to select certain tab via code
+    //$("#mainpage").attr("class", ".selected");
     </script>
   </body>
 </html>

@@ -485,8 +485,7 @@ function savePrograms() {
 }
 
 function getPrograms($retJson = true) {
-
-	// Get plain programs first
+	// Get plain programs
 	$sql = "select * from programs";
 	try {
 		$db = getConnection();
@@ -524,7 +523,10 @@ function getPrograms($retJson = true) {
 	}
 	
 	// Get level items for each program
-	$sql = "select * from program_levels where program_id=?";
+	$sql = "select program_levels.*,lights.name from program_levels
+					left join lights on lights.permanent_id=program_levels.target_id
+					where program_id=?";
+	
 	foreach ($programs as $cProg) {
 		$cid = $cProg->id;
 		try {
@@ -1125,7 +1127,7 @@ function getObjectData ($ids) {
 
 // Get children for a light
 function getChildren ($id) {
-	$sql = "select * from lights where permanent_id in (select child_id from groups where parent_id=?)";
+	$sql = "select * from lights where permanent_id in (select child_id from groups where parent_id=?) and detector_type=0";
 	$db = getConnection();
 	$children = dbExec($db, $sql, array($id), 0);
 	return ($children);

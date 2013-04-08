@@ -29,35 +29,7 @@
 	},
 
 	});
-
-  // a view of a program as a list item, i.e. just the name
-  Program.ProgramView = Backbone.View.extend ({
-		tagName: 'span',
-		tagClass: 'program-item',
 	
-		initialize: function() {
-				this.render();
-		},
-		
-		template: _.template("<div>Ma<input class='program_day' id='mon' type='checkbox'>\
-		Ti<input class='program-day' id='tue' type='checkbox'>\
-		Ke<input class='program-day' id='wed' type='checkbox'>\
-		To<input class='program-day' id='thu' type='checkbox'>\
-		Pe<input class='program-day' id='fri' type='checkbox'>\
-		La<input class='program-day' id='sat' type='checkbox'>\
-		Su<input class='program-day' id='sun' type='checkbox'></div>\
-		Voimassa klo.<input class='program-time' id='start'>-<input class='program-time' id='end'></div>\
-		<div class='program-sliders'><div class='program-slider' id='motion' />\
-		<div class='program-slider' id='sun' /></div>"),
-	
-		render: function() {
-				this.$el.html (this.template() );
-				this.$(".program-slider").slider({orientation: "vertical", value: this.model.get('value')});
-				this.$(".program-slider").slider({orientation: "vertical", value: this.model.get('value')});
-				return this;
-		},
-  })
-  
   Program.ProgramMainView = Backbone.View.extend ({
 		tagName: 'div',
 		tagClass: 'program-item',
@@ -80,7 +52,8 @@
 			},
 			
 		initialize: function() {
-				this.render();
+			this.render();	
+			//this.model.on("remove", function() {console.log("removexxxx"); this.remove() }, this);
 		},
 		
 		template: _.template("<tr>\
@@ -90,8 +63,8 @@
 		<tr>"),
 	
 		render: function() {
-			this.$el.html (this.template())
-			this.$("#program-name").html(this.model.get("name"));
+			this.$el.html(this.template())
+			this.$("#program-name").append(this.model.get("name"));
 			return this;
 		},
   })

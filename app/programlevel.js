@@ -25,7 +25,6 @@
 	  	allow_delete: false,
 	  }
 	},
-
 	});
 
   ProgramSlider.ProgramSliderView = Backbone.View.extend ({
@@ -33,7 +32,8 @@
 	className: "programslider-item",
 
 	events: {
-		"click #level-item-remove" : function() {
+		// TODO: Ask this if: edited program, added new item, saved, edited again
+		"click #item-remove" : function() {
 			if (! this.model.get("new_level"))  {
 				var choice = confirm("Haluatko varmasti poistaa ryhmän?");
 				if (choice) {
@@ -48,11 +48,11 @@
 		"change #levelGroupInput" : function() { this.model.set("target_id", this.$("#levelGroupInput").val() ); },
 		"slidechange #light-slider" : function () { this.setSliderValues(); },
 		"slidechange #motion-slider" : function () { this.setSliderValues(); },
-	
+		
 		// Checkboxes clicked
-		"click #light-enabled" : function (event) { this.model.set("light_detector", event.target.checked); console.log(this.model.get("light_detector"));},
+		"click #light-enabled" : function (event) { this.model.set("light_detector", event.target.checked); },
 		"click #motion-enabled" : function(event) {
-			// Set slider 0 if checkbox not ticked
+			// Set slider value to 0 if checkbox not ticked
 			this.$("#motion-slider").slider({disabled: ! event.target.checked, value: event.target.checked?this.model.get("motion_level"):0 });
 			this.model.set("motion_detector", event.target.checked);
 		},
@@ -66,34 +66,48 @@
 		// Click popup close button
 		"click #groupsPopupClose" : function() { this.$("#groupsPopup").hide(); },
 		
-		// Get selected treee node ID and put the group name in the input
+		// Get selected tree node ID and put the group name in the input
 		"click #levelLightGroups a" : function() {
-			this.model.set("target_id", this.$("#levelLightGroups").jstree('get_selected').attr('id'));
-			this.$("#levelGroupInput").attr({"value": $('.jstree-clicked').text().substr(1)});
-			this.$("#groupsPopup").hide();
+			var cid = this.$("#levelLightGroups").jstree('get_selected').attr('id');
+
+			if (cid != -1) {
+				this.model.set("target_id", cid);
+				var cName = $('.jstree-clicked').text().substr(1);
+				this.model.set("name", cName);
+				this.$("#levelGroupInput").attr({"value": cName});
+				this.$("#groupsPopup").hide();
+			}
 		},
 	},
 
 	initialize: function() {
-   		this.model.bind("remove", function() { this.remove(); }, this);
-			this.model.bind("change:errors", function() { this.drawErrors(); }, this);
-	    this.render();
-	    
-	    // Used for showing error messages in the right place
-	    this.model.set("cid", this.model.cid);
-	    
-      this.tree = this.$("#levelLightGroups").jstree ({
-	  		"json_data": {
-            "ajax": {
-                "url": "../server2/groupsTree/1",
-            }
-	  		},
-	  		// TODO: Group icons and others here too
-	  		"types": {
-	      	"light": { max_children: 0 }
-	  		},
-	  		"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
-	  	})
+		this.model.bind("remove", function() { this.remove(); }, this);
+		this.model.bind("change:errors", function() { this.drawErrors(); }, this);
+		this.render();
+		
+		// Used for showing error messages in the right place
+		this.model.set("cid", this.model.cid);
+		
+		_this = this;
+		this.$("#levelLightGroups").jstree ({
+			"json_data": {
+					"ajax": {
+							"url": "../server2/groupsTree/1",
+					}
+			},
+			// TODO: Group icons and others here too
+			"types": {
+				"light": { max_children: 0 }
+			},
+			"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
+		})
+		.bind("loaded.jstree", function (e, data) {
+			// If ID exists choose that node else open root
+			var cid = _this.model.get("target_id");
+			if (cid) data.inst.select_node("#"+cid);
+			else data.inst.open_node("#-1");
+		});
+
 	},
 	
 	drawErrors: function() {
@@ -114,7 +128,7 @@
 	},
 	
 	template: _.template("<div class='programError' id='programsErrorLevel'></div>\
-	<input id='level-item-remove' type='button' value='Poista ryhmä'>\
+	<input id='item-remove' type='button' value='Poista ryhmä'>\
 	<div id='levelGroup'>\
 		Ryhmä:<input id='levelGroupInput' readonly='readonly'><br/>\
 		<div id='groupsPopup'>\
@@ -124,26 +138,29 @@
 	</div>\
 	<table id='levelSettings'>\
 		<tr>\
-			<td><div class='program-slider' id='light-slider' /></td>\
-			<td><div class='program-slider' id='motion-slider' /></td>\
-			<td>\
-				<input id='light-enabled' type='checkbox'>Käytä valosensoria<br />\
+			<td id='levelSettingsSlider'><b>Valo:</b><div class='program-slider' id='light-slider' /></td>\
+			<td id='levelSettingsSlider'><b>Liike:</b><div class='program-slider' id='motion-slider' /></td>\
+			<td id='levelSettingsCheckbox'>\
+				<input id='light-enabled' type='checkbox'>Käytä valotunnistinta<br />\
 				<input id='motion-enabled' type='checkbox'>Käytä liiketunnistinta<br />\
 			</td>\
 		</tr>\
-	</table><br/><br/><br/><br/>"),
+	</table><br/>"),
 	
 	render: function() {
 	    this.$el.html(this.template());
+	    
+			this.$("#levelGroupInput").val(this.model.get("name"));
 	    
 	    this.$("#light-slider").slider({ orientation: "vertical", value: this.model.get("light_level") });
  	    this.$("#motion-slider").slider({ orientation: "vertical", value: this.model.get("motion_level") });
 			
 			// TODO: See license on jquery.ui.touch-punch.min.js library
+			// TODO: If disabled, you can move whole slider
 			this.$("#light-slider").draggable();
 			this.$("#motion-slider").draggable();
 			this.$("#motion-slider").slider({disabled: this.model.get("motion_detector")==0?true:false});
-
+			
  	    this.$("#light-enabled").attr("checked", this.model.get("light_detector")==0?false:true);
  	    this.$("#motion-enabled").attr("checked", this.model.get("motion_detector")==0?false:true);
 	    

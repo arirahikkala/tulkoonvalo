@@ -1,8 +1,3 @@
-.light-nameX { height: 1em; overflow-y: hidden; }
-.light-widgetX { margin: 1em auto 0 auto; }
-.lightX { float: left; width: 5em; overflow: hidden; margin: 0 5px 0 5px; text-align: center; }
-.slider-collectionX { float: left; }
-
 .slider-widget { margin: auto; }
 .slider
 {
@@ -13,7 +8,6 @@
 	border-right: 1px solid #eeeeee;
 	border-left: 1px solid #eeeeee;
 	border-bottom: 1px solid #cccccc;
-	/*padding: 25px;*/
 }
 
 #ui-slider-handle-value
@@ -85,20 +79,41 @@
 	z-index: 10;
 }
 
-#levelSettings td
-{
-	padding-right: 3em;
-}
-
 #sliderIDTree
 {
 	width: 30%;
 	height: 40%;
-	border: solid 4px grey;
+	border: 4px solid grey;
 }
 
 #groupTableContainer
 {
 	width: 120%;
 	height: 150px;
+}
+
+#programsList
+{
+	width: 100%;
+	border: 1px solid black;
+}
+
+#item-remove
+{
+	float: right;
+}
+
+#program-name
+{
+	width: 40%;
+}
+
+#levelSettingsCheckbox
+{
+	padding: 1em 2em 0em -10em;
+}
+
+#levelSettingsSlider
+{
+	padding: 1em 2em 0em 1em;
 }

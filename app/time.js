@@ -48,7 +48,7 @@
 			this.model.set("weekdays", weekdays);
 		},
 		
-		"click #time-item-remove" : function() {
+		"click #item-remove" : function() {
 			if (! this.model.get("new_time"))  {
 				var choice = confirm("Haluatko varmasti poistaa ajan?");
 				if (choice) {
@@ -86,7 +86,7 @@
 	
 	// TODO: Time picker license
 	template: _.template("<div class='programError' id='programsErrorTime'></div>\
-	<input id='time-item-remove' type='button' value='Poista aika'>\
+	<input id='item-remove' type='button' value='Poista aika'>\
 	<div id='program-days'>\
 		Ma<input class='program-day' id='0' type='checkbox'>\
 		Ti<input class='program-day' id='1' type='checkbox'>\
