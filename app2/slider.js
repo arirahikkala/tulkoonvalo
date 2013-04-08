@@ -144,10 +144,10 @@
 		if (! this.model.get("enabled")) {
 			this.model.set("alreadyEnabled", false);
 			this.model.set("timer", 0);
-			this.model.set("value", 0);
+			//this.model.set("value", 0);
 			this.model.stopTimer();
 			isDisabled = true;
-			sliderColor = "red";
+			timerColor = "red";
 			//this.model.set("value", this.model.get("ghost"));
 		}
 		else {
@@ -157,15 +157,14 @@
 			}
 			this.model.startTimer();
 			isDisabled = false;
-			sliderColor = "green";
+			timerColor = "green";
 		}
 
 		this.$(".timer").attr("disabled", isDisabled);
 		this.$(".timer-add").attr("disabled", isDisabled);
 		this.$(".timer-sub").attr("disabled", isDisabled);
 		this.$(".onoff").attr("disabled", isDisabled);
-		this.$(".timer").css({"border-color": sliderColor});
-		this.$(".slider-widget #ui-slider-handle-value").html(this.model.get("value"));
+		this.$(".timer").css({"border-color": timerColor});
 		
 		// Format time for display
 		this.timerFormat(this.timerEndCheck(0));
@@ -209,7 +208,7 @@
 			this.model.set("timer", 0);
 			this.model.set("value", 0);
 			this.model.stopTimer();
-			sliderColor = "red";
+			timerColor = "red";
 		}
 		else {
 			// Don't set time to default if already enabled
@@ -218,14 +217,14 @@
 				this.model.set("timer", this.model.get("timerDefault"));
 			}
 			this.model.startTimer();
-			sliderColor = "green";
+			timerColor = "green";
 		}
 		
 		this.$(".timer").attr("disabled", ! enabled);
 		this.$(".timer-add").attr("disabled", ! enabled);
 		this.$(".timer-sub").attr("disabled", ! enabled);
 		this.$(".onoff").attr("disabled", ! enabled);
-		this.$(".timer").css({"border-color": sliderColor});
+		this.$(".timer").css({"border-color": timerColor});
 		
 		// Format time for display
 		this.timerFormat(this.timerEndCheck(0));
@@ -310,7 +309,7 @@
 			// TODO: See license on jquery.ui.touch-punch.min.js library
 			this.$(".slider-widget").draggable();
 			this.$(".slider-widget .ui-slider-handle").append("<div id='ui-slider-handle-value'></div>");
-			
+			this.$(".slider-widget #ui-slider-handle-value").html(this.model.get("value"));
 			
 			// TODO: Is this necessary?
 			// Cut too long names

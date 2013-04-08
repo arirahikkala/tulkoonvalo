@@ -192,8 +192,11 @@ function childLoop($cGroup, $groups, $onlyGroups=false) {
 	else {
 		switch ($cGroup->detector_type) {
 			case 0: $childType = "light";
+            	break;
 			case 1: $childType = "detector_light";
+            	break;
 			case 2: $childType = "detector_motion";
+            	break;
 		}
 	}
 	$newChild["attr"]["rel"] = $childType;
@@ -565,7 +568,7 @@ function deleteProgramsParse() {
 	dbExec($db, $sql, array());
 }
 
-function getGhost ($id) {
+/*function getGhost ($id) {
 	$programs=getProgramsParse();
 
 	$time = getdate();
@@ -590,7 +593,7 @@ function getGhost ($id) {
 		}					
 	}
 	return(0);
-}
+}*/
 
 function checkProgramsOverlap ($target, $targetID) {
 	$programs2=getPrograms(false);
@@ -1137,7 +1140,7 @@ function getObjectData ($ids) {
 		if ($timerFull <= 0) $timerFull = 0;
 		$lights -> timer_full = $timerFull;
 
-		$lights -> ghost = getGhost($id);
+		//$lights -> ghost = getGhost($id);
 		$retArray[] = $lights;
 	}
 	print(json_encode($retArray));
