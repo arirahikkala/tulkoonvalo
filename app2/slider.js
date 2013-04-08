@@ -40,7 +40,7 @@
 			childrenFetched: false,
 			childElement: null,
 			level: 1,
-			ghost: 0,
+			//ghost: 0,
 	  };
 	
 	},
@@ -146,7 +146,7 @@
 			this.model.stopTimer();
 			isDisabled = true;
 			sliderColor = "red";
-			this.model.set("value", this.model.get("ghost"));
+			//this.model.set("value", this.model.get("ghost"));
 		}
 		else {
 			if (! this.model.get("alreadyEnabled")) {
@@ -303,7 +303,7 @@
 			
 			// TODO: Is this necessary?
 			// Cut too long names
-			var header = this.model.get("name")+this.model.get("ghost");
+			var header = this.model.get("name");
 			if (header.length > 15)
 				header = header.substring(0, 12)+"...";
 			this.$(".widget-header").html(header);
