@@ -9,7 +9,7 @@ $app->get('/lights/:ids/', function($ids) { getLights($ids); });
 $app->get('/newlights/:ids/', function($ids) { newGetLights($ids); });
 $app->get('/children/:id/', function($id) { getChildren($id); });
 $app->get('/allchildren/:id/', function($id) { getAllChildren($id); });
-$app->get('/savesliders/:ids/:value/:timer', function($ids, $value, $timer) { saveSliders($ids, $value, $timer); });
+$app->post('/savesliders', 'saveSliders');
 $app->get('/poll/:ids/:values/:timers/:enableds', function($ids, $values, $timers, $enableds) { poll($ids, $values, $timers, $enableds); });
 $app->get('/togglesliders/:ids/', function($ids) { toggleSliders($ids); });
 //$app->post('/lights', 'addGroup');
@@ -1056,7 +1056,13 @@ function getLevels($ids_array) {
 }
 
 // Save slider level
-function saveSliders($ids, $value, $timer) {
+function saveSliders() {
+	$params = json_decode(Slim::getInstance()->request()->getBody());
+	print(json_encode($params));
+	$ids = $params->ids;
+	$value = $params->value;
+	$timer = $params->timer;
+	
 	$currentTime = time();
 	
 	// Check timer 24h and "negative" limits
@@ -1076,7 +1082,6 @@ function saveSliders($ids, $value, $timer) {
 		
 	$ids_array = preg_split ("/,/", $ids);
 	
-	// TODO: IP check here if wanted
 	// TODO: Repeated SQL statements seem heavy. Implode IDs!
 
   // Insert the slider values into DB
@@ -1085,11 +1090,8 @@ function saveSliders($ids, $value, $timer) {
 		$db = getConnection();
 		$stmt = $db->prepare($sql);
 		
-		foreach ($ids_array as $cid) {
+		foreach ($ids_array as $cid)
 			$stmt->execute(array($value,$currentTime,$endTime,$cid,$value,$currentTime,$endTime));
-			$stmt->execute();  // TODO: Another execute makes this work?
-		}
-		
 	}
 	catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}';

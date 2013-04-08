@@ -132,7 +132,6 @@ var SliderCollection = Backbone.Collection.extend ({
 				}
 			},
 		"json");
-		
 	},
 	
 });

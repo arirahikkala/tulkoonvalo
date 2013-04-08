@@ -91,7 +91,7 @@
 	    "slidechange .slider-widget" : "sliderChangeUser",
 	    "click .timer-add" : function () { this.timerChange(900); },
 	    "click .timer-sub" : function () { this.timerChange(-900); },
-	    "click .onoff" : function () { this.enabledChange(false); },
+	    "click .onoff" : function () { this.enabledChange(false, false); },
 	    "click .show-children": function () { this.toggleChildren(); },
 	},
 	
@@ -135,55 +135,25 @@
 			}
 		}
 	},
-
-	// (todo: also move over name changes to the UI)
-	// Disable/enable UI elements and timer
-	updateUIFromModel: function() {
-		if (! this.model.get("enabled")) {
-			this.model.set("alreadyEnabled", false);
-			this.model.set("timer", 0);
-			this.model.set("value", 0);
-			this.model.stopTimer();
-			isDisabled = true;
-			sliderColor = "red";
-			this.model.set("value", this.model.get("ghost"));
-		}
-		else {
-			if (! this.model.get("alreadyEnabled")) {
-				this.model.set("alreadyEnabled", true);
-				this.model.set("timer", this.model.get("timerDefault"));
-			}
-			this.model.startTimer();
-			isDisabled = false;
-			sliderColor = "green";
-		}
-
-		this.$(".timer").attr("disabled", isDisabled);
-		this.$(".timer-add").attr("disabled", isDisabled);
-		this.$(".timer-sub").attr("disabled", isDisabled);
-		this.$(".onoff").attr("disabled", isDisabled);
-		this.$(".timer").css({"border-color": sliderColor});
-		this.$(".slider-widget #ui-slider-handle-value").html(this.model.get("value"));
-		
-		// Format time for display
-		this.timerFormat(this.timerEndCheck(0));
-	},
 	
 	updateSliderWidget: function() {
-		// Disable events to prevent sliderChangeUser calls in children
+		// Disable events to prevent cascading calls in children
 		this.undelegateEvents();
 		this.$(".slider-widget").slider("value", this.model.get("value"));
-		//console.log("updatesliderwidge", this.model.get("name"));
 		this.delegateEvents();
+		
+		// Numeral next to the slider
 		this.$(".slider-widget #ui-slider-handle-value").html(this.model.get("value"));
 	},
 	
 	sliderChangeUser: function(ev, ui) {
+	  this.model.set("value", this.$(".slider-widget").slider("option", "value"));
+	  
+	  // Call enabledChange is not enabled
 		if (! this.model.get("enabled")) {
 			this.model.set("enabled", true);
 		}
-	  this.model.set("value", this.$(".slider-widget").slider("option", "value"));
-		this.childrenChange();
+		else this.childrenChange();
 	},
 	
 	// Change timer from buttons
@@ -197,10 +167,11 @@
 	
 	enabledChange: function(enabled=false, save=true) {
 		this.model.set("enabled", enabled);
+		
 		if (! enabled) {
 			this.model.set("alreadyEnabled", false);
 			this.model.set("timer", 0);
-			//this.model.set("value", 0);
+			this.model.set("value", 0);
 			this.model.stopTimer();
 			sliderColor = "red";
 		}
@@ -223,10 +194,7 @@
 		// Format time for display
 		this.timerFormat(this.timerEndCheck(0));
 		
-		//$.get("../server2/togglesliders/"+this.model.get("lightID")+','+this.model.get("allChildren"));
-		//this.updateUIFromModel();
-		
-		// When calling from init don't call this
+		// Don't save when caller is init or onOff button is pressed
 		if (save) this.childrenChange();
 
 	},
@@ -245,7 +213,14 @@
 		}
 		
 		// Insert slider values into DB
-		$.get("../server2/savesliders/"+this.model.get("lightID")+','+this.model.get("allChildren")+"/"+this.model.get("value")+"/"+this.model.get("timer"));
+		$.post(
+			"../server2/savesliders",
+			JSON.stringify(
+			{"ids": this.model.get("lightID")+','+this.model.get("allChildren"),
+			"value": this.model.get("value"),
+			"timer": this.model.get("timer")})
+		);
+
 		return false;
 	},
 
