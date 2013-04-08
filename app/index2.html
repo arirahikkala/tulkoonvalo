@@ -188,7 +188,7 @@
       		error: function(m,r) { parseErrors(m,r,"programsErrorMain"); }
       		});
       });
-
+      
 			// Edit program page
       $("#programEditName").bind ("change", function() { tempPrograms.models[0].set("name", $("#programEditName").val()); });
       $("#addEditTime").bind ("click", function() { tempTimes.add({}); });
@@ -209,68 +209,30 @@
 				}); 
       });
       
+      // TODO: Icon paths
     	var treeSettings = [
 				{
-					"root" : {
-						"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
-					},
-					"group" : {
-						"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
-					},
-					"light" : {
-						//"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
-					},
-					"detector" : {
-						//"icon" : { "image" : "http://static.jstree.com/v.1.0rc/_docs/_drive.png" },
+					"types": {
+						"root" : {},
+						"group" : {},
+						"light" : {
+							"icon" : { "image" : "http://www.student.oulu.fi/~mikkonev/lamp.svg" },
+						},
+						"detector_light" : {
+							"icon" : { "image" : "http://www.student.oulu.fi/~mikkonev/detector.svg" },
+						},
+						"detector_motion" : {
+							"icon" : { "image" : "http://www.student.oulu.fi/~mikkonev/detector.svg" },
+						},
 					},
 				},
 				["themes", "json_data", "ui", "dnd", "crrm", "types"]
 			]
-
-      $("#lightsTreeContainer").jstree ({
-	  		"json_data": {
-            "ajax": {
-                "url": "../server2/lightsTree",
-            }
-	  		},
-				"crrm": {
-					move : { check_move: function () { return(false); }}
-				},
-	  		"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
-	  	});
-	  	
-      $("#detectorTreeContainer").jstree ({
-	  		"json_data": {
-            "ajax": {
-                "url": "../server2/detectorsTree",
-            }
-	  		},
-				"crrm": {
-					move : { check_move: function () { return(false); }}
-				},
-	  		"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
-	  	})
-	  	
-      $("#lightGroups").jstree ({
-	  		"json_data": {
-            "ajax": { "url": "../server2/groupsTree/0", }
-	  		},
-	  		
-				"crrm": {
-					move : {
-						"always_copy": "multitree",
-						check_move: function (m,data) {
-					 		return(true);
-					 	}
-					}
-				},
-				"types" : treeSettings[0],
-	  		"plugins": treeSettings[1],
-	  	});
       
       $("#lightsTreeContainer").jstree ({
 	  		"json_data": { "ajax": { "url": "../server2/lightsTree", } },
 				"crrm": { move : { check_move: function () { return(false); }} },
+				"types" : treeSettings[0],
 	  		"plugins": treeSettings[1],
 	  	});
 	  	
@@ -289,6 +251,11 @@
 	  	})
 	  	
     .bind("rename.jstree", function (e, data) {
+    	if (data.rslt.obj.attr("rel") != "group") {
+    	$.jstree.rollback(data.rlbk);
+    	return false;
+    	}
+    	
 			$.post(
 	    	"../server2/groups/" + data.rslt.obj.attr("id") + "/name", 
 				JSON.stringify ({ name: data.rslt.new_name }), 
@@ -300,16 +267,20 @@
 			);
 		})
 		
-    .bind("dblclick.jstree", function () {
+    .bind("dblclick.jstree", function (data) {
 			$("#lightGroups").jstree("rename", null)
     })
 
     .bind("move_node.jstree", function (e, data) {
-    		// TODO: How to stop moving groups in detectors etc. here?
-    		// The node is moved from some other tree
-    		var only_move = (data.rslt.op[0].id=="lightGroups")?true:false;
+    		// ID may contain string "copy_", strip it away
+    		var idStart = data.rslt.o[0].id.substr(0,5)
+    		if (idStart == "copy_") id = data.rslt.o[0].id.substr(5)
+    		else id = data.rslt.o[0].id
     		
-				$.post ("../server2/groups/" + data.rslt.o.attr("id") + "/parent",
+    		// The node is moved from some other tree
+    		var only_move = (data.rslt.op[0].id=="lightsTreeContainer")?0:1;
+    		
+				$.post ("../server2/groups/" + id + "/parent",
 				JSON.stringify ({
 		 	   "parent_id" : data.rslt.cr == -1 ? -1 : data.rslt.np.attr("id"),
 		 	   "only_move": only_move,

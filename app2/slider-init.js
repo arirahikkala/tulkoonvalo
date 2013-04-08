@@ -43,12 +43,13 @@ var SliderCollection = Backbone.Collection.extend ({
 			if (curLight["timer"] > 0)
 				isEnabled = true;
 			
-			// Create a new slider
-			this.add ({ name: curLight["name"], value: curLight["current_level"], 
+			// Create a new slider with some data, rest are long-polled
+			this.add ({ name: curLight["name"], 
 			children: curLight["children"], allChildren: curLight["all_children"], 
-			collection: this, lightID: curLight["permanent_id"], 
+			lightID: curLight["permanent_id"], 
 			enabled: isEnabled, timer: curLight["timer"], timerLast: curLight["timer_full"],
-			level: null, ghost: curLight["ghost"] });
+			//value: curLight["current_level"], level: null, ghost: curLight["ghost"]
+			});
 			
 			// Keep record of sliders with a certain ID
 			var cid = curLight["permanent_id"];

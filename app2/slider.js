@@ -31,15 +31,14 @@
 			timerDefault: 7200,
 			timerMax: 86400, // 24h
 			timerEnabled: false,
-			enabled: 0,
-			alreadyEnabled: 0,
+			enabled: false,
+			alreadyEnabled: false,
 			name: "",
 			children: null, // Children right under
 			allChildren: null, // Children on all levels
 			showChildren: false,
 			childrenFetched: false,
 			childElement: null,
-			collection: null, // TODO: Ok, you can get this easier way
 			level: 1,
 			ghost: 0,
 	  };
@@ -49,7 +48,7 @@
 	startTimer: function() {
 			if (! this.get("timerEnabled")) {
 				var _this = this;
-				_this.interval = setInterval(function() {_this.set("timer", _this.get("timer")-1)}, 1000);
+				_this.interval = setInterval(function() {_this.set("timer", _this.get("timer")-100)}, 1000);
 				this.set("timerEnabled", true);
 			}
 	},
@@ -58,6 +57,7 @@
 			clearInterval(this.interval);
 			//console.log("timer stopped",this.get("name"));
 			this.set("timerEnabled", false);
+			this.set("enabled", false);
 	},
 
   });
@@ -88,10 +88,10 @@
 
 	// Backbone assigns these events automatically when the view is created
 	events: {
-	    "slidechange .slider-widget" : "sliderChange",
+	    "slidechange .slider-widget" : "sliderChangeUser",
 	    "click .timer-add" : function () { this.timerChange(900); },
 	    "click .timer-sub" : function () { this.timerChange(-900); },
-	    "click .onoff" : function () { this.enabledChange(); },
+	    "click .onoff" : function () { this.enabledChange(false); },
 	    "click .show-children": function () { this.toggleChildren(); },
 	},
 	
@@ -101,11 +101,13 @@
 	    this.model.bind("remove", this.remove, this);
 	    this.render();
 	    var _this = this;
-	    this.updateUIFromModel();
+	   // this.updateUIFromModel();
+	   //this.enabledChange(this.model.get("enabled"));
+	   this.enabledChange(this.model.get("enabled"), false);
 	    
-			this.model.bind("change:value", function() { this.updateSliderFromModel(); }, this);
+			this.model.bind("change:enabled", function(e) { this.enabledChange(this.model.get("enabled")); }, this );
+			this.model.bind("change:value", function() { this.updateSliderWidget(); }, this);
 			this.model.bind("change:timer", function() { this.timerFormat(this.timerEndCheck(-1)); }, this );
-			this.model.bind("change:enabled", function() { this.updateUIFromModel(); }, this );
 	},
 	
 	toggleChildren: function() {
@@ -114,7 +116,7 @@
 		if (this.model.get("childrenFetched") == false) {
 			this.model.set("childrenFetched", true);
 			this.model.set("showChildren", true);
-			this.model.get("collection").newSlider(this.model.get("children"), this);
+			this.model.collection.newSlider(this.model.get("children"), this);
 			this.$(".show-children").attr("src", "../childrenarrow_back2.png");
 		}
 		
@@ -138,9 +140,8 @@
 	// Disable/enable UI elements and timer
 	updateUIFromModel: function() {
 		if (! this.model.get("enabled")) {
-			this.model.set("alreadyEnabled", 0);
+			this.model.set("alreadyEnabled", false);
 			this.model.set("timer", 0);
-			this.model.set("timerLast", this.model.get("timer"));
 			this.model.set("value", 0);
 			this.model.stopTimer();
 			isDisabled = true;
@@ -148,8 +149,8 @@
 			this.model.set("value", this.model.get("ghost"));
 		}
 		else {
-			if (this.model.get("alreadyEnabled") == 0) {
-				this.model.set("alreadyEnabled", 1);
+			if (! this.model.get("alreadyEnabled")) {
+				this.model.set("alreadyEnabled", true);
 				this.model.set("timer", this.model.get("timerDefault"));
 			}
 			this.model.startTimer();
@@ -167,15 +168,18 @@
 		this.timerFormat(this.timerEndCheck(0));
 	},
 	
-	updateSliderFromModel: function() {
-		// Disable events to prevent sliderChange calls in children
+	updateSliderWidget: function() {
+		// Disable events to prevent sliderChangeUser calls in children
 		this.undelegateEvents();
 		this.$(".slider-widget").slider("value", this.model.get("value"));
+		//console.log("updatesliderwidge", this.model.get("name"));
 		this.delegateEvents();
 	},
 	
-	sliderChange: function(ev, ui) {
-		this.model.set("enabled", 1);
+	sliderChangeUser: function(ev, ui) {
+		if (! this.model.get("enabled")) {
+			this.model.set("enabled", true);
+		}
 	  this.model.set("value", this.$(".slider-widget").slider("option", "value"));
 		this.childrenChange();
 	},
@@ -185,26 +189,76 @@
 		var newTime = this.timerEndCheck(timeAdd);
 		// TODO: Round the added time to the nearest 15min?
 		this.model.set("timer", newTime);
-		this.model.set("timerLast", newTime);
-		  
-		// Inform children
+		//this.model.set("timerLast", newTime);  
 		this.childrenChange();
 	},
 	
+	enabledChange: function(enabled=false, save=true) {
+		this.model.set("enabled", enabled);
+		if (! enabled) {
+			this.model.set("alreadyEnabled", false);
+			this.model.set("timer", 0);
+			//this.model.set("value", 0);
+			this.model.stopTimer();
+			sliderColor = "red";
+		}
+		else {
+			// Don't set time to default if already enabled
+			if (! this.model.get("alreadyEnabled")) {
+				this.model.set("alreadyEnabled", true);
+				this.model.set("timer", this.model.get("timerDefault"));
+			}
+			this.model.startTimer();
+			sliderColor = "green";
+		}
+		
+		this.$(".timer").attr("disabled", ! enabled);
+		this.$(".timer-add").attr("disabled", ! enabled);
+		this.$(".timer-sub").attr("disabled", ! enabled);
+		this.$(".onoff").attr("disabled", ! enabled);
+		this.$(".timer").css({"border-color": sliderColor});
+		
+		// Format time for display
+		this.timerFormat(this.timerEndCheck(0));
+		
+		//$.get("../server2/togglesliders/"+this.model.get("lightID")+','+this.model.get("allChildren"));
+		//this.updateUIFromModel();
+		
+		// When calling from init don't call this
+		if (save) this.childrenChange();
+
+	},
+	
+	childrenChange: function() {
+		// Set children values
+		var coll = this.model.collection;
+		for (var j in this.model.get("allChildren")) {
+			var cid = this.model.get("allChildren")[j];
+			for (var i in coll.sliderList[cid]) {
+				coll.sliderList[cid][i].set("enabled", this.model.get("enabled"));
+				coll.sliderList[cid][i].set("value", this.model.get("value"));
+				coll.sliderList[cid][i].set("timer", this.model.get("timer"));
+				coll.sliderList[cid][i].set("timerLast", this.model.get("timer"));
+			}
+		}
+		
+		// Insert slider values into DB
+		$.get("../server2/savesliders/"+this.model.get("lightID")+','+this.model.get("allChildren")+"/"+this.model.get("value")+"/"+this.model.get("timer"));
+		return false;
+	},
+
 	// Check if given time can be subtracted from timer
 	timerEndCheck: function(timeValue) {
-			var newTime = this.model.get("timer") + timeValue;
-			//console.log("timer...", this.model.get("name"), this.model.get("timer"));	
-			// Lower time limit
-	    if (newTime <= 0) {
-		    	this.model.stopTimer();
-	  	  	return 0;
-	  	}
-	  	// Upper time limit
-	    else if (newTime > this.model.get("timerMax"))
-	    	return this.model.get("timerMax");
-	    	
-	  	return newTime;
+		var newTime = this.model.get("timer") + timeValue;
+		// Lower and upper time limits
+		if (newTime <= 0) {
+				this.model.stopTimer();
+				return 0;
+		}
+		else if (newTime > this.model.get("timerMax"))
+			return this.model.get("timerMax");
+			
+		return newTime;
 	},
 	
 	// Format the time on UI
@@ -231,33 +285,6 @@
 		}
 	},
 	
-	enabledChange: function() {
-		console.log("enabledChange", this.model.get("name"), this.model.get("ghost"));
-		this.model.set("enabled", false);
-		
-		$.get("../server2/togglesliders/"+this.model.get("lightID")+','+this.model.get("allChildren"));
-
-		this.childrenChange();
-	},
-	
-	childrenChange: function() {
-		// TODO: Don't change own values from
-		
-		var coll = this.model.get("collection");
-		for (var j in this.model.get("allChildren")) {
-			var cid = this.model.get("allChildren")[j];
-			for (var i in coll.sliderList[cid]) {
-				coll.sliderList[cid][i].set("enabled", this.model.get("enabled"));
-				coll.sliderList[cid][i].set("value", this.model.get("value"));
-				coll.sliderList[cid][i].set("timer", this.model.get("timer"));
-				coll.sliderList[cid][i].set("timerLast", this.model.get("timer"));
-			}
-		}
-		
-		// Insert slider values into DB
-		$.get("../server2/savesliders/"+this.model.get("lightID")+','+this.model.get("allChildren")+"/"+this.model.get("value")+"/"+this.model.get("timer"));
-		return false;
-	},
 	
 	// re-render the widget
 	// (note: since this is a very simple view and has no subviews, it's okay to just rerender everything)

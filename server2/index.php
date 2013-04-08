@@ -87,7 +87,8 @@ function moveGroup($id) {
 		dbExec($db, $sql, array($id));
 	}
 	else {
-		if ($params->only_move) {
+		// Moved inside the tree, delete the original and insert a new one
+		if ($params->only_move == 1) {
 			$sql = "delete from groups where child_id=?";
 			dbExec($db, $sql, array($id));
 		
@@ -105,8 +106,15 @@ function renameGroup($id) {
 	$params = json_decode(Slim::getInstance()->request()->getBody());
 	$db = getConnection();
 	
-	$sql = "update lights set name=? where permanent_id=?";
-	dbExec($db, $sql, array($params->name, $id));
+	// The renamed item must be a group
+	$sql = "select isGroup from lights where permanent_id=?";
+	$isGroup = dbExec($db, $sql, array($id), 1)->isGroup;
+	
+	if ($isGroup == 1) {
+		$sql = "update lights set name=? where permanent_id=?";
+		dbExec($db, $sql, array($params->name, $id));
+	}
+	else print(json_encode($params));
 }
 
 function addGroup() {
@@ -183,9 +191,9 @@ function childLoop($cGroup, $groups, $onlyGroups=false) {
 	if ($cGroup->isGroup == 1) $childType = "group";//$newChild["attr"]["type"] = 0;
 	else {
 		switch ($cGroup->detector_type) {
-			case 0: $childType = "light";//$newChild["attr"]["type"] = 1; break;
-			case 1: $childType = "detector_light";//$newChild["attr"]["type"] = 2; break;
-			case 2: $childType = "detector_motion";//$newChild["attr"]["type"] = 3; break;
+			case 0: $childType = "light";
+			case 1: $childType = "detector_light";
+			case 2: $childType = "detector_motion";
 		}
 	}
 	$newChild["attr"]["rel"] = $childType;
@@ -1027,28 +1035,18 @@ function getLevels($ids_array) {
 			$stmt->execute(array($cid));
 			$level = $stmt->fetch (PDO::FETCH_OBJ);
 			
-			// There may or may not be DB results
-			if ($level) {
+			// There may not be DB results or the timer may be 0
+			if ($level && strtotime($level->ends_at)-time() > 0) {
 				$retArray[$level->id] = array();
-				
-				// If timer has run out, deactivate everything
-				if (strtotime($level->ends_at)-time() <= 0) {
-					$retArray[$level->id]["timer"] = 0;
-					$retArray[$level->id]["current_level"] = 0;
-					$retArray[$level->id]["enabled"] = false;
-				}
-				else {
 					$retArray[$level->id]["timer"]  = strtotime($level->ends_at)-strtotime($level->activated_at);
 					$retArray[$level->id]["current_level"] = $level->current_level;	
 					$retArray[$level->id]["enabled"] = true;
-				}
+					continue;
 			}
-			else {
-				$retArray[$cid] = array();
-				$retArray[$cid]["enabled"] = false;
-				$retArray[$cid]["current_level"] = 0;
-				$retArray[$cid]["timer"] = 0;
-			}
+			$retArray[$cid] = array();
+			$retArray[$cid]["enabled"] = false;
+			$retArray[$cid]["current_level"] = 0;
+			$retArray[$cid]["timer"] = 0;
 		}
 	}
 	catch(PDOException $e) {
