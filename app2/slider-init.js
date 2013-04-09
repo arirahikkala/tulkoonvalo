@@ -42,13 +42,12 @@ var SliderCollection = Backbone.Collection.extend ({
 			// A slider may have timer enabled
 			if (curLight["timer"] > 0)
 				isEnabled = true;
-			
+			console.log("cimte", curLight);
 			// Create a new slider with some data, rest are long-polled
 			this.add ({ name: curLight["name"], 
 			children: curLight["children"], allChildren: curLight["all_children"], 
 			lightID: curLight["permanent_id"], 
 			enabled: isEnabled, timer: curLight["timer"], timerLast: curLight["timer_full"], level: null
-			//value: curLight["current_level"], ghost: curLight["ghost"]
 			});
 			
 			// Keep record of sliders with a certain ID
@@ -105,7 +104,6 @@ var SliderCollection = Backbone.Collection.extend ({
 	longPollGet: function() {
 		_this = this;
 		
-		// TODO: This is so ugly
 		var sliderValues = [];
 		var timerValues = [];
 		var enabledValues = [];
@@ -126,7 +124,7 @@ var SliderCollection = Backbone.Collection.extend ({
 							_this.sliderList[cid][i].set("enabled", response[cid]["enabled"]);
 							_this.sliderList[cid][i].set("value", response[cid]["current_level"]);
 							_this.sliderList[cid][i].set("timer", response[cid]["timer"]);
-							_this.sliderList[cid][i].set("timerLast", response[cid]["timer"]);
+							_this.sliderList[cid][i].set("timerLast", response[cid]["timer_last"]);
 						}
 					}
 				}

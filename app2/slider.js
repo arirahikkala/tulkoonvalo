@@ -31,6 +31,7 @@
 			timerDefault: 7200,
 			timerMax: 86400, // 24h
 			timerEnabled: false,
+			timerEnd: false,
 			enabled: false,
 			alreadyEnabled: false,
 			name: "",
@@ -40,22 +41,22 @@
 			childrenFetched: false,
 			childElement: null,
 			level: 1,
-			//ghost: 0,
 	  };
 	
 	},
 	
 	startTimer: function() {
 			if (! this.get("timerEnabled")) {
+				this.set("timerEnd", false);
 				var _this = this;
-				_this.interval = setInterval(function() {_this.set("timer", _this.get("timer")-100)}, 1000);
+				_this.interval = setInterval(function() {
+					_this.set("timer", _this.get("timer")-1);}, 1000);
 				this.set("timerEnabled", true);
 			}
 	},
 	
 	stopTimer: function() {
 			clearInterval(this.interval);
-			//console.log("timer stopped",this.get("name"));
 			this.set("timerEnabled", false);
 			this.set("enabled", false);
 	},
@@ -91,20 +92,15 @@
 	    "slidechange .slider-widget" : "sliderChangeUser",
 	    "click .timer-add" : function () { this.timerChange(900); },
 	    "click .timer-sub" : function () { this.timerChange(-900); },
-	    "click .onoff" : function () { this.enabledChange(false, false); },
+	    "click .onoff" : function () { this.enabledChange(false,false); },
 	    "click .show-children": function () { this.toggleChildren(); },
 	},
 	
 	// Backbone calls this automatically when creating the view
 	initialize: function() {
-	    //this.model.bind("change", this.updateUIFromModel, this);
-	    this.model.bind("remove", this.remove, this);
 	    this.render();
-	    var _this = this;
-	   // this.updateUIFromModel();
-	   //this.enabledChange(this.model.get("enabled"));
-	   this.enabledChange(this.model.get("enabled"), false);
-	    
+			this.enabledChange(this.model.get("enabled"), false);
+	   
 			this.model.bind("change:enabled", function(e) { this.enabledChange(this.model.get("enabled")); }, this );
 			this.model.bind("change:value", function() { this.updateSliderWidget(); }, this);
 			this.model.bind("change:timer", function() { this.timerFormat(this.timerEndCheck(-1)); }, this );
@@ -170,6 +166,8 @@
 		
 		if (! enabled) {
 			this.model.set("alreadyEnabled", false);
+			if (this.model.get("timer") <= 0)
+				this.model.set("timerEnd", true);
 			this.model.set("timer", 0);
 			this.model.set("value", 0);
 			this.model.stopTimer();
@@ -196,7 +194,8 @@
 		
 		// Don't save when caller is init or onOff button is pressed
 		if (save) this.childrenChange();
-
+		
+		this.model.set("timerEnd", false)
 	},
 	
 	childrenChange: function() {
@@ -205,23 +204,28 @@
 		for (var j in this.model.get("allChildren")) {
 			var cid = this.model.get("allChildren")[j];
 			for (var i in coll.sliderList[cid]) {
-				coll.sliderList[cid][i].set("enabled", this.model.get("enabled"));
-				coll.sliderList[cid][i].set("value", this.model.get("value"));
-				coll.sliderList[cid][i].set("timer", this.model.get("timer"));
-				coll.sliderList[cid][i].set("timerLast", this.model.get("timer"));
+				// Don't save children if parent timer ran out
+				if (! this.model.get("timerEnd")) {
+					coll.sliderList[cid][i].set("enabled", this.model.get("enabled"));
+					coll.sliderList[cid][i].set("value", this.model.get("value"));
+					coll.sliderList[cid][i].set("timer", this.model.get("timer"));
+					coll.sliderList[cid][i].set("timerLast", this.model.get("timer"));
+				}
 			}
 		}
 		
 		// Insert slider values into DB
+		if (this.model.get("allChildren").length > 0 && ! this.model.get("timerEnd"))
+			var sliders = this.model.get("lightID")+','+this.model.get("allChildren");
+		else
+			var sliders = this.model.get("lightID");
 		$.post(
 			"../server2/savesliders",
 			JSON.stringify(
-			{"ids": this.model.get("lightID")+','+this.model.get("allChildren"),
+			{"ids": sliders,
 			"value": this.model.get("value"),
 			"timer": this.model.get("timer")})
 		);
-
-		return false;
 	},
 
 	// Check if given time can be subtracted from timer
@@ -242,15 +246,13 @@
 	timerFormat: function(timerValue) {
 		var hours = Math.floor(timerValue/3600);
 		var minutes = Math.floor((timerValue % 3600) / 60);
-
-		// TODO: Additional proposal for UI (add red color, center font, message when time's up etc.)
+		
 		// Show second countdown when <1 min time
-		if (timerValue < 60) {
+		if (timerValue < 60 && timerValue > 0) {
 			if (timerValue < 10)
 				timerValue = "0"+timerValue.toString();
 			this.$(".timer").val(timerValue);
 		}
-		
 		else {	
 			// Add leading '0'
 			if (hours < 10)
@@ -281,8 +283,10 @@
 			var header = this.model.get("name");
 			if (header.length > 15)
 				header = header.substring(0, 12)+"...";
-			this.$(".widget-header").html(header);
+			header = "<div class='widget-header-text'>"+header+"</div>";
+			
 			this.$(".widget-header").html(header+"<input class='show-children' type='image' src='../childrenarrow2.png' />");
+
 			if (this.model.get("children").length == 0)
 				this.$(".show-children").hide();
 				

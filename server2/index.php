@@ -897,25 +897,6 @@ function modifyProgram ($time1, $prog, $weekdays, $levels_array, $type, $id1, $i
 	return($modifiedPrograms);
 }
 
-// TODO: Is this even called anymore?
-// TODO: Sliders work properly if nothing in light_activations?
-function togglesliders($ids) {
-	$ids_array = preg_split ("/,/", $ids);
-	$sql = "delete from light_activations where id=?";
-	
-	try {
-		$db = getConnection();
-		$stmt = $db->prepare($sql);
-		
-		foreach ($ids_array as $cid) {
-			$stmt->execute(array($cid));
-		}
-	}
-	catch(PDOException $e) {
-		echo '{"error":{"text":'. $e->getMessage() .'}}';
-	}
-}
-
 // TODO: Should send parameters fancier way? - no other way in get?
 // Long polling used by the sliders
 function poll($ids, $values, $timers, $enableds) {
@@ -948,7 +929,7 @@ function poll($ids, $values, $timers, $enableds) {
 			$timer = 0;
 		else if ($timer > 86400)
 			$timer = 86400;
-		$origLevels[$cid]["timer"] = $timer;
+		$origLevels[$cid]["timer_last"] = $timer;
 		
 		$isEnabled = $enableds_array[$counter];
 		if ($isEnabled == "false")
@@ -963,13 +944,17 @@ function poll($ids, $values, $timers, $enableds) {
 	
 	// Loop for 60 seconds at a time with small pauses in between
 	while((time() - $time) < 60) {
-		$newLevels = getLevels($ids_array);
+		$getLevels = getLevels($ids_array);
+		$newLevels = $getLevels[0];
+		$timerArray = $getLevels[1];
 		$retArray = array();
 		
 		// If original values don't match with values in DB, return new values
 		foreach($newLevels as $id => $carray) {
-			if ($newLevels[$id] != $origLevels[$id])
+			if ($newLevels[$id] != $origLevels[$id]) {
 					$retArray[$id] = $carray;
+					$retArray[$id]["timer"] = $timerArray[$id];
+			}
 		}
 		if ($retArray) {
 			print(json_encode($retArray));
@@ -987,6 +972,7 @@ function getLevels($ids_array) {
 	// TODO: Implode ids
 	$sql = "select * from light_activations where id=?";
 	$retArray = array();
+	$timerArray = array();
 	try {
 		$db = getConnection();
 		$stmt = $db->prepare($sql);
@@ -998,21 +984,23 @@ function getLevels($ids_array) {
 			// There may not be DB results or the timer may be 0
 			if ($level && strtotime($level->ends_at)-time() > 0) {
 				$retArray[$level->id] = array();
-					$retArray[$level->id]["timer"]  = strtotime($level->ends_at)-strtotime($level->activated_at);
+					$retArray[$level->id]["timer_last"] = strtotime($level->ends_at)-strtotime($level->activated_at);
 					$retArray[$level->id]["current_level"] = $level->current_level;	
 					$retArray[$level->id]["enabled"] = true;
+					$timerArray[$level->id] = strtotime($level->ends_at)-time();
 					continue;
 			}
 			$retArray[$cid] = array();
 			$retArray[$cid]["enabled"] = false;
 			$retArray[$cid]["current_level"] = 0;
-			$retArray[$cid]["timer"] = 0;
+			$retArray[$cid]["timer_last"] = 0;
+			$timerArray[$id] = strtotime($level->ends_at)-time();
 		}
 	}
 	catch(PDOException $e) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}';
 	}
-	return($retArray);
+	return(array($retArray, $timerArray));
 }
 
 // Save sliders when user does something
