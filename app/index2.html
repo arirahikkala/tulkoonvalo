@@ -51,7 +51,7 @@
 					<div id="groupsLightGroups" class="programs"></div>
     			<div id="groupRemove" class="eiVierekkain">
     				<input id="addGroup" type="submit" value="+Uusi ryhmä" />
-						<input id="deleteGroup" type="submit" value="Poista ryhmä" />
+						<input id="deleteGroup" type="submit" value="Poista valittu" />
     			</div>
 					<table>
 					<tr>
@@ -198,6 +198,16 @@
 				var editProg = tempPrograms.pop();
 				editProg.set("times", tempTimes.models.slice(0));
 				editProg.set("levels", tempProgramLevels.models.slice(0));
+				
+				// Make it that item removal is asked
+				for (var x in editProg.get("times")) {
+					console.log(editProg.get("times")[x]);
+					editProg.get("times")[x].set("new_time", false);
+				}
+				for (var x in editProg.get("levels")) {
+					console.log(editProg.get("levels")[x]);
+					editProg.get("levels")[x].set("new_level", false);
+				}
 				
 				Backbone.sync("update", editProg, {
 					// TODO: Goto main page

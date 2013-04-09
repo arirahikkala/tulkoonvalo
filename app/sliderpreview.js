@@ -32,75 +32,78 @@
 	className: "sliderpreview-item",
 
 	events: {
-		"click #removeSliderID": function (event) {
-			// Remove the ul element and the id from the list
-			var remParent = $(event.target).parent();
-			this.model.get("sliderIDs").splice(remParent.index(), 1);
-			remParent.remove();
-			
-			this.newSliders();
+		// TODO: After removing inserting doesn't work
+		// TODO: If node is selected nodes are inserted inside it which shouldn't happen
+		"click #deleteGroup": function (event) {
+			$.jstree._reference(this.$("#sliderSelected")).remove()
+			this.setSliderIDs();
 		},
 	},
 
 	initialize: function() {
-	    this.render();
-			var _this = this;
-			
-			// Get the code for sliders
-			$.get('../app2/index-text.html', 
-			function(response) {
-				// Get the two halves from the code
-				div = _this.model.get("slidersCodeDiv");
-				startIndex = response.search(div);
-				_this.model.set("slidersCodeStart", response.substr(0, startIndex));
-				_this.model.set("slidersCodeEnd", response.substr(startIndex+div.length));
-			});
-			
-	 		this.model.set("SliderCollection", new SliderCollection());
-    	this.model.set("SlidersView", new SliderCollectionView ({ model: this.model.get("SliderCollection"), el: this.$("#sliderWidgets") }));
-    	
+		this.render();
+		var _this = this;
+		
+		// Get the code for sliders
+		$.get('../app2/index-text.html', 
+		function(response) {
+			// Get the two halves from the code
+			div = _this.model.get("slidersCodeDiv");
+			startIndex = response.search(div);
+			_this.model.set("slidersCodeStart", response.substr(0, startIndex));
+			_this.model.set("slidersCodeEnd", response.substr(startIndex+div.length));
+		});
+		
+		this.model.set("SliderCollection", new SliderCollection());
+		this.model.set("SlidersView", new SliderCollectionView ({ model: this.model.get("SliderCollection"), el: this.$("#sliderWidgets") }));
+		
 		var treeSettings = this.model.collection.getTreeSettings();
-		_this = this;
 		this.tree = this.$("#sliderLightGroups").jstree ({
 			"json_data": {
 					"ajax": {
 							"url": "../server2/groupsTree/1",
 					}
 			},
+			"crrm": { move : { "always_copy": "multitree" } },
 			"dnd" : {
-				"drop_finish" : function (data,r) {
-					console.log("DROP",data,r);
-					 $("#sliderSelected").jstree("create",-1,false,"No rename",false,true); 
-
-					//$(data.rslt.obj).attr("id", r);
-					//data.inst.refresh();
+				"drop_finish" : function (data) {
+					$("#sliderSelected").jstree("create", null, "last",
+					{"data":data.o[0].children[1].text, "attrs":{"id":data.o[0].id}}, false, true);
 				},
-				"drop_check" : function(data) {console.log(data);return true;},
 			},
 			"types" : treeSettings[0],
 			"plugins": treeSettings[1],
+		})
+		
+		.bind("loaded.jstree", function (e, data) {
+			data.inst.open_node("#-1");
 		})
 		
 		this.tree = this.$("#sliderSelected").jstree ({
 			"json_data": {
 					"data": {},
+					//"data": {"data": "Vedät ryhmät tänne", "attr": {"id":1, "rel":"root"} },
 			},
-			"types": {
-				"light": { max_children: 0 }
-			},
-			"crrm": { move : { "always_copy": "multitree" } },
-			"types" : treeSettings[0],
+			"types" : { "max_depth": 1 },
 			"plugins": treeSettings[1],
 		})
+		
+		.bind("create.jstree", function (e, data) {
+    	data.rslt.obj[0].id = data.args[2]["attrs"].id;
+    	_this.setSliderIDs();
+    })
 	},
 	
+	// Create array from the tree node IDs
 	setSliderIDs: function(data) {
-		var newID = $(data.o[0]).attr("id");
-		var newName = $($(data.o[0]).find('a')[0]).text();
-		
-		this.model.get("sliderIDs").push(newID);
-		this.$("#selectedIDs").append("<li id='"+newID+"'>"+newName+"<input id='removeSliderID' type=button value='Poista'></li>");
-	
+		sliderIDs = [];
+		console.log($(this.$("#sliderSelected")));
+    var treeChildren = $(this.$("#sliderSelected")[0].children[0].childNodes);
+		for (var x=0; x<treeChildren.size(); x++) {
+			console.log(treeChildren[x].id);
+			sliderIDs.push(treeChildren[x].id);
+		}
+		this.model.set("sliderIDs", sliderIDs);
 		this.newSliders();
 	},
 
@@ -132,6 +135,7 @@
 				<b>Vedä ryhmät tänne</b>\
 				<div id='sliderSelected'></div>\
 			</div>\
+			<input id='deleteGroup' type='submit' value='Poista valittu' />\
 		</td>\
 	</tr>\
 	</table>\

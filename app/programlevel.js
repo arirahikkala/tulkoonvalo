@@ -32,7 +32,6 @@
 	className: "programslider-item",
 
 	events: {
-		// TODO: Ask this if: edited program, added new item, saved, edited again
 		"click #item-remove" : function() {
 			if (! this.model.get("new_level"))  {
 				var choice = confirm("Haluatko varmasti poistaa ryhmän?");
