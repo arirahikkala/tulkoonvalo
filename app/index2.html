@@ -329,11 +329,12 @@
 		    }
 			})
     })
-		.bind("loaded.jstree", function (e, data) {
-			data.inst.open_node("#-1");
-		});
     
-    /*
+    .bind("loaded.jstree", function (e, data) {
+			data.inst.open_node("#-1");
+    });
+    
+        /*
 		// Light programs collection
 		*/
 		var ProgramCollection = Backbone.Collection.extend ({
@@ -499,8 +500,8 @@
 			},
 			
 	mainpageView: function() {
-		console.log("mainpage");
 		console.log("mainnn",Programs.models[0]);
+        window.location = "../app/index2.html";
 	},
 	
 	groupsView: function () {
