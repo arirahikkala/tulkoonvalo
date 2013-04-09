@@ -59,23 +59,39 @@
 	 		this.model.set("SliderCollection", new SliderCollection());
     	this.model.set("SlidersView", new SliderCollectionView ({ model: this.model.get("SliderCollection"), el: this.$("#sliderWidgets") }));
     	
-	    this.tree = this.$("#sliderLightGroups").jstree ({
-	  		"json_data": {
-            "ajax": {
-                "url": "../server2/groupsTree/1",
-            }
-	  		},
-	  		// TODO: Group icons and others here too
-	  		"types": {
-	      	"light": { max_children: 0 }
-	  		},
-	  		
-				"dnd" : {
-					"drop_finish" : function (data) { _this.setSliderIDs(data); },
-					"drop_check" : function(data) {console.log(data.o);return false;},
+		var treeSettings = this.model.collection.getTreeSettings();
+		_this = this;
+		this.tree = this.$("#sliderLightGroups").jstree ({
+			"json_data": {
+					"ajax": {
+							"url": "../server2/groupsTree/1",
+					}
+			},
+			"dnd" : {
+				"drop_finish" : function (data,r) {
+					console.log("DROP",data,r);
+					 $("#sliderSelected").jstree("create",-1,false,"No rename",false,true); 
+
+					//$(data.rslt.obj).attr("id", r);
+					//data.inst.refresh();
 				},
-	  		"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
-	  	})
+				"drop_check" : function(data) {console.log(data);return true;},
+			},
+			"types" : treeSettings[0],
+			"plugins": treeSettings[1],
+		})
+		
+		this.tree = this.$("#sliderSelected").jstree ({
+			"json_data": {
+					"data": {},
+			},
+			"types": {
+				"light": { max_children: 0 }
+			},
+			"crrm": { move : { "always_copy": "multitree" } },
+			"types" : treeSettings[0],
+			"plugins": treeSettings[1],
+		})
 	},
 	
 	setSliderIDs: function(data) {
@@ -102,11 +118,23 @@
 	},
 	
 	template: _.template("\
-	<table><tr>\
-		<td><div id='sliderLightGroups'></div></td>\
-		<td><div id='sliderIDTree' class='jstree-drop'>Vedä ryhmät tähän laatikkoon.</div></td>\
-		<td>Valitut ryhmät:<ul id='selectedIDs'></ul></td>\
-	</tr></table>\
+	<table>\
+	<tr>\
+		<td>\
+			<div id='groupTableContainer' class='programs'>\
+				<div id='sliderLightGroups'></div>\
+			</div>\
+		</td>\
+	</tr>\
+	<tr>\
+		<td>\
+			<div id='groupTableContainer' class='programs jstree-drop'>\
+				<b>Vedä ryhmät tänne</b>\
+				<div id='sliderSelected'></div>\
+			</div>\
+		</td>\
+	</tr>\
+	</table>\
 	<div>\
 		Kopioitava HTML-koodi:\
 		<textarea id='slidersCode' type='textarea' rows='15' cols='40'></textarea>\

@@ -48,7 +48,7 @@
     		</div>
     
     		<div id="groups" class="divit"><h2>Valoryhmät</h2>
-						<div id="groupsLightGroups" class="programs"></div>
+					<div id="groupsLightGroups" class="programs"></div>
     			<div id="groupRemove" class="eiVierekkain">
     				<input id="addGroup" type="submit" value="+Uusi ryhmä" />
 						<input id="deleteGroup" type="submit" value="Poista ryhmä" />
@@ -65,7 +65,7 @@
 					<tr>
 						<td>
 							<div id='groupTableContainer' class="programs">
-								<b>Detektorit</b>
+								<b>Tunnistimet</b>
 								<div id="detectorTreeContainer"></div>
 							</div>
 						</td>
@@ -245,7 +245,7 @@
 				"crrm": { move : { "always_copy": "multitree" } },
 				"types" : treeSettings[0],
 	  		"plugins": treeSettings[1],
-	  	})
+	  	})	
 	  	
     .bind("rename.jstree", function (e, data) {
     	if (data.rslt.obj.attr("rel") != "group") {
@@ -294,7 +294,7 @@
     	var cid = data.rslt.obj.attr("id");
     	
     	if (data.rslt.obj.attr("rel") == "root") { $.jstree.rollback(data.rlbk); return; }
-    	
+
     	// Only ask if a group and has children
     	if (data.rslt.obj.attr("rel") == "group" && data.rslt.obj.children().find("a").length != 0) {
 	    	var choice = confirm("Myös kaikki aliryhmät poistetaan. Haluatko jatkaa?");
@@ -315,7 +315,6 @@
     })
     
     // create a new node
-    // note T65
     .bind("create.jstree", function (e, data) {
 			$.post (
 	    	"../server2/groups",
@@ -428,6 +427,9 @@
 			
 			getErrorMessage: function($id) {
 				return(errorMessages[$id]);
+			},
+			getTreeSettings: function() {
+				return(treeSettings);
 			},
 		});
 		
