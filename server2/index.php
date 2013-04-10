@@ -172,7 +172,7 @@ function getLightsTree($retJson=true) {
 }
 
 // Get the whole tree with groups, lights and detectors to the admin view
-function getGroupsTree($onlyGroups=false) {
+function getGroupsTree($onlyGroups=0) {
 	$db = getConnection();
 	$sql = "select name,permanent_id,parent_id,isGroup,detector_type from lights left join groups on (lights.permanent_id = groups.child_id)";
 	$groups = dbExec($db, $sql, null, 0);	
@@ -189,7 +189,7 @@ function getGroupsTree($onlyGroups=false) {
 }
 
 // Drill down the groups tree and get all the children
-function childLoop($cGroup, $groups, $onlyGroups=false) {
+function childLoop($cGroup, $groups, $onlyGroups) {
 	$newChild = array("data"=>$cGroup->name, "attr"=>array("id"=>$cGroup->permanent_id), "children"=>array());
 	
 	// Set the item type
@@ -208,9 +208,9 @@ function childLoop($cGroup, $groups, $onlyGroups=false) {
 	
 	foreach ($groups as $g) {
 		if ($g->parent_id == $cGroup->permanent_id) {
-			$subChildren = childLoop($g, $groups);
+			$subChildren = childLoop($g, $groups, $onlyGroups);
 			
-			if ((!$onlyGroups) || ($onlyGroups && $g->isGroup == 1))
+			if (($onlyGroups == 0) || ($onlyGroups == 1 && $g->detector_type == 0))
 				array_push($newChild["children"], $subChildren);
 		}
 	}

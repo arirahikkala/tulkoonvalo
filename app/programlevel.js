@@ -94,11 +94,8 @@
 							"url": "../server2/groupsTree/1",
 					}
 			},
-			// TODO: Group icons and others here too
-			"types": {
-				"light": { max_children: 0 }
-			},
-			"plugins": ["themes", "json_data", "ui", "dnd", "crrm", "types"]
+			"types": treeSettings[0],
+			"plugins": treeSettings[1]
 		})
 		.bind("loaded.jstree", function (e, data) {
 			// If ID exists choose that node else open root
