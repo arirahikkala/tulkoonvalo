@@ -97,10 +97,9 @@
 	// Create array from the tree node IDs
 	setSliderIDs: function(data) {
 		sliderIDs = [];
-		console.log($(this.$("#sliderSelected")));
+		
     var treeChildren = $(this.$("#sliderSelected")[0].children[0].childNodes);
 		for (var x=0; x<treeChildren.size(); x++) {
-			console.log(treeChildren[x].id);
 			sliderIDs.push(treeChildren[x].id);
 		}
 		this.model.set("sliderIDs", sliderIDs);
@@ -109,18 +108,22 @@
 
 	newSliders: function() {
 		var newIDs = this.model.get("sliderIDs");
-	
+		console.log(newIDs);
+		
 		// Remove old sliders
 		var coll = this.model.get("SliderCollection");
+		
 		for (var i=coll.length; i>0; i--)
 			coll.remove(coll.models[i-1]);
-		
-		// Create new code and sliders
-		this.$("#slidersCode").val(this.model.get("slidersCodeStart")+newIDs+this.model.get("slidersCodeEnd"));
-		coll.newSlider(newIDs, null);
-        
-        if (newIDs.length==0)
-        	this.$("#slidersCode").val("");
+			
+		// Add new sliders and the HTML code
+		if (newIDs.length > 0) {
+			this.$("#slidersCode").val(this.model.get("slidersCodeStart")+newIDs+
+				this.model.get("slidersCodeEnd"));
+			coll.newSlider(newIDs, null);
+		}
+		else
+			this.$("#slidersCode").val("");
 	},
 	
 	template: _.template("\

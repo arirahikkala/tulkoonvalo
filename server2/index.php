@@ -210,6 +210,7 @@ function childLoop($cGroup, $groups, $onlyGroups) {
 		if ($g->parent_id == $cGroup->permanent_id) {
 			$subChildren = childLoop($g, $groups, $onlyGroups);
 			
+			// $onlyGroups actually allows groups AND lights
 			if (($onlyGroups == 0) || ($onlyGroups == 1 && $g->detector_type == 0))
 				array_push($newChild["children"], $subChildren);
 		}
@@ -942,8 +943,8 @@ function poll($ids, $values, $timers, $enableds) {
 	}
 	$time = time();
 	
-	// Loop for 60 seconds at a time with small pauses in between
-	while((time() - $time) < 60) {
+	// Loop for n seconds at a time with small pauses in between
+	while((time() - $time) < 10) {
 		$getLevels = getLevels($ids_array);
 		$newLevels = $getLevels[0];
 		$timerArray = $getLevels[1];

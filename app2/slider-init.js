@@ -42,7 +42,7 @@ var SliderCollection = Backbone.Collection.extend ({
 			// A slider may have timer enabled
 			if (curLight["timer"] > 0)
 				isEnabled = true;
-			console.log("cimte", curLight);
+				
 			// Create a new slider with some data, rest are long-polled
 			this.add ({ name: curLight["name"], 
 			children: curLight["children"], allChildren: curLight["all_children"], 
@@ -61,7 +61,7 @@ var SliderCollection = Backbone.Collection.extend ({
 			// Create an element for children and insert them in it
 			if (this.parentEl) {
 				if (! childWrap) {
-					childWrap = $("<div class='bar' />");
+					childWrap = $("<div class='childwrap'></div>");
 					this.parentEl.$el.after(childWrap);
 					this.parentEl.model.set("childElement", childWrap);
 				}

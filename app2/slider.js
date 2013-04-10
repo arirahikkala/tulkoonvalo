@@ -17,6 +17,16 @@
 		// Backbone uses this to figure out where to .fetch() and .save()
 		urlRoot: "../server2/sliders/",
 	
+	initialize: function() {
+		console.log("asd");
+      this.bind("remove", function() {
+      console.log("remem", this, this.attributes);
+      console.log(this.childElement);
+      this.get("childElement").remove();
+      }, this);
+	//	this.model.get("childElement").remove();
+	},
+	
 	url: function() {
 	    var origUrl = Backbone.Model.prototype.url.call(this);
 	    return origUrl + (origUrl.charAt(origUrl.length - 1) == '/' ? '' : '/');
@@ -69,7 +79,7 @@
 	className: "slider",
 	
 	template: _.template("\
-	<div class='widget-header' id='0'>\
+	<div class='widget-header'>\
 	</div>\
 	<table border=0px>\
 	<tr>\
@@ -99,7 +109,9 @@
 	// Backbone calls this automatically when creating the view
 	initialize: function() {
 	    this.render();
-        	this.model.bind("remove", this.remove, this);
+      this.model.bind("remove", function() {
+      this.remove();
+      }, this);
 			this.enabledChange(this.model.get("enabled"), false);
 	   
 			this.model.bind("change:enabled", function(e) { this.enabledChange(this.model.get("enabled")); }, this );
