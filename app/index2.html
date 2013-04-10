@@ -485,6 +485,8 @@
     var tempProgramLevelsView = new ProgramSliderCollectionView ({ model: tempProgramLevels });
     
 		Programs.fetch({success: function() { console.log("Fetched",Programs); }});
+        
+        sliderPreview.add({});
 
     // Backbone.Router handles noticing where we're navigating to for us
     var AppRouter = Backbone.Router.extend ({
@@ -551,9 +553,7 @@
 		$("#programEditName").val(editProg.get("name"));
 	},
 	
-	slidersView: function() {
-		sliderPreview.add({});
-	},
+	slidersView: function() {},
     });
     // I assume Backbone internally sets some global variable to make this work, because yes, this is needed to make the router run
      var appRouter = new AppRouter;

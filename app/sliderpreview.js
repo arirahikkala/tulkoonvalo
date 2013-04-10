@@ -34,8 +34,8 @@
 	events: {
 		// TODO: After removing inserting doesn't work
 		// TODO: If node is selected nodes are inserted inside it which shouldn't happen
-		"click #deleteGroup": function (event) {
-			$.jstree._reference(this.$("#sliderSelected")).remove()
+		"click #deleteSliderGroup": function (event) {
+			$.jstree._reference(this.$("#sliderSelected")).remove();
 			this.setSliderIDs();
 		},
 	},
@@ -67,7 +67,7 @@
 			"crrm": { move : { "always_copy": "multitree" } },
 			"dnd" : {
 				"drop_finish" : function (data) {
-					$("#sliderSelected").jstree("create", null, "last",
+					$("#sliderSelected").jstree("create", -1, "last",
 					{"data":data.o[0].children[1].text, "attrs":{"id":data.o[0].id}}, false, true);
 				},
 			},
@@ -117,7 +117,10 @@
 		
 		// Create new code and sliders
 		this.$("#slidersCode").val(this.model.get("slidersCodeStart")+newIDs+this.model.get("slidersCodeEnd"));
-		this.model.get("SliderCollection").newSlider(newIDs, null);
+		coll.newSlider(newIDs, null);
+        
+        if (newIDs.length==0)
+        	this.$("#slidersCode").val("");
 	},
 	
 	template: _.template("\
@@ -135,13 +138,13 @@
 				<b>Vedä ryhmät tänne</b>\
 				<div id='sliderSelected'></div>\
 			</div>\
-			<input id='deleteGroup' type='submit' value='Poista valittu' />\
+			<input id='deleteSliderGroup' type='submit' value='Poista valittu' />\
 		</td>\
 	</tr>\
 	</table>\
 	<div>\
 		Kopioitava HTML-koodi:\
-		<textarea id='slidersCode' type='textarea' rows='15' cols='40'></textarea>\
+		<textarea id='slidersCode' type='textarea' readonly='readonly' rows='15' cols='40'></textarea>\
 	</div>\
 	<div id='slidersPreview'>Säätimien esikatselu:\
 		<div class='bar' id='sliderWidgets'></div>\

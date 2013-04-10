@@ -99,6 +99,7 @@
 	// Backbone calls this automatically when creating the view
 	initialize: function() {
 	    this.render();
+        	this.model.bind("remove", this.remove, this);
 			this.enabledChange(this.model.get("enabled"), false);
 	   
 			this.model.bind("change:enabled", function(e) { this.enabledChange(this.model.get("enabled")); }, this );
