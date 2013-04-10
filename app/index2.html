@@ -185,7 +185,7 @@
 				editProg.set("levels", tempProgramLevels);
 
       	editProg.save(null, {
-      		success: function(m,r) { m.set("id", r); Programs.add(m); emptyTempCollections(); },
+      		success: function(m,r) { m.set("id", r); Programs.add(m); emptyTempCollections(); appRouter.navigate('mainpage', {trigger: true, replace: true}); },
       		error: function(m,r) { parseErrors(m,r,"programsErrorMain"); }
       		});
       });
@@ -211,7 +211,7 @@
 				
 				Backbone.sync("update", editProg, {
 					// TODO: Goto main page
-					success: function() { editProg.trigger("reset"); },
+					success: function() { editProg.trigger("reset"); appRouter.navigate('mainpage', {trigger: true, replace: true});},
 					error: function(m,r) { parseErrors(m,r,"programsErrorMainEdit"); }
 				});
       });
