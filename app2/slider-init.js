@@ -70,9 +70,9 @@ var SliderCollection = Backbone.Collection.extend ({
 				childWrap.append(childEl);
 				
 				if (this.parentEl.model.get("level")%2 == 0)
-					levelColor = "red";
+					levelColor = "two";
 			else
-				levelColor = "yellow";
+				levelColor = "one";
 
 			this.models[this.length-1].set("level", this.parentEl.model.get("level")+1);
 			headEl = $(childEl.children()[0]);

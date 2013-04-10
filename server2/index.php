@@ -967,7 +967,7 @@ function poll($ids, $values, $timers, $enableds) {
 			print(json_encode($retArray));
 			break;
 		}
-		usleep(1000000);
+		usleep(200000);
 	}
 }
 

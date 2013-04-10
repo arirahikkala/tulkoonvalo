@@ -128,7 +128,7 @@
 	template: _.template("<div class='programError' id='programsErrorLevel'></div>\
 	<input id='item-remove' type='button' value='Poista ryhmä'>\
 	<div id='levelGroup'>\
-		Ryhmä:<input id='levelGroupInput' placeholder='Klikkaa nähdäksesi ryhmät' readonly='readonly'><br/>\
+		Valo tai ryhmä:<input id='levelGroupInput' placeholder='Klikkaa nähdäksesi ryhmät' readonly='readonly'><br/>\
 		<div id='groupsPopup' class='programs'>\
 			<input id='groupsPopupClose' type='button' value='Sulje'><br />\
 				<b>Ryhmät</b><br /><div id='levelLightGroups'></div>\

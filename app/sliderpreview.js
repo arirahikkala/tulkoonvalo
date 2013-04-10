@@ -99,11 +99,9 @@
 	// Create array from the tree node IDs
 	setSliderIDs: function(data) {
 		sliderIDs = [];
-		
     var treeChildren = $(this.$("#sliderSelected")[0].children[0].childNodes);
-		for (var x=0; x<treeChildren.size(); x++) {
+		for (var x=0; x<treeChildren.size(); x++)
 			sliderIDs.push(treeChildren[x].id);
-		}
 		this.model.set("sliderIDs", sliderIDs);
 		this.newSliders();
 	},

@@ -79,7 +79,7 @@
 	className: "slider",
 	
 	template: _.template("\
-	<div class='widget-header'>\
+	<div class='widget-header' id='one'>\
 	</div>\
 	<table border=0px>\
 	<tr>\

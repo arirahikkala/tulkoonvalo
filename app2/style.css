@@ -18,7 +18,6 @@
 
 .widget-header
 {
-	background: yellow;
 	overflow: hidden;
 	height: 2em;
 }
@@ -28,15 +27,9 @@
 	float: left;
 }
 
-#red.widget-header
-{
-	background: red;
-}
+#one.widget-header { background: lightblue; }
 
-#yellow.widget-header
-{
-	background: yellow;
-}
+#two.widget-header { background: grey; }
 
 .show-children
 {
