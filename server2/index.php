@@ -204,12 +204,12 @@ function childLoop($cGroup, $groups, $onlyGroups) {
             	break;
 		}
 	}
+
 	$newChild["attr"]["rel"] = $childType;
 	
 	foreach ($groups as $g) {
 		if ($g->parent_id == $cGroup->permanent_id) {
 			$subChildren = childLoop($g, $groups, $onlyGroups);
-			
 			if (($onlyGroups == 0) || ($onlyGroups == 1 && $g->detector_type == 0))
 				array_push($newChild["children"], $subChildren);
 		}
@@ -417,18 +417,22 @@ function programValidation($params) {
 			$errorTimes[$time->cid][] = 5;
 	}
 	// TODO: Check that it's a group used in a program
-	// TODO: Level must be in the range of 0...100
 
 	// Check level settings
 	$usedLevels = array();
 	foreach ($params->levels as $level) {
 		if ($level->allow_delete) continue;
 		$usedLevels[$level->target_id][] = $level->cid;
+        if ($level->target_id==null)
+        $errorLevels[$level->cid][] = 7;
+        if ($level->light_level>100 || $level->light_level<0 ||
+        	$level->motion_level>100 || $level->motion_level<0)
+        $errorLevels[$level->cid][] = 8;
 	}
 	
 	// Check that same group isn't in the program twice
 	foreach ($usedLevels as $group) {
-		if (count($group) > 1) {
+		if (count($group) > 1 && $level->target_id!=null) {
 			foreach ($group as $cid)
 				$errorLevels[$cid][] = 6;
 		}
