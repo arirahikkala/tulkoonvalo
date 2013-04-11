@@ -185,8 +185,10 @@ function getGroupsTree($onlyGroups=0) {
 			$tree[] = $newChildren;
 		}
 	}
-	print(json_encode($tree));
-	//print(json_encode( array("data"=>"Ryhmät", "attr"=>array("id"=>-1, "rel"=>"root"), "children"=>$tree) ));
+    if($onlyGroups==1)
+		print(json_encode($tree));
+    else
+		print(json_encode( array("data"=>"Ryhmät", "attr"=>array("id"=>-1, "rel"=>"root"), "children"=>$tree) ));
 }
 
 // Drill down the groups tree and get all the children

@@ -46,7 +46,7 @@
     		</div>
     
     		<div id="groups" class="divit"><h2>Valoryhmät</h2>
-					<div id="groupsLightGroups" class="programs"><b>Ryhmät</b></div>
+					<div id="groupsLightGroups" class="programs"></div>
     			<div id="groupRemove" class="eiVierekkain">
     				<input id="addGroup" type="submit" value="+Uusi ryhmä" />
 						<input id="deleteGroup" type="submit" value="Poista valittu" />
@@ -193,6 +193,8 @@
 			
 				editProg.set("times", tempTimes);
 				editProg.set("levels", tempProgramLevels);
+                
+                console.log(editProg);
 
       	editProg.save(null, {
       		success: function(m,r) {
@@ -478,9 +480,6 @@
 
     var tempProgramLevels = new ProgramSliderCollection();
     var tempProgramLevelsView = new ProgramSliderCollectionView ({ model: tempProgramLevels });
-    
-		Programs.fetch({success: function() { updateMainPageText(); }});
-    sliderPreview.add({});
 
     // Backbone.Router handles noticing where we're navigating to for us
     var AppRouter = Backbone.Router.extend ({
@@ -492,12 +491,15 @@
 	    	"sliders": "slidersView",
 			},
 			
-	mainpageView: function() {},
+	mainpageView: function() { Programs.fetch({success: function() { updateMainPageText(); console.log("JEE"); }}); },
 	groupsView: function () {},
-	
+    slidersView: function () { sliderPreview.pop(); sliderPreview.add({}); },
+    
 	programsView: function () {
 		emptyTempCollections();
 		$("#programName").val('');
+        $("#programsErrorMain").html('');
+        
 		
 		// Show items in the right place
 		tempTimesView.$el = $("#programTimes");
@@ -509,9 +511,10 @@
 		tempTimes.add({});
 	},
 	
-	programsEditView: function (progID) {		
+	programsEditView: function (progID) {
+    	$("#programsErrorMainEdit").html('');
 		emptyTempCollections();
-		$(".selected").attr("class", ""); // Unselect tabs
+		$(".selected").attr("class", ""); // Deselect tabs
 		
 		// Show items in the right place
 		tempTimesView.$el = $("#programEditTimes");
@@ -524,6 +527,7 @@
 		tempProgramLevels.add(editProg.get("levels"));
 		
 		$("#programEditName").val(editProg.get("name"));
+        console.log(editProg);
 		
 		// If reloaded while editing, prevent editing page messing up
 		appRouter.navigate('mainpage', {trigger: true, replace: true});

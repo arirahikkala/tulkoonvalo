@@ -49,6 +49,8 @@
 		this.render();
 		var _this = this;
 		
+        this.model.bind("remove", function() { this.remove(); }, this);
+        
 		// Get the code for sliders
 		$.get('../app2/index-text.html', 
 		function(response) {
