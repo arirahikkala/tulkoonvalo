@@ -185,7 +185,8 @@ function getGroupsTree($onlyGroups=0) {
 			$tree[] = $newChildren;
 		}
 	}
-	print(json_encode( array("data"=>"Ryhmät", "attr"=>array("id"=>-1, "rel"=>"root"), "children"=>$tree) ));
+	print(json_encode($tree));
+	//print(json_encode( array("data"=>"Ryhmät", "attr"=>array("id"=>-1, "rel"=>"root"), "children"=>$tree) ));
 }
 
 // Drill down the groups tree and get all the children
@@ -210,11 +211,8 @@ function childLoop($cGroup, $groups, $onlyGroups) {
 	foreach ($groups as $g) {
 		if ($g->parent_id == $cGroup->permanent_id) {
 			$subChildren = childLoop($g, $groups, $onlyGroups);
-<<<<<<< HEAD
 			
 			// $onlyGroups actually allows groups AND lights
-=======
->>>>>>> 2b9d6c5289948a11f0fb9ecd41d98264471de9ce
 			if (($onlyGroups == 0) || ($onlyGroups == 1 && $g->detector_type == 0))
 				array_push($newChild["children"], $subChildren);
 		}
@@ -1003,7 +1001,7 @@ function getLevels($ids_array) {
 			$retArray[$cid]["enabled"] = false;
 			$retArray[$cid]["current_level"] = 0;
 			$retArray[$cid]["timer_last"] = 0;
-			$timerArray[$id] = strtotime($level->ends_at)-time();
+			$timerArray[$id] = 0;
 		}
 	}
 	catch(PDOException $e) {

@@ -19,9 +19,9 @@
 	  	cid: null,
 	  	date_start: '',
 	  	date_end: '',
-	  	weekdays: '0000000',
-	  	time_start: '',
-	  	time_end: '',
+	  	weekdays: '1000000',
+	  	time_start: '12:00',
+	  	time_end: '13:00',
 	  	new_time: true,
 	  	allow_delete: false,
 	  }

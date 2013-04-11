@@ -15,8 +15,6 @@
     <script type="text/javascript" src="time.js"></script>
     <script type="text/javascript" src="programlevel.js"></script>
     <script type="text/javascript" src="sliderpreview.js"></script>
-    <script type="text/javascript" src="../app2/slider.js"></script>
-    <script type="text/javascript" src="../app2/slider-init.js"></script>
     <script src="../lib/jquery.ui.touch-punch.min.js"></script> 
     
     <link rel="stylesheet" href="../lib/jqueryui/css/ui-lightness/jquery-ui-1.8.21.custom.css" />
@@ -35,7 +33,7 @@
     	<div id="usual" class="usual">
 
     		<ul class="tabs testi">
-      		<li><a href="#mainpage">Etusivu</a></li>
+      		<li><a href="#mainpage" id="mainpageTab">Etusivu</a></li>
       		<li><a href="#groups">Valoryhmät</a></li>
       		<li><a href="#programs">Uusi sääntö</a></li>
       		<li><a href="#sliders">Uusi virtuaalikytkin</a></li>
@@ -43,12 +41,12 @@
     		</ul>
     
     		<div id="mainpage" class="divit"><h2>Etusivu</h2>
-      		<table id="programsList">
-      		</table>
+    			<div class='mainPageText'></div>
+      		<table id="programsList"></table>
     		</div>
     
     		<div id="groups" class="divit"><h2>Valoryhmät</h2>
-					<div id="groupsLightGroups" class="programs"></div>
+					<div id="groupsLightGroups" class="programs"><b>Ryhmät</b></div>
     			<div id="groupRemove" class="eiVierekkain">
     				<input id="addGroup" type="submit" value="+Uusi ryhmä" />
 						<input id="deleteGroup" type="submit" value="Poista valittu" />
@@ -79,12 +77,15 @@
     				Säännön nimi:
     				<input id='programName' />
     			</div>
+    			<br />
     			<div id="programTimesContainer">
+    				<b>Aika-asetukset:</b>
     				<div id="programTimes"></div>
     				<input id="addTime" type="submit" value="+Lisää aika" />
     			</div>
-    			
+    			<br />
 					<div id='ProgramLevelsContainer'>
+    				<b>Ryhmäasetukset:</b>
 	    			<div id="ProgramLevels"></div>
 	    			<input id="addProgramSlider" type="submit" value="+Lisää ryhmä" />
 					</div>
@@ -130,8 +131,8 @@
 				4:"Ohjelmalla on oltava vähintään yksi ryhmäasetus.",
 				5:"Aloitusajan on oltava lopetusaikaa pienempi.",
 				6:"Tämä ryhmä on jo käytössä toisessa valotasossa.",
-                7:"Valitse ryhmä.",
-                8:"Vääränlaiset valoasetukset."
+				7:"Valitse ryhmä.",
+				8:"Vääränlaiset valoasetukset."
 			};
 		
 			function parseErrors(m,r,errorEl) {
@@ -160,7 +161,7 @@
 					cLevel.set("errors", r["level_errors"][i]);
 				}
 			}
-		
+			
 			function emptyTempCollections() {
 				tempPrograms.remove(tempPrograms.models[0]);
 				
@@ -171,11 +172,18 @@
 				}
 			}
 			
+			function updateMainPageText() {
+				if (Programs.models.length == 0)
+					$(".mainPageText").html("<b>Valosääntöjä ei löytynyt. Aloita luomalla uusia ryhmiä tai sääntöjä.</b>");
+				else 
+					$(".mainPageText").html("");
+			}
+			
       // Set up the light groups page
       $("#deleteGroup").bind ("click", function() { $.jstree._reference("#lightGroups").remove() });
       $("#addGroup").bind ("click", function() { $.jstree._reference ("#lightGroups").create() });
       $("#lightGroups").hide();
-
+      
 			// New program page
       $("#programName").bind ("change", function() { tempPrograms.models[0].set("name", $("#programName").val()); });
       $("#addTime").bind ("click", function() { tempTimes.add({}); });
@@ -187,7 +195,11 @@
 				editProg.set("levels", tempProgramLevels);
 
       	editProg.save(null, {
-      		success: function(m,r) { m.set("id", r); Programs.add(m); emptyTempCollections(); appRouter.navigate('mainpage', {trigger: true, replace: true}); },
+      		success: function(m,r) {
+      			m.set("id", r); Programs.add(m);
+      			appRouter.navigate('mainpage', {trigger: true, replace: true});
+      			$("#mainpageTab").click();
+      		},
       		error: function(m,r) { parseErrors(m,r,"programsErrorMain"); }
       		});
       });
@@ -201,19 +213,18 @@
 				editProg.set("times", tempTimes.models.slice(0));
 				editProg.set("levels", tempProgramLevels.models.slice(0));
 				
-				// Make it that item removal is asked
-				for (var x in editProg.get("times")) {
-					console.log(editProg.get("times")[x]);
-					editProg.get("times")[x].set("new_time", false);
-				}
-				for (var x in editProg.get("levels")) {
-					console.log(editProg.get("levels")[x]);
-					editProg.get("levels")[x].set("new_level", false);
-				}
-				
 				Backbone.sync("update", editProg, {
-					// TODO: Goto main page
-					success: function() { editProg.trigger("reset"); appRouter.navigate('mainpage', {trigger: true, replace: true});},
+					success: function() {
+						// Make it that item removal is asked while editing next time
+						for (var x in editProg.get("times"))
+							editProg.get("times")[x].set("new_time", false);
+						for (var x in editProg.get("levels"))
+							editProg.get("levels")[x].set("new_level", false);
+							
+						editProg.trigger("reset");
+						appRouter.navigate('mainpage', {trigger: true, replace: true});
+						$("#mainpageTab").click();
+					},
 					error: function(m,r) { parseErrors(m,r,"programsErrorMainEdit"); }
 				});
       });
@@ -338,16 +349,21 @@
 		    else {
 					$(data.rslt.obj).attr("id", r);
 					data.inst.refresh();
+
 		    }
 			})
     })
     
     .bind("loaded.jstree", function (e, data) {
 			data.inst.open_node("#-1");
+			//$.jstree._reference($("#lightGroups")).open_node("#-1");
     });
     
+		$("#groupsLightGroups").append($("#lightGroups"));
+		$("#lightGroups").show();
+    
     /*
-		// Light programs collection
+		// Programs collection
 		*/
 		var ProgramCollection = Backbone.Collection.extend ({
 			model: Program.Program,
@@ -360,8 +376,12 @@
 			
 			initialize: function() {
 				var _this = this;
-				this.model.on("add", function (m, c) { _this.$el.append (new Program.ProgramMainView ({model: m, router: AppRouter}).$el)});
+				this.model.on("add", function (m, c) {
+					_this.$el.append (new Program.ProgramMainView ({model: m, router: AppRouter}).$el);
+					updateMainPageText();
+				});
 				this.model.on("reset", function() { _this.render(); });
+				this.model.on("remove", function() { updateMainPageText(); });
 			},
 
 			render: function() {
@@ -390,20 +410,11 @@
 			initialize: function() {
 				var _this = this;
 				this.model.on ("add", function (m, c) { _this.$el.append (new Time.TimeView ({model: m}).$el); });
-				this.model.on("reset", function() { _this.render(); });
-
-				//this.render();
-			},
-
-			render: function() {
-				this.$el.empty();
-				var _this = this;
-				this.model.each (function (x) { _this.$el.append (new Time.TimeView ({model: x}).$el); });
 			},
 		});
 		
 		/*
-		// Light & motion detector settings for programs
+		// Group/level settings for programs
 		*/
 		var ProgramSliderCollection = Backbone.Collection.extend ({
 			model: ProgramSlider.ProgramSlider,
@@ -411,6 +422,9 @@
 			
 			getErrorMessage: function($id) {
 				return(errorMessages[$id]);
+			},
+			getTreeSettings: function() {
+				return(treeSettings);
 			},
 		});
 		
@@ -421,14 +435,7 @@
 			initialize: function() {
 				var _this = this;
 				this.model.on ("add", function (m, c) { _this.$el.append (new ProgramSlider.ProgramSliderView ({model: m}).$el)});
-				//this.render();
 			},
-
-			render: function() {
-				this.$el.empty();
-				var _this = this;
-				this.model.each (function (x) { _this.$el.append (new ProgramSlider.ProgramSliderView ({model: x}).$el)});
-			}
 		});
 		
 		/*
@@ -453,30 +460,16 @@
 			initialize: function() {
 				var _this = this;
 				this.model.on ("add", function (m, c) { _this.$el.append (new SliderPreview.SliderPreviewView ({model: m}).$el)});
-				//this.render();
 			},
-
-			render: function() {
-				this.$el.empty();
-				var _this = this;
-				this.model.each (function (x) { _this.$el.append (new SliderPreview.SliderPreviewView ({model: x}).$el)});
-			}
 		});
 		
 		// Collections for a variety of uses
 		var Programs = new ProgramCollection();
-		//var ProgramsView = new ProgramCollectionView ({ model: Programs, el: $("#current_program") });
 		var ProgramsMainView = new ProgramCollectionMainView ({ model: Programs, el: $("#programsList") });
-
-		var Times = new TimeCollection();  
-    var TimesView = new TimeCollectionView ({ model: Times, el: $("#programTimes") });
-    
-    var ProgramLevels = new ProgramSliderCollection();
-    var ProgramLevelsView = new ProgramSliderCollectionView ({ model: ProgramLevels, el: $("#ProgramLevels") });
-    
+		
     var sliderPreview = new SliderPreviewCollection();
     var sliderPreviewView = new SliderPreviewCollectionView({ model: sliderPreview, el: $("#sliders") });
-
+    
 		var tempPrograms = new ProgramCollection();
 		var tempProgramsView = new ProgramCollectionMainView ({ model: Programs });
 
@@ -486,9 +479,8 @@
     var tempProgramLevels = new ProgramSliderCollection();
     var tempProgramLevelsView = new ProgramSliderCollectionView ({ model: tempProgramLevels });
     
-		Programs.fetch({success: function() { console.log("Fetched",Programs); }});
-        
-        sliderPreview.add({});
+		Programs.fetch({success: function() { updateMainPageText(); }});
+    sliderPreview.add({});
 
     // Backbone.Router handles noticing where we're navigating to for us
     var AppRouter = Backbone.Router.extend ({
@@ -499,28 +491,9 @@
 	    	"groups": "groupsView",
 	    	"sliders": "slidersView",
 			},
-
-			initialize : function () {
-				this.lastPage = "mainpage";
-				
-				this.bind("all", function() {
-					// Clear collections when leaving new programs page
-					if (this.lastPage == "programs")
-						emptyTempCollections();
-						
-					this.lastPage = Backbone.history.fragment;
-				});
-				this.navigate('mainpage', {trigger: true, replace: true});
-			},
 			
-	mainpageView: function() {
-		console.log("mainnn",Programs.models[0]);
-        window.location = "../app/index2.html";
-	},
-	
-	groupsView: function () {
-		$.get("../server2/groupsTree/1");
-	},
+	mainpageView: function() {},
+	groupsView: function () {},
 	
 	programsView: function () {
 		emptyTempCollections();
@@ -533,7 +506,7 @@
 		// Create a null ID program with time and level items
 		tempPrograms.add({id:null});
 		tempProgramLevels.add({});
-		tempTimes.add({});	
+		tempTimes.add({});
 	},
 	
 	programsEditView: function (progID) {		
@@ -551,17 +524,19 @@
 		tempProgramLevels.add(editProg.get("levels"));
 		
 		$("#programEditName").val(editProg.get("name"));
+		
+		// If reloaded while editing, prevent editing page messing up
+		appRouter.navigate('mainpage', {trigger: true, replace: true});
 	},
-	
-	slidersView: function() {},
     });
     // I assume Backbone internally sets some global variable to make this work, because yes, this is needed to make the router run
      var appRouter = new AppRouter;
      
     // we're done with everything, roll it
     Backbone.history.start();
-    // TODO: Some way to select certain tab via code
-    //$("#mainpage").attr("class", ".selected");
+    
+    // Start browsing from the main page
+  	appRouter.navigate('mainpage', {trigger: true, replace: true});
     </script>
   </body>
 </html>

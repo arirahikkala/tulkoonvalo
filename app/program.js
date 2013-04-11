@@ -46,8 +46,7 @@
 					console.log(choice);
 					if (choice) {
 						this.model.destroy();
-                        this.remove();
-						console.log(this.model.get("times"));
+            this.remove();
 					}
 				}
 			},

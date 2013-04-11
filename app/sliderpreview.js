@@ -20,8 +20,6 @@
 	  	slidersCodeStart: null,
 	  	slidersCodeEnd: null,
 	  	slidersCodeDiv: "<!--SLIDER_ARRAY-->",
-	  	SliderCollection: null,
-	  	SlidersView: null,
 	  }
 	},
 
@@ -38,6 +36,13 @@
 			$.jstree._reference(this.$("#sliderSelected")).remove();
 			this.setSliderIDs();
 		},
+		
+		"click .codePreview": function() {
+			var popup = window.open('','name','height=400,width=500');
+			popup.document.write(this.model.get("slidersCodeStart")+this.model.get("sliderIDs")+
+				this.model.get("slidersCodeEnd"));
+			popup.document.close();
+		}
 	},
 
 	initialize: function() {
@@ -53,9 +58,6 @@
 			_this.model.set("slidersCodeStart", response.substr(0, startIndex));
 			_this.model.set("slidersCodeEnd", response.substr(startIndex+div.length));
 		});
-		
-		this.model.set("SliderCollection", new SliderCollection());
-		this.model.set("SlidersView", new SliderCollectionView ({ model: this.model.get("SliderCollection"), el: this.$("#sliderWidgets") }));
 		
 		var treeSettings = this.model.collection.getTreeSettings();
 		this.tree = this.$("#sliderLightGroups").jstree ({
@@ -108,53 +110,40 @@
 
 	newSliders: function() {
 		var newIDs = this.model.get("sliderIDs");
-		console.log(newIDs);
 		
-		// Remove old sliders
-		var coll = this.model.get("SliderCollection");
-		
-		for (var i=coll.length; i>0; i--)
-			coll.remove(coll.models[i-1]);
-			
 		// Add new sliders and the HTML code
 		if (newIDs.length > 0) {
 			this.$("#slidersCode").val(this.model.get("slidersCodeStart")+newIDs+
 				this.model.get("slidersCodeEnd"));
-			coll.newSlider(newIDs, null);
 		}
 		else
 			this.$("#slidersCode").val("");
 	},
 	
-	template: _.template("\
-	<table>\
+	template: _.template("<table>\
 	<tr>\
-		<td>\
+		<td id='groupTableCell'>\
 			<div id='groupTableContainer' class='programs'>\
-				<div id='sliderLightGroups'></div>\
+				<b>Ryhmät</b><br /><div id='sliderLightGroups'></div>\
 			</div>\
 		</td>\
-	</tr>\
-	<tr>\
-		<td>\
+		<td id='groupTableCell'>\
 			<div id='groupTableContainer' class='programs jstree-drop'>\
-				<b>Vedä ryhmät tänne</b>\
+				<b>Kytkimen ryhmät</b>\
 				<div id='sliderSelected'></div>\
 			</div>\
-			<input id='deleteSliderGroup' type='submit' value='Poista valittu' />\
 		</td>\
 	</tr>\
+	<tr><td></td><td><input id='deleteSliderGroup' type='submit' value='Poista valittu' /></td></tr>\
 	</table>\
-	<div>\
-		Kopioitava HTML-koodi:\
+	<br />\
+	<div class='codePreviewContainer'>\
+		Kopioitava HTML-koodi:<a class='codePreview' href=#>Näytä kytkimien esikatselu</a>\
 		<textarea id='slidersCode' type='textarea' readonly='readonly' rows='15' cols='40'></textarea>\
-	</div>\
-	<div id='slidersPreview'>Säätimien esikatselu:\
-		<div class='bar' id='sliderWidgets'></div>\
 	</div>"),
 	
 	render: function() {
-	    this.$el.html (this.template() );
+	    this.$el.html (this.template());
 	    return this;
 	},
 	

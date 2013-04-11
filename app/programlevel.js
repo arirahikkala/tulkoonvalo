@@ -15,8 +15,9 @@
 
 	defaults: function() {
 	  return {
+	  	// TODO: Remove test values from level and time items
 	  	id: null,
-	  	target_id: null,
+	  	target_id: 1,
 	  	light_detector: false,
 	  	motion_detector: false,
 	  	light_level: 0,
@@ -71,7 +72,7 @@
 
 			if (cid != -1) {
 				this.model.set("target_id", cid);
-				var cName = $('.jstree-clicked').text().substr(1);
+				var cName = this.$('.jstree-clicked').text().substr(1);
 				this.model.set("name", cName);
 				this.$("#levelGroupInput").attr({"value": cName});
 				this.$("#groupsPopup").hide();
@@ -88,6 +89,7 @@
 		this.model.set("cid", this.model.cid);
 		
 		_this = this;
+		var treeSettings = this.model.collection.getTreeSettings();
 		this.$("#levelLightGroups").jstree ({
 			"json_data": {
 					"ajax": {
@@ -126,10 +128,10 @@
 	template: _.template("<div class='programError' id='programsErrorLevel'></div>\
 	<input id='item-remove' type='button' value='Poista ryhmä'>\
 	<div id='levelGroup'>\
-		Ryhmä:<input id='levelGroupInput' readonly='readonly'><br/>\
-		<div id='groupsPopup'>\
-			<input id='groupsPopupClose' type='button' value='Sulje'>\
-			<div id='levelLightGroups'></div>\
+		Ryhmä:<input id='levelGroupInput' placeholder='Klikkaa nähdäksesi ryhmät' readonly='readonly'><br/>\
+		<div id='groupsPopup' class='programs'>\
+			<input id='groupsPopupClose' type='button' value='Sulje'><br />\
+				<b>Ryhmät</b><br /><div id='levelLightGroups'></div>\
 		</div>\
 	</div>\
 	<table id='levelSettings'>\
