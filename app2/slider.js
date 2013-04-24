@@ -18,13 +18,9 @@
 		urlRoot: "../server2/sliders/",
 	
 	initialize: function() {
-		console.log("asd");
       this.bind("remove", function() {
-      console.log("remem", this, this.attributes);
-      console.log(this.childElement);
       this.get("childElement").remove();
       }, this);
-	//	this.model.get("childElement").remove();
 	},
 	
 	url: function() {
@@ -90,7 +86,7 @@
 	</tr>\
 	<tr>\
 		<td><input class='timer' type='text' readonly='readonly' /></td>\
-		<td><input class='onoff' type='image' disabled='disabled' src='../powericon.png' /></td>\
+		<td><input class='onoff' type='image' disabled='disabled' src='../img/power-button.png' /></td>\
 	</tr>\
 	<tr>\
 		<td><input class='timer-sub' type='button' value='-' /></td>\
@@ -126,7 +122,7 @@
 			this.model.set("childrenFetched", true);
 			this.model.set("showChildren", true);
 			this.model.collection.newSlider(this.model.get("children"), this);
-			this.$(".show-children").attr("src", "../childrenarrow_back2.png");
+			this.$(".show-children").attr("src", "../img/arrow-left.png");
 		}
 		
 		else {
@@ -135,12 +131,12 @@
 			if (this.model.get("showChildren") == true) {
 				this.model.set("showChildren", false);
 				this.model.get("childElement").hide("fade", 300);
-				this.$(".show-children").attr("src", "../childrenarrow2.png");
+				this.$(".show-children").attr("src", "../img/arrow-right.png");
 			}
 			else {
 				this.model.set("showChildren", true);
 				this.model.get("childElement").show("fade", 300);
-				this.$(".show-children").attr("src", "../childrenarrow_back2.png");
+				this.$(".show-children").attr("src", "../img/arrow-left.png");
 			}
 		}
 	},
@@ -168,9 +164,8 @@
 	// Change timer from buttons
 	timerChange: function(timeAdd) {
 		var newTime = this.timerEndCheck(timeAdd);
-		// TODO: Round the added time to the nearest 15min?
+		
 		this.model.set("timer", newTime);
-		//this.model.set("timerLast", newTime);  
 		this.childrenChange();
 	},
 	
@@ -217,6 +212,7 @@
 		for (var j in this.model.get("allChildren")) {
 			var cid = this.model.get("allChildren")[j];
 			for (var i in coll.sliderList[cid]) {
+			
 				// Don't save children if parent timer ran out
 				if (! this.model.get("timerEnd")) {
 					coll.sliderList[cid][i].set("enabled", this.model.get("enabled"));
@@ -227,11 +223,13 @@
 			}
 		}
 		
-		// Insert slider values into DB
+		// Construct slider ID array
 		if (this.model.get("allChildren").length > 0 && ! this.model.get("timerEnd"))
 			var sliders = this.model.get("lightID")+','+this.model.get("allChildren");
 		else
 			var sliders = this.model.get("lightID");
+			
+		// Insert slider values into DB
 		$.post(
 			"../server2/savesliders",
 			JSON.stringify(
@@ -286,19 +284,17 @@
 	    this.$el.html (this.template ({name: this.model.get('name')}));
 	    this.$(".slider-widget").slider({orientation: "vertical", value: this.model.get('value')});
 			
-			// TODO: See license on jquery.ui.touch-punch.min.js library
 			this.$(".slider-widget").draggable();
 			this.$(".slider-widget .ui-slider-handle").append("<div id='ui-slider-handle-value'></div>");
 			this.$(".slider-widget #ui-slider-handle-value").html(this.model.get("value"));
 			
-			// TODO: Is this necessary?
 			// Cut too long names
 			var header = this.model.get("name");
-			if (header.length > 15)
-				header = header.substring(0, 12)+"...";
+			if (header.length > 10)
+				header = header.substring(0, 7)+"...";
 			header = "<div class='widget-header-text'>"+header+"</div>";
 			
-			this.$(".widget-header").html(header+"<input class='show-children' type='image' src='../childrenarrow2.png' />");
+			this.$(".widget-header").html(header+"<input class='show-children' type='image' src='../img/arrow-right.png' />");
 
 			if (this.model.get("children").length == 0)
 				this.$(".show-children").hide();

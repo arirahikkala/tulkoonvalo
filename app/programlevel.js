@@ -15,9 +15,8 @@
 
 	defaults: function() {
 	  return {
-	  	// TODO: Remove test values from level and time items
 	  	id: null,
-	  	target_id: 1,
+	  	target_id: null,
 	  	light_detector: false,
 	  	motion_detector: false,
 	  	light_level: 0,
@@ -148,16 +147,12 @@
 	render: function() {
 	    this.$el.html(this.template());
 	    
-			this.$("#levelGroupInput").val(this.model.get("name"));
+		this.$("#levelGroupInput").val(this.model.get("name"));
 	    
 	    this.$("#light-slider").slider({ orientation: "vertical", value: this.model.get("light_level") });
  	    this.$("#motion-slider").slider({ orientation: "vertical", value: this.model.get("motion_level") });
 			
-			// TODO: See license on jquery.ui.touch-punch.min.js library
-			// TODO: If disabled, you can move whole slider
-			this.$("#light-slider").draggable();
-			this.$("#motion-slider").draggable();
-			this.$("#motion-slider").slider({disabled: this.model.get("motion_detector")==0?true:false});
+		this.$("#motion-slider").slider({disabled: this.model.get("motion_detector")==0?true:false});
 			
  	    this.$("#light-enabled").attr("checked", this.model.get("light_detector")==0?false:true);
  	    this.$("#motion-enabled").attr("checked", this.model.get("motion_detector")==0?false:true);

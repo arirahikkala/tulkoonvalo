@@ -1,4 +1,3 @@
-
 var SliderCollection = Backbone.Collection.extend ({
 	model: Slider.Slider,
 	lightIds : [],
@@ -15,10 +14,11 @@ var SliderCollection = Backbone.Collection.extend ({
 		this.longPoll();
 	},
 
+    // Create new sliders with a parent (or null if no parent)
 	newSlider: function(lightList, parentEl) {
 		this.lightIds = lightList;
 		
-		// No parents in first creation
+		// No parents in initial creation
 		if (parentEl)
 			this.parentEl = parentEl;
 			
@@ -32,7 +32,6 @@ var SliderCollection = Backbone.Collection.extend ({
 		if (this.query) this.query.abort();
 		
 		var childWrap = null;
-		//var now = new Date();
 
 		for (var i in response) {
 			var curLight = response[i];
@@ -77,7 +76,6 @@ var SliderCollection = Backbone.Collection.extend ({
 			this.models[this.length-1].set("level", this.parentEl.model.get("level")+1);
 			headEl = $(childEl.children()[0]);
 			headEl.attr("id", levelColor);
-			console.log(this.models[this.length-1].get("level"));
 			childEl.css({"margin-top":this.models[this.length-1].get("level")*0.5+"em"});
 			}
 		}
@@ -97,7 +95,7 @@ var SliderCollection = Backbone.Collection.extend ({
 				_this.pollEnabled = true;
 				_this.longPollGet()
 			}
-		}, 100);
+		}, 500);
 	},
 	
 	// Get slider value (if changed from somewhere else) and rule value for ghost slider
@@ -112,24 +110,31 @@ var SliderCollection = Backbone.Collection.extend ({
 		for (var cid in this.sliderList) {
 			sliderValues.push(this.sliderList[cid][0].get("value"));
 			timerValues.push(this.sliderList[cid][0].get("timerLast"));
-			enabledValues.push(this.sliderList[cid][0].get("enabled"));
+			enabledValues.push(this.sliderList[cid][0].get("enabled")?1:0);
 		}
 		
-		this.query = $.get("../server2/poll/"+this.sliderIDs+"/"+sliderValues+"/"+timerValues+"/"+enabledValues,
-			function(response) {
-				_this.pollEnabled = false;
-				if (response) {
-					for (var cid in response) {
-						for (var i in _this.sliderList[cid]) {
-							_this.sliderList[cid][i].set("enabled", response[cid]["enabled"]);
-							_this.sliderList[cid][i].set("value", response[cid]["current_level"]);
-							_this.sliderList[cid][i].set("timer", response[cid]["timer"]);
-							_this.sliderList[cid][i].set("timerLast", response[cid]["timer_last"]);
-						}
-					}
-				}
-			},
-		"json");
+		this.query = $.post("../server2/poll/",
+			JSON.stringify(
+                {"ids": this.sliderIDs,
+                "values": sliderValues,
+                "timers": timerValues,
+                "enableds": enabledValues}
+            )
+		)
+		.done(function(response) {
+            _this.pollEnabled = false;
+            if (response) {
+                response = $.parseJSON(response);
+                for (var cid in response) {
+                    for (var i in _this.sliderList[cid]) {
+                        _this.sliderList[cid][i].set("enabled", response[cid]["enabled"]);
+                        _this.sliderList[cid][i].set("value", response[cid]["current_level"]);
+                        _this.sliderList[cid][i].set("timer", response[cid]["timer"]);
+                        _this.sliderList[cid][i].set("timerLast", response[cid]["timer_last"]);
+                    }
+                }
+            }
+        });
 	},
 	
 });

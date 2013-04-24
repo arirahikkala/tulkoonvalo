@@ -120,7 +120,7 @@
 
       // jstree needs this to load its CSS
       $.jstree._themes="../lib/jstree/themes/";
-      
+      var editTree = null;
       $("#usual ul").idTabs(true);
       
 			errorMessages = { 
@@ -193,9 +193,7 @@
 			
 				editProg.set("times", tempTimes);
 				editProg.set("levels", tempProgramLevels);
-                
-                console.log(editProg);
-
+				
       	editProg.save(null, {
       		success: function(m,r) {
       			m.set("id", r); Programs.add(m);
@@ -212,6 +210,7 @@
       $("#addEditProgramSlider").bind ("click", function() { tempProgramLevels.add({}); });
       $("#saveEditProgram").bind ("click", function() {
 				var editProg = tempPrograms.pop();
+				// This copies items instead of creating a reference
 				editProg.set("times", tempTimes.models.slice(0));
 				editProg.set("levels", tempProgramLevels.models.slice(0));
 				
@@ -221,30 +220,32 @@
 						for (var x in editProg.get("times"))
 							editProg.get("times")[x].set("new_time", false);
 						for (var x in editProg.get("levels"))
-							editProg.get("levels")[x].set("new_level", false);
-							
+    					    editProg.get("levels")[x].set("new_level", false);
+    					    
+    					// We already are in "mainpage", do fetch here (yea, it's stupid)
+    					Programs.fetch({success: function() { updateMainPageText(); } } );
+    					
 						editProg.trigger("reset");
 						appRouter.navigate('mainpage', {trigger: true, replace: true});
 						$("#mainpageTab").click();
 					},
-					error: function(m,r) { parseErrors(m,r,"programsErrorMainEdit"); }
+					error: function(m,r) { parseErrors(r,m,"programsErrorMainEdit"); }
 				});
       });
       
-      // TODO: Icon paths
     	var treeSettings = [
 				{
 					"types": {
 						"root" : {},
 						"group" : {},
 						"light" : {
-							"icon" : { "image" : "http://www.student.oulu.fi/~mikkonev/lamp.svg" },
+							"icon" : { "image" : "../img/lamp.svg" },
 						},
 						"detector_light" : {
-							"icon" : { "image" : "http://www.student.oulu.fi/~mikkonev/detector.svg" },
+							"icon" : { "image" : "../img/detector.svg" },
 						},
 						"detector_motion" : {
-							"icon" : { "image" : "http://www.student.oulu.fi/~mikkonev/detector.svg" },
+							"icon" : { "image" : "../img/detector.svg" },
 						},
 					},
 				},
@@ -428,6 +429,10 @@
 			getTreeSettings: function() {
 				return(treeSettings);
 			},
+			getTree: function() {
+			    //console.log(editTree);
+			    return(editTree);
+			}
 		});
 		
 		var ProgramSliderCollectionView = Backbone.View.extend ({
@@ -484,14 +489,14 @@
     // Backbone.Router handles noticing where we're navigating to for us
     var AppRouter = Backbone.Router.extend ({
 			routes: {
-				"mainpage": "mainpageView",
+			"mainpage": "mainpageView",
 	    	"programs": "programsView",
 	    	"programsEdit/:cid": "programsEditView",
 	    	"groups": "groupsView",
 	    	"sliders": "slidersView",
 			},
 			
-	mainpageView: function() { Programs.fetch({success: function() { updateMainPageText(); console.log("JEE"); }}); },
+	mainpageView: function() { Programs.fetch({success: function() { updateMainPageText(); } } ); },
 	groupsView: function () {},
     slidersView: function () { sliderPreview.pop(); sliderPreview.add({}); },
     
@@ -512,25 +517,24 @@
 	},
 	
 	programsEditView: function (progID) {
-    	$("#programsErrorMainEdit").html('');
-		emptyTempCollections();
-		$(".selected").attr("class", ""); // Deselect tabs
-		
-		// Show items in the right place
-		tempTimesView.$el = $("#programEditTimes");
-		tempProgramLevelsView.$el = $("#programEditSliders");
+        $("#programsErrorMainEdit").html('');
+        emptyTempCollections();
+        $(".selected").attr("class", ""); // Deselect tabs
+    
+        // Show items in the right place
+        tempTimesView.$el = $("#programEditTimes");
+        tempProgramLevelsView.$el = $("#programEditSliders");
 
-		editProg = Programs.get(progID);
-		tempPrograms.add(editProg);
-		
-		tempTimes.add(editProg.get("times"));
-		tempProgramLevels.add(editProg.get("levels"));
-		
-		$("#programEditName").val(editProg.get("name"));
-        console.log(editProg);
-		
-		// If reloaded while editing, prevent editing page messing up
-		appRouter.navigate('mainpage', {trigger: true, replace: true});
+        editProg = Programs.get(progID);
+        tempPrograms.add(editProg);
+    
+        tempTimes.add(editProg.get("times"));
+        tempProgramLevels.add(editProg.get("levels"));
+    
+        $("#programEditName").val(editProg.get("name"));
+    
+        // If reloaded while editing, prevent editing page messing up
+        appRouter.navigate('mainpage', {trigger: true, replace: true});
 	},
     });
     // I assume Backbone internally sets some global variable to make this work, because yes, this is needed to make the router run

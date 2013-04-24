@@ -30,8 +30,6 @@
 	className: "sliderpreview-item",
 
 	events: {
-		// TODO: After removing inserting doesn't work
-		// TODO: If node is selected nodes are inserted inside it which shouldn't happen
 		"click #deleteSliderGroup": function (event) {
 			$.jstree._reference(this.$("#sliderSelected")).remove();
 			this.setSliderIDs();
@@ -52,7 +50,7 @@
         this.model.bind("remove", function() { this.remove(); }, this);
         
 		// Get the code for sliders
-		$.get('../app2/index-text.html', 
+		$.get('slider-code.html', 
 		function(response) {
 			// Get the two halves from the code
 			div = _this.model.get("slidersCodeDiv");

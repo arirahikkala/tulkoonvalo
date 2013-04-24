@@ -43,7 +43,6 @@
 				
 			"click #program-delete": function(e) {
 					var choice = confirm("Haluatko varmasti poistaa säännön '"+this.model.get("name")+"'?");
-					console.log(choice);
 					if (choice) {
 						this.model.destroy();
             this.remove();
@@ -51,10 +50,7 @@
 				}
 			},
 			
-		initialize: function() {
-			this.render();	
-			//this.model.on("remove", function() {console.log("removexxxx"); this.remove() }, this);
-		},
+		initialize: function() { this.render(); },
 		
 		template: _.template("<tr>\
 		<td id='program-name'></td>\

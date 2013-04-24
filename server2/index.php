@@ -1,5 +1,8 @@
 <?php // -*- PHP -*-
 
+// Used in converting SQL datetime into timestamp
+date_default_timezone_set('Europe/Helsinki');
+
 require 'slim/Slim.php';
 
 $app = new Slim();
@@ -9,7 +12,7 @@ $app->get('/lights/:ids/', function($ids) { getLights($ids); });
 $app->get('/children/:id/', function($id) { getChildren($id); });
 $app->get('/allchildren/:id/', function($id) { getAllChildren($id); });
 $app->post('/savesliders', 'saveSliders');
-$app->get('/poll/:ids/:values/:timers/:enableds', function($ids, $values, $timers, $enableds) { poll($ids, $values, $timers, $enableds); });
+$app->post('/poll/', 'poll');
 $app->get('/togglesliders/:ids/', function($ids) { toggleSliders($ids); });
 $app->get('/programs/', 'getPrograms');
 $app->post('/programs/', 'savePrograms');
@@ -123,7 +126,6 @@ function addGroup() {
 	$params = json_decode(Slim::getInstance()->request()->getBody());
 	$db = getConnection();
 	
-	// TODO: Allow random ID?
 	$newID = rand();
 	
 	$sql = "insert into lights values (?,?,1,0)";
@@ -226,7 +228,6 @@ function childLoop($cGroup, $groups, $onlyGroups) {
 }
 
 // Convenience function for several DB statements
-// TODO: Make everyone use this
 function dbExec($db, $sql, $dbArray, $fetchType=-1) {
 	try {
 		$stmt = $db->prepare($sql);
@@ -271,7 +272,6 @@ function deleteProgram($id) {
 	$sql = "delete from program_levels where program_id=?";	
 	dbExec($db, $sql, array($id));
 
-	// TODO: Commendaros
 	deleteProgramsParse();
 	$programs=getPrograms(false);
 	foreach ($programs as $target){
@@ -291,7 +291,7 @@ function deleteProgram($id) {
 function updateProgram($id) {
 	$params = json_decode(Slim::getInstance()->request()->getBody());
 
-	// If errors found in form return
+	// If errors found in form return code 400
 	$retArray = programValidation($params);	
 	if ($retArray) {
 		Slim::getInstance()->response()->status(400);
@@ -376,7 +376,6 @@ function programValidation($params) {
 	
 	$nameLen = strlen($params->name);
 	
-	// TODO: Form needs testing with lengths etc.
 	// Generic errors with name and lack of time or level items
 	if ($nameLen == 0 || $nameLen > 32)
 		$errorMain["name"] = 0;
@@ -421,7 +420,6 @@ function programValidation($params) {
 		if (!$timeFormatError && strtotime($time->time_start) > strtotime($time->time_end))
 			$errorTimes[$time->cid][] = 5;
 	}
-	// TODO: Check that it's a group used in a program
 
 	// Check level settings
 	$usedLevels = array();
@@ -483,7 +481,6 @@ function savePrograms() {
 		);
 	}
 
-	// TODO: These common statements could be put into their own functions
 	$sql = "insert into program_times values (null,?,?,?,?,?,?)";
 	foreach ($params->times as $time) {
 		dbExec($db, $sql, array(
@@ -502,8 +499,6 @@ function savePrograms() {
 		);
 	}
 	print($programID);
-	// TODO: Return to main page with a success message
-	// TODO: Fix being unable to edit from other than mainpage tab (e.g. when reload page)
 }
 
 function getPrograms($retJson = true) {
@@ -519,7 +514,6 @@ function getPrograms($retJson = true) {
 		echo '{"error":{"text":'. $e->getMessage() .'}}';
 	}
 	
-	// TODO: Refactor this SQL mess?
 	// Get time items for each program
 	$sql = "select * from program_times where program_id=?";
 	foreach ($programs as $cProg) {
@@ -573,7 +567,6 @@ function getPrograms($retJson = true) {
 	else return($programs);
 }
 
-// TODO: Commendaros
 function getProgramsParse() {
 	$db=getConnection();
 	$sql = "select * from programs_parse";
@@ -581,41 +574,12 @@ function getProgramsParse() {
 	return($programs);
 }
 
-// TODO: Commendaros
 function deleteProgramsParse() {
 	$db=getConnection();
 	$sql = "delete from programs_parse";	
 	dbExec($db, $sql, array());
 }
 
-/*function getGhost ($id) {
-	$programs=getProgramsParse();
-
-	$time = getdate();
-	$todaysPrograms=array();
-
-	$today=$time["wday"]-1;
-	if ($today==-1)
-		$today=6;
-	
-	foreach ($programs as $prog) {
-		if ($prog->target_id==$id){
-			$weekdays=$prog->weekdays;
-			if (substr($weekdays, $today, 1)=="1"){
-				if ((strtotime($prog->time_start) <= $time[0]) && 
-				($time[0] < strtotime($prog->time_end))) {
-					if ($prog->motion_detector==1)
-						return ($prog->motion_level);
-					else
-						return ($prog->light_level);
-				}
-			}
-		}					
-	}
-	return(0);
-}*/
-
-// TODO: Commendaros
 function checkProgramsOverlap ($target, $targetID) {
 	$programs2=getPrograms(false);
 	$modifiedPrograms=array();
@@ -906,15 +870,19 @@ function modifyProgram ($time1, $prog, $weekdays, $levels_array, $type, $id1, $i
 	return($modifiedPrograms);
 }
 
-// TODO: Should send parameters fancier way? - no other way in get?
 // Long polling used by the sliders
-function poll($ids, $values, $timers, $enableds) {
+function poll() {
+    $params = json_decode(Slim::getInstance()->request()->getBody());
+    $ids_array = $params->ids;
+    $values_array = $params->values;
+    $timers_array = $params->timers;
+    $enableds_array = $params->enableds;
+    /*
 	$ids_array = preg_split ("/,/", $ids);
 	$values_array = preg_split( "/,/", $values);
 	$timers_array = preg_split ( "/,/", $timers);
 	$enableds_array = preg_split ( "/,/", $enableds);
-	
-	// TODO: Proper check for values (in other places too...) no empty values "" etc. ?
+	*/
 	if ((count($ids_array) != count($values_array)) ||
 	(count($values_array) != count($timers_array)) ||
 	(count($timers_array) != count($enableds_array)) )
@@ -923,6 +891,7 @@ function poll($ids, $values, $timers, $enableds) {
 	// Create an array from the given values
 	$origLevels = array();
 	$counter = 0;
+	
 	foreach ($ids_array as $cid) {
 		$origLevels[$cid] = array();
 		
@@ -975,10 +944,7 @@ function poll($ids, $values, $timers, $enableds) {
 
 // Get new values from the DB for long polling
 function getLevels($ids_array) {
-	// TODO: This belongs elsewhere
-	date_default_timezone_set('Europe/Helsinki');
-	
-	// TODO: Implode ids
+
 	$sql = "select * from light_activations where id=?";
 	$retArray = array();
 	$timerArray = array();
@@ -1023,13 +989,12 @@ function saveSliders() {
 	$currentTime = time();
 	
 	// Check timer 24h and "negative" limits
-	if ($timer < 0) // TODO: What happens if this is sent?
+	if ($timer < 0)
 		$timer = 0;
 	else if ($timer > 86400)
 		$timer = 86400;
 	$endTime = $currentTime + $timer;
 	
-	// TODO: This int convert good enough?
 	// Check the slider value
 	$value = (int)$value;
 	if ($value < 0)
@@ -1039,9 +1004,8 @@ function saveSliders() {
 		
 	$ids_array = preg_split ("/,/", $ids);
 	
-	// TODO: Repeated SQL statements seem heavy. Implode IDs!
 
-  // Insert the slider values into DB
+    // Insert the slider values into DB
 	$sql = "insert into light_activations values (?,?,?,?) on duplicate key update current_level=?, activated_at=from_unixtime(?), ends_at=from_unixtime(?)";
 	try {
 		$db = getConnection();
@@ -1056,14 +1020,9 @@ function saveSliders() {
 }
 
 // Get light/group data and children to create new sliders
-// TODO: Inexistent IDs
 function getObjectData ($ids) {	
 	$ids_array = preg_split ("/,/", $ids);
 	$retArray = array();
-	
-	// TODO: This belongs elsewhere
-	// Used in converting SQL datetime into timestamp
-	date_default_timezone_set('Europe/Helsinki');
 	
 	foreach ($ids_array as $id) {		
 		$sql = "select * from lights left join light_activations on lights.permanent_id=light_activations.id where permanent_id=?";
@@ -1082,7 +1041,6 @@ function getObjectData ($ids) {
 		$children = getChildren($id);
 		$childrenIds = array();
 		
-		// TODO: Move id extract elsewhere
 		if (count($children)) {
 			// Extract children IDs
 			foreach ($children as $child) {
@@ -1114,7 +1072,6 @@ function getAllChildren ($id) {
 	$allChildren = array();
 	$tempChildren[] = $id;
 
-	// TODO: Should prevent endless cycle in group creation
 	while (count($tempChildren) > 0) {
 		$cid = array_pop($tempChildren);
 		$cChildren = getChildren($cid);

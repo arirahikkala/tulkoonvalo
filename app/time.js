@@ -19,9 +19,9 @@
 	  	cid: null,
 	  	date_start: '',
 	  	date_end: '',
-	  	weekdays: '1000000',
-	  	time_start: '12:00',
-	  	time_end: '13:00',
+	  	weekdays: '0000000',
+	  	time_start: '00:00',
+	  	time_end: '12:00',
 	  	new_time: true,
 	  	allow_delete: false,
 	  }
@@ -84,7 +84,6 @@
 			this.$("#programsErrorTime").html("");
 	},
 	
-	// TODO: Time picker license
 	template: _.template("<div class='programError' id='programsErrorTime'></div>\
 	<input id='item-remove' type='button' value='Poista aika'>\
 	<div id='program-days'>\

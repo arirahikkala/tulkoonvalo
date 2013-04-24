@@ -1,4 +1,4 @@
-/* !!! TODO: Check elements exist, compress shorties*/
+
 .slider-widget { margin: auto; }
 .slider
 {
@@ -11,30 +11,12 @@
 	border-bottom: 1px solid #cccccc;
 }
 
-#ui-slider-handle-value
-{
-	margin-left: 1.5em;
-}
-
-.widget-header
-{
-	overflow: hidden;
-	height: 2em;
-}
-
-.widget-header-text
-{
-	float: left;
-}
-
+#ui-slider-handle-value { margin-left: 1.5em; }
+.widget-header { overflow: hidden; height: 2em; }
+.widget-header-text { float: left; }
 #one.widget-header { background: lightblue; }
-
 #two.widget-header { background: grey; }
-
-.show-children
-{
-	float: right;
-}
+.show-children { float: right; }
 
 .timer { width: 3em; font-size: 1em; border: solid 4px; border-color: red; }
 .timer-add { margin-top: 1em; width: 100%; }
@@ -77,50 +59,13 @@
 	z-index: 10;
 }
 
-#groupTableCell
-{
-	width: 50%;
-}
-#groupTableContainer
-{
-	width: 100%;
-	height: 150px;
-}
-
-#slidersCode
-{
-	width: 100%;
-}
-
-.codePreview
-{
-	float: right;
-}
-
-#programsList
-{
-	width: 100%;
-	border: 1px solid black;
-}
-
-#item-remove
-{
-	float: right;
-}
-
+#groupTableCell { width: 50%; }
+#groupTableContainer { width: 100%; height: 150px; }
+#slidersCode { width: 100%; }
+.codePreview { float: right; }
+#programsList { width: 100%; border: 1px solid black; }
+#item-remove { float: right; }
 #groupsPopupClose { float: right; }
-
-#program-name
-{
-	width: 40%;
-}
-
-#levelSettingsCheckbox
-{
-	padding: 1em 2em 0em -10em;
-}
-
-#levelSettingsSlider
-{
-	padding: 1em 2em 0em 1em;
-}
+#program-name { width: 40%; }
+#levelSettingsCheckbox { padding: 1em 2em 0em -10em; }
+#levelSettingsSlider { padding: 1em 2em 0em 1em; }
