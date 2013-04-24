@@ -110,7 +110,7 @@
       }, this);
 			this.enabledChange(this.model.get("enabled"), false);
 	   
-			this.model.bind("change:enabled", function(e) { this.enabledChange(this.model.get("enabled")); }, this );
+			this.model.bind("change:enabled", function(e) { this.enabledChange(this.model.get("enabled"), true); }, this );
 			this.model.bind("change:value", function() { this.updateSliderWidget(); }, this);
 			this.model.bind("change:timer", function() { this.timerFormat(this.timerEndCheck(-1)); }, this );
 	},
@@ -169,7 +169,7 @@
 		this.childrenChange();
 	},
 	
-	enabledChange: function(enabled=false, save=true) {
+	enabledChange: function(enabled, save) {
 		this.model.set("enabled", enabled);
 		
 		if (! enabled) {
